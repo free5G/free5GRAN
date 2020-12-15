@@ -55,7 +55,7 @@ Before running free5GRAN, USRP B210 device has to be configured:
 * Find the device you want to use
 * Copy the `serial` field of the device and paste it in the config file.
 
-To run free5GRAN: `sudo ./free5GRAN ../config/CONFIG_FILE`
+To run free5GRAN: `sudo ./free5GRAN ../config/CONFIG_FIE`
 
 
 ### Debugging

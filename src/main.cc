@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/exception.hpp>
@@ -106,14 +106,16 @@ int main(int argc, char *argv[]) {
                 // Default ssb period to 20 ms
                 ssb_period = 0.02;
             }if (cell_info.lookupValue("band", band) ){
+                bool found_band = false;
                 for (int j = 0; j < free5GRAN::NUM_SUPPORTED_BANDS; j ++){
                     if (free5GRAN::AVAILABLE_BANDS[j].number == band){
                         band_obj = free5GRAN::AVAILABLE_BANDS[j];
+                        found_band = true;
                         BOOST_LOG_TRIVIAL(trace) << "Band n" + to_string(band);
                         break;
                     }
                 }
-                try {
+                if (found_band) {
                     if (cell_info.lookupValue("ssb_frequency", frequency) || cell_info.lookupValue("gscn", gscn)){
                         if (!cell_info.lookupValue("ssb_frequency", frequency)){
                             frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
@@ -123,7 +125,9 @@ int main(int argc, char *argv[]) {
                     else {
                         cerr << "Missing parameters (frequency or GSCN) in config file" << endl;
                     }
-                } catch (const std::exception& e) { cout << "BAND not supported" << endl; }
+                }else {
+                    cout << "BAND not supported" << endl;
+                }
             }
             else {
                 cerr << "Missing parameters (band) in config file" << endl;
