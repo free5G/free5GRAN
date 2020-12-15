@@ -65,3 +65,7 @@ free5GRAN writes logs in `build/free5GRAN.log`. It can be used for debugging. Fo
 ## Testing note 
 
 free5GRAN has been successfully tested on Ubuntu 18.04 with USRP B210. It is currently under active development, which means that it might not be fully stable. 
+
+## Issues
+
+All the issues have to be reported in the `issues` page of this repository. Some known issues about the current version are already detailed in `issues` section.
