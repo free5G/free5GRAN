@@ -1,0 +1,136 @@
+###### CELL
+## PCI: 413 (confirmed)
+## CP: Normal
+## I_B_SSB: 6
+## I_SSB: 6
+
+###### MIB
+## Frame number: 976
+## PDCCH configuration: 160
+## Subcarrier spacing common: 30
+## Cell barred: 1
+## DMRS type A position : 2
+## k SSB: 0
+## Intra freq reselection: 0
+## CRC validated
+
+#######################################################################
+
+###### DCI
+# RIV: 288
+# Time Domain RA: 0
+# Non-interleaved VRB to PRB
+# Modulation coding scheme: 6
+# Redudancy version: 0
+# SIB1 message
+#######################################################################
+
+BCCH-DL-SCH-Message ::= {
+    message: SIB1 ::= {
+        cellSelectionInfo: cellSelectionInfo ::= {
+            q-RxLevMin: -70
+            q-QualMin: -20
+        }
+        cellAccessRelatedInfo: CellAccessRelatedInfo ::= {
+            plmn-IdentityList: PLMN-IdentityInfoList ::= {
+                PLMN-IdentityInfo ::= {
+                    plmn-IdentityList: plmn-IdentityList ::= {
+                        PLMN-Identity ::= {
+                            mcc: MCC ::= {
+                                9
+                                0
+                                1
+                            }
+                            mnc: MNC ::= {
+                                7
+                                0
+                            }
+                        }
+                    }
+                    trackingAreaCode: 00 00 64
+                    cellIdentity: 00 12 34 50 10 (4 bits unused)
+                    cellReservedForOperatorUse: 1 (notReserved)
+                }
+            }
+        }
+        connEstFailureControl: ConnEstFailureControl ::= {
+            connEstFailCount: 0 (n1)
+            connEstFailOffsetValidity: 0 (s30)
+            connEstFailOffset: 1
+        }
+        servingCellConfigCommon: ServingCellConfigCommonSIB ::= {
+            downlinkConfigCommon: DownlinkConfigCommonSIB ::= {
+                frequencyInfoDL: FrequencyInfoDL-SIB ::= {
+                    frequencyBandList: MultiFrequencyBandListNR-SIB ::= {
+                        NR-MultiBandInfo ::= {
+                            freqBandIndicatorNR: 78
+                        }
+                    }
+                    offsetToPointA: 24
+                    scs-SpecificCarrierList: scs-SpecificCarrierList ::= {
+                        SCS-SpecificCarrier ::= {
+                            offsetToCarrier: 0
+                            subcarrierSpacing: 1 (kHz30)
+                            carrierBandwidth: 51
+                        }
+                    }
+                }
+                initialDownlinkBWP: BWP-DownlinkCommon ::= {
+                    genericParameters: BWP ::= {
+                        locationAndBandwidth: 13750
+                        subcarrierSpacing: 1 (kHz30)
+                    }
+                    pdcch-ConfigCommon: PDCCH-ConfigCommon ::= {
+                        commonControlResourceSet: ControlResourceSet ::= {
+                            controlResourceSetId: 1
+                            frequencyDomainResources: FF 00 00 00 00 00 (3 bits unused)
+                            duration: 1
+                            cce-REG-MappingType: <present>
+                            precoderGranularity: 0 (sameAsREG-bundle)
+                        }
+                        commonSearchSpaceList: commonSearchSpaceList ::= {
+                            SearchSpace ::= {
+                                searchSpaceId: 1
+                                controlResourceSetId: 0
+                                monitoringSlotPeriodicityAndOffset: <present>
+                                monitoringSymbolsWithinSlot: 80 00 (2 bits unused)
+                                nrofCandidates: nrofCandidates ::= {
+                                    aggregationLevel1: 0 (n0)
+                                    aggregationLevel2: 0 (n0)
+                                    aggregationLevel4: 1 (n1)
+                                    aggregationLevel8: 0 (n0)
+                                    aggregationLevel16: 0 (n0)
+                                }
+                                searchSpaceType: common ::= {
+                                    dci-Format0-0-AndFormat1-0: dci-Format0-0-AndFormat1-0 ::= {
+                                    }
+                                }
+                            }
+                        }
+                        searchSpaceSIB1: 0
+                        searchSpaceOtherSystemInformation: 0
+                        pagingSearchSpace: 32
+                        ra-SearchSpace: 32
+                    }
+                    pdsch-ConfigCommon: PDSCH-ConfigCommon ::= {
+                    }
+                }
+                bcch-Config: BCCH-Config ::= {
+                    modificationPeriodCoeff: 0 (n2)
+                }
+                pcch-Config: PCCH-Config ::= {
+                    defaultPagingCycle: 1 (rf64)
+                    nAndPagingFrameOffset: <present>
+                    ns: 0 (four)
+                }
+            }
+            ssb-PositionsInBurst: ssb-PositionsInBurst ::= {
+                inOneGroup: <absent>
+            }
+            ssb-PeriodicityServingCell: 0 (ms5)
+            ss-PBCH-BlockPower: 0
+        }
+    }
+}
+####################################################################
+####################################################################
