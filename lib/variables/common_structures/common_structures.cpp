@@ -17,13 +17,15 @@
 #include "common_structures.h"
 #include "../common_variables/common_variables.h"
 
-free5GRAN::band free5GRAN::BAND_N_1 = {1, (int) 15e3, 5279, 5419, 4};
-free5GRAN::band free5GRAN::BAND_N_2 = {2, (int) 15e3, 4829, 4969, 4};
-free5GRAN::band free5GRAN::BAND_N_3 = {3, (int) 15e3, 4517, 4693, 4};
-free5GRAN::band free5GRAN::BAND_N_7 = {7,(int) 15e3, 6554, 6718, 4,new int[8]{2,8,16,22}};
-free5GRAN::band free5GRAN::BAND_N_8 = {8, (int) 15e3, 2318, 2395, 4, new int[8]{2,8,16,22}};
-free5GRAN::band free5GRAN::BAND_N_28 = {28, (int) 15e3, 1901, 2002, 4, new int[8]{2,8,16,22}};
-free5GRAN::band free5GRAN::BAND_N_78 = {78, (int) 30e3, 7711, 8051, 8, new int[8]{2,8,16,22,30,36,44,50}};
+
+// https://medium.com/@mishra.eric/understanding-nr5g-synchronisation-signal-block-ssb-7a8d56a48e16
+free5GRAN::band free5GRAN::BAND_N_1 = {1, (int) 15e3, 5279, 5419, 4, new int[8]{2,8,16,22},500};
+free5GRAN::band free5GRAN::BAND_N_2 = {2, (int) 15e3, 4829, 4969, 4, new int[8]{2,8,16,22},500};
+free5GRAN::band free5GRAN::BAND_N_3 = {3, (int) 15e3, 4517, 4693, 4, new int[8]{2,8,16,22},500};
+free5GRAN::band free5GRAN::BAND_N_7 = {7,(int) 15e3, 6554, 6718, 4,new int[8]{2,8,16,22}, 500};
+free5GRAN::band free5GRAN::BAND_N_8 = {8, (int) 15e3, 2318, 2395, 4, new int[8]{2,8,16,22}, 500};
+free5GRAN::band free5GRAN::BAND_N_28 = {28, (int) 15e3, 1901, 2002, 4, new int[8]{2,8,16,22}, 500};
+free5GRAN::band free5GRAN::BAND_N_78 = {78, (int) 30e3, 7711, 8051, 8, new int[8]{2,8,16,22,30,36,44,50}, 50};
 // TEST n78
 //free5GRAN::band free5GRAN::BAND_N_78 = {78, (int) 30e3, 7837, 7839, 8, new int[8]{2,8,16,22,30,36,44,50}};
 

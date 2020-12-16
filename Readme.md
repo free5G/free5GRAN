@@ -57,6 +57,9 @@ Before running free5GRAN, USRP B210 device has to be configured:
 
 To run free5GRAN: `sudo ./free5GRAN ../config/CONFIG_FIE`
 
+### Detection threshold
+
+In the current version, receiver detects cells based on PSS sequence correlation peak. This may vary depending on radio conditions, frequency and environment. You can adjust threshold in `lib/variables/common_structures/common_structures.cpp` by modifying different pre-defined bands. Parameter to be modified is `pss_threshold`.
 
 ### Debugging
 

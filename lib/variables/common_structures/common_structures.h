@@ -26,7 +26,7 @@ namespace free5GRAN{
      * Define structure to store NR bands information
      */
     typedef struct band_ {
-        int number, scs, min_gscn, max_gscn, l_max, *ssb_symbols;
+        int number, scs, min_gscn, max_gscn, l_max, *ssb_symbols, pss_threshold;
     } band;
 
     /*

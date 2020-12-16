@@ -99,11 +99,11 @@ int phy::cell_synchronization(float &received_power) {
      * Get PSS correlation result
      */
     free5GRAN::phy::synchronization::search_pss(n_id_2,synchronisation_index,peak_value, common_cp_length, buff, fft_size);
-    BOOST_LOG_TRIVIAL(trace) << "Peak value: "+ to_string(peak_value/common_cp_length);
+    BOOST_LOG_TRIVIAL(trace) << "Peak value: "+ to_string(peak_value);
     /*
      * Arbitrary threshold for validating a cell
      */
-    if (peak_value/common_cp_length < 15){
+    if (peak_value < band_object.pss_threshold){
         return 1;
     }
     /*
@@ -166,8 +166,8 @@ int phy::extract_pbch() {
      * - MIB parsing
     */
     BOOST_LOG_TRIVIAL(trace) << "Extracting PBCH";
-    // Get 30ms of signal (=3 frames, at least 2 complete ones)
-    size_t num_samples = 0.03 * rf_device->getSampleRate();
+    // Get at least 30ms of signal (=3 frames, at least 2 complete ones)
+    size_t num_samples = max(0.03, ssb_period) * rf_device->getSampleRate();
     //vector<complex<float>> buff(num_samples);
     buff.clear();
     buff.resize(num_samples);
