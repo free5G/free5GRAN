@@ -20,9 +20,9 @@ sudo apt-get install cmake libfftw3-dev libconfig++-dev libboost-program-options
 
 ### Radio frontend
 
-We currently support USRP B210. `libuhd` and `libuhd-dev` are required. They can be installed on Ubuntu via:
+We currently support USRP B210. `libuhd-dev` is required. It can be installed on Ubuntu via:
 ```
-sudo apt-get install libuhd libuhd-dev
+sudo apt-get install libuhd-dev
 ```
 
 ### Compiling

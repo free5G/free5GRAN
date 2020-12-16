@@ -77,6 +77,7 @@ namespace free5GRAN{
     extern band BAND_N_1;
     extern band BAND_N_2;
     extern band BAND_N_3;
+    extern band BAND_N_28;
 
     /*
      * Bandwidth parameters for PSS and SSB

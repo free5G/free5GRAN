@@ -152,7 +152,7 @@ namespace free5GRAN{
     /*
      * Array to store available bands
      */
-    extern free5GRAN::band AVAILABLE_BANDS[6];
+    extern free5GRAN::band AVAILABLE_BANDS[7];
 
     /*
      * TS 38.213 Table 13-1
