@@ -286,7 +286,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
             } catch (const std::exception& e) { cout << "NO SIB1" << endl; }
         }else {
             cout << "###### DCI" << endl;
-            cout << "# DCI not found, not CRC validated, or RV";
+            cout << "# DCI not found, not CRC validated, or unsupported RV";
             cout << "\n";
         }
         cout << "#######################################################################" << endl;
