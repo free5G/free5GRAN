@@ -72,3 +72,7 @@ free5GRAN has been successfully tested on Ubuntu 18.04 with USRP B210. It is cur
 ## Issues
 
 All the issues have to be reported in the `issues` page of this repository. Some known issues about the current version are already detailed in `issues` section.
+
+## 5G NSA support
+
+As 5G NSA uses 4G cell for attachment, SIB are transmitted on a 4G cell and this receiver won't be able to decode SIB1 data from 5G NSA mode. However, this receiver should be able to detect 5G NSA cell and decode MIB data.
