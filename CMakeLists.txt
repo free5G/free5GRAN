@@ -53,3 +53,7 @@ find_package (Threads)
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 target_link_libraries(free5GRAN asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
+
+install(TARGETS free5GRAN DESTINATION /usr/local/bin)
+install(DIRECTORY config DESTINATION $ENV{HOME}/.config/free5GRAN)
+install(FILES config/search_cell.cfg DESTINATION $ENV{HOME}/.config/free5GRAN/config RENAME free5GRAN.cfg)

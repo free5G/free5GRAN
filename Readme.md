@@ -37,6 +37,7 @@ cd build
 mkdir output_files
 cmake ..
 make
+sudo make install
 ```
 
 ### Configuration and running
@@ -49,13 +50,18 @@ Searching a cell with pre-defined parameters. Example config file is provided (`
 #### Band scanning
 Scanning one or more 5G NR bands. Example config file is provided (`free5GRAN/config/scan_band.cfg`).
 
-### USRP configuration
+#### USRP configuration
 Before running free5GRAN, USRP B210 device has to be configured:
 * Run `uhd_find_devices`
 * Find the device you want to use
 * Copy the `serial` field of the device and paste it in the config file.
 
-To run free5GRAN: `sudo ./free5GRAN ../config/CONFIG_FIE`
+
+#### Running
+
+`free5GRAN` should be available globally after installation. Configuration files are located in `$HOME/.config/free5GRAN/config`. There is two possible options for running free5GRAN:
+* Run `sudo free5GRAN` to run `free5GRAN` with default config file `$HOME/.config/free5GRAN/config/free5GRAN.cfg`.
+* Run `sudo free5GRAN CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
 
 ### Detection threshold
 

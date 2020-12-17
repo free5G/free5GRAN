@@ -73,8 +73,16 @@ int main(int argc, char *argv[]) {
     }
     catch(const libconfig::FileIOException &fioex)
     {
-        cerr << "Please provide a config file!" << endl;
-        return(EXIT_FAILURE);
+        try
+        {
+            string path = (string) getenv("HOME") +  "/.config/free5GRAN/config/free5GRAN.cfg";
+            cfg.readFile(path.c_str());
+        }
+        catch(const libconfig::FileIOException &fioex)
+        {
+            cerr << "Please provide a config file!" << endl;
+            return(EXIT_FAILURE);
+        }
     }
     catch(const libconfig::ParseException &pex)
     {
