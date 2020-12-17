@@ -2,7 +2,7 @@
 
 free5GRAN is an open-source 5G RAN stack. The current version includes a receiver which decodes MIB & SIB1 data. It also acts as a cell scanner. free5GRAN works in SA mode.
 
-free5GRAN includes a library which can be reused for further developments. Documentation is available HERE.
+free5GRAN includes a library which can be reused for further developments. Documentation is available https://free5g.github.io/free5GRAN-documentation/.
 
 ## Installation & Running
 
@@ -76,3 +76,7 @@ All the issues have to be reported in the `issues` page of this repository. Some
 ## 5G NSA support
 
 As 5G NSA uses 4G cell for attachment, SIB are transmitted on a 4G cell and this receiver won't be able to decode SIB1 data from 5G NSA mode. However, this receiver should be able to detect 5G NSA cell and decode MIB data.
+
+## Supported bands
+
+A number of bands are already supported by free5GRAN. New bands can be added in `free5GRAN/lib/variables/common_structures`
