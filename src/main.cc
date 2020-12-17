@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     {
         try
         {
-            string path = (string) getenv("HOME") +  "/.config/free5GRAN/config/free5GRAN.cfg";
+            string path = "/root/.config/free5GRAN/config/free5GRAN.cfg";
             cfg.readFile(path.c_str());
         }
         catch(const libconfig::FileIOException &fioex)
