@@ -404,7 +404,7 @@ void init_logging(string level)
 
     boost::log::add_file_log
             (
-                    boost::log::keywords::file_name = "free5GRAN.log",
+                    boost::log::keywords::file_name = "/var/log/free5GRAN/free5GRAN.log",
                     boost::log::keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%] %Message%"
             );
 
