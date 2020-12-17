@@ -31,10 +31,8 @@ free5GRAN executable can be compiled from sources with the following commands:
 ```
 git clone https://github.com/free5G/free5GRAN.git
 cd free5GRAN
-mkdir files
 mkdir build
 cd build
-mkdir output_files
 cmake ..
 make
 sudo make install
@@ -69,7 +67,7 @@ In the current version, receiver detects cells based on PSS sequence correlation
 
 ### Debugging
 
-free5GRAN writes logs in `build/free5GRAN.log`. It can be used for debugging. Foremost, free5RGAN writes some data files in `free5gran/build/output_files` directory. For plotting those files, run `python analyse.py` in project `free5gran/` directory. This python script generates files that are stored in `free5gran/files` directory.
+free5GRAN writes logs in `/var/log/free5GRAN/free5GRAN.log`. It can be used for debugging. Foremost, free5RGAN writes some data files in `EXECUTION_DIRECTORY/output_files` directory (if it exists). For plotting those files, run `python analyse.py` in `free5gran/` git directory. This python script generates files that are stored in `free5gran/files` directory.
 
 ## Testing note 
 
