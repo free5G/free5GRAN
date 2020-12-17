@@ -59,8 +59,8 @@ Before running free5GRAN, USRP B210 device has to be configured:
 
 #### Running
 
-`free5GRAN` should be available globally after installation. Configuration files are located in `$HOME/.config/free5GRAN/config`. There is two possible options for running free5GRAN:
-* Run `sudo free5GRAN` to run `free5GRAN` with default config file `$HOME/.config/free5GRAN/config/free5GRAN.cfg`.
+`free5GRAN` should be available globally after installation. Configuration files are located in `/root/.config/free5GRAN/config`. There is two possible options for running free5GRAN:
+* Run `sudo free5GRAN` to run `free5GRAN` with default config file `/root/.config/free5GRAN/config/free5GRAN.cfg`.
 * Run `sudo free5GRAN CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
 
 ### Detection threshold
