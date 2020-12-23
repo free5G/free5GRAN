@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
     try
     {
         cfg.readFile(argv[1]);
+        cout << "Using configuration file $PWD/" << argv[1] << endl;
     }
     catch(const libconfig::FileIOException &fioex)
     {
@@ -77,6 +78,7 @@ int main(int argc, char *argv[]) {
         {
             string path = "/root/.config/free5GRAN/config/free5GRAN.cfg";
             cfg.readFile(path.c_str());
+            cout << "Using configuration file " << path << endl;
         }
         catch(const libconfig::FileIOException &fioex)
         {

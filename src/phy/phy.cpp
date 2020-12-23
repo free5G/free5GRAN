@@ -73,18 +73,18 @@ int phy::cell_synchronization(float &received_power) {
     double time_first_sample;
     received_power = 0;
 
-    size_t num_samples = ssb_period * rf_device->getSampleRate();
+    size_t num_samples = 2 * ssb_period * rf_device->getSampleRate();
 
     // Create buffer
-    //vector<complex<float>> buff(num_samples);
+    vector<complex<float>> buff_2_ssb_periods(num_samples);
     buff.clear();
-    buff.resize(num_samples);
+    buff.resize(num_samples / 2);
 
     complex<float> j(0, 1);
 
-    // Get samples from libphy layer and put them in buff variable
+    // Get samples from RF layer and put them in buff variable
     time_first_pss = chrono::high_resolution_clock::now();
-    rf_device->get_samples(&buff, time_first_sample);
+    rf_device->get_samples(&buff_2_ssb_periods, time_first_sample);
 
     int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * scs/15e3;
     int cp_lengths_pbch[num_symbols_per_subframe_pbch];
@@ -96,16 +96,17 @@ int phy::cell_synchronization(float &received_power) {
      */
     common_cp_length = cp_lengths_pbch[1];
     /*
+     * Extract first half of buffer (= 1 SSB period)
+     */
+    for (int i = 0; i < num_samples / 2; i ++){
+        buff[i] = buff_2_ssb_periods[i];
+    }
+
+    /*
      * Get PSS correlation result
      */
     free5GRAN::phy::synchronization::search_pss(n_id_2,synchronisation_index,peak_value, common_cp_length, buff, fft_size);
-    BOOST_LOG_TRIVIAL(trace) << "Peak value: "+ to_string(peak_value);
-    /*
-     * Arbitrary threshold for validating a cell
-     */
-    if (peak_value < band_object.pss_threshold){
-        return 1;
-    }
+    BOOST_LOG_TRIVIAL(trace) << "Peak value: "+ to_string(peak_value/common_cp_length);
     /*
      * Computing symbol length and first sample index of PSS in buff
      */
@@ -117,14 +118,12 @@ int phy::cell_synchronization(float &received_power) {
     index_first_pss = pss_start_index;
 
     vector<complex<float>> sss_signal(fft_size);
-
     /*
      * Extracting the SSS signal based on sss_init_index and cp_length
      */
     for (int i = 0; i < fft_size; i++){
         sss_signal[i] = buff[i + sss_init_index];
     }
-
     /*
      * Computing received power
      */
@@ -135,6 +134,7 @@ int phy::cell_synchronization(float &received_power) {
     received_power = 10 * log10(received_power);
     int n_id_1;
     float peak_value_sss;
+
     /*
      * Get SSS correlation result
      */
@@ -143,7 +143,37 @@ int phy::cell_synchronization(float &received_power) {
     BOOST_LOG_TRIVIAL(trace) << "Peak value: "+ to_string(peak_value_sss);
     pci = 3 * n_id_1 + n_id_2;
     BOOST_LOG_TRIVIAL(trace) << "PCI : "+ to_string(pci);
-    return 0;
+
+
+    /*
+     * Retreive first SSB symbol of second SSB period
+     */
+    vector<complex<float>> second_pss(fft_size + common_cp_length), second_sss(fft_size);
+    int second_pss_index = pss_start_index + num_samples / 2;
+    int n_id_1_2, n_id_2_2, sync_index_pss_2;
+    float peak_value_pss_2;
+    for (int i = 0; i < fft_size + common_cp_length; i++){
+        second_pss[i] = buff_2_ssb_periods[i + second_pss_index];
+    }
+    /*
+     * Retrieve N ID 2 value from second SSB
+     */
+    free5GRAN::phy::synchronization::search_pss(n_id_2_2,sync_index_pss_2,peak_value_pss_2, common_cp_length, second_pss, fft_size);
+
+    /*
+     * Extract SSS symbol from second SSB
+     */
+    for (int i = 0; i < fft_size; i++){
+        second_sss[i] = buff_2_ssb_periods[i + second_pss_index + 2 * symbol_duration + common_cp_length];
+    }
+
+    free5GRAN::phy::synchronization::get_sss(n_id_1_2, peak_value_sss, sss_signal, fft_size, n_id_2_2);
+
+    if (3 * n_id_1_2 + n_id_2_2 == pci){
+        return 0;
+    }else {
+        return 1;
+    }
 }
 
 int phy::extract_pbch() {
