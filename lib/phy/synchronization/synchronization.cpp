@@ -174,24 +174,22 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
      * Search for the max value and index
      */
     for (int i = 0; i < num_samples + fft_size + cp_length - 1; i++){
-        if (i >= fft_size + cp_length- 2 ){
-            float abs_0_short = abs(corr_0[i]);
-            float abs_1_short = abs(corr_1[i]);
-            float abs_2_short = abs(corr_2[i]);
+        float abs_0_short = abs(corr_0[i]);
+        float abs_1_short = abs(corr_1[i]);
+        float abs_2_short = abs(corr_2[i]);
 
-            if (abs_0_short > max_value){
-                max_value = abs_0_short;
-                n_id_2 = 0;
-                synchronisation_index = i;
-            } else if (abs_1_short  > max_value){
-                max_value = abs_1_short ;
-                n_id_2 = 1;
-                synchronisation_index = i;
-            } else if (abs_2_short > max_value){
-                max_value = abs_2_short;
-                n_id_2 = 2;
-                synchronisation_index = i;
-            }
+        if (abs_0_short > max_value){
+            max_value = abs_0_short;
+            n_id_2 = 0;
+            synchronisation_index = i;
+        } else if (abs_1_short  > max_value){
+            max_value = abs_1_short ;
+            n_id_2 = 1;
+            synchronisation_index = i;
+        } else if (abs_2_short > max_value){
+            max_value = abs_2_short;
+            n_id_2 = 2;
+            synchronisation_index = i;
         }
     }
     peak_value = max_value;

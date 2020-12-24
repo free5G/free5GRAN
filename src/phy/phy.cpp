@@ -114,6 +114,12 @@ int phy::cell_synchronization(float &received_power) {
     int pss_start_index = synchronisation_index - symbol_duration + 1;
     int sss_init_index = pss_start_index + 2 * symbol_duration + common_cp_length; // = (synchronisation_index - symbol_duration + 1) + 2 * symbol_duration;
 
+    /*
+     * If highest correlation peak is not fully in buffer, cell is not found
+     */
+    if (pss_start_index < 0){
+        return 1;
+    }
 
     index_first_pss = pss_start_index;
 
@@ -167,7 +173,7 @@ int phy::cell_synchronization(float &received_power) {
         second_sss[i] = buff_2_ssb_periods[i + second_pss_index + 2 * symbol_duration + common_cp_length];
     }
 
-    free5GRAN::phy::synchronization::get_sss(n_id_1_2, peak_value_sss, sss_signal, fft_size, n_id_2_2);
+    free5GRAN::phy::synchronization::get_sss(n_id_1_2, peak_value_sss, second_sss, fft_size, n_id_2_2);
 
     if (3 * n_id_1_2 + n_id_2_2 == pci){
         return 0;

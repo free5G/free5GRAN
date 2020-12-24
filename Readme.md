@@ -61,10 +61,6 @@ Before running free5GRAN, USRP B210 device has to be configured:
 * Run `sudo free5GRAN` to run `free5GRAN` with default config file `/root/.config/free5GRAN/config/free5GRAN.cfg`.
 * Run `sudo free5GRAN CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
 
-### Detection threshold
-
-In the current version, receiver detects cells based on PSS sequence correlation peak. This may vary depending on radio conditions, frequency and environment. You can adjust threshold in `lib/variables/common_structures/common_structures.cpp` by modifying different pre-defined bands. Parameter to be modified is `pss_threshold`.
-
 ### Debugging
 
 free5GRAN writes logs in `/var/log/free5GRAN/free5GRAN.log`. It can be used for debugging. Foremost, free5RGAN writes some data files in `EXECUTION_DIRECTORY/output_files` directory (if it exists). For plotting those files, run `python analyse.py` in `free5gran/` git directory. This python script generates files that are stored in `free5gran/files` directory.
