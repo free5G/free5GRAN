@@ -228,7 +228,9 @@ int phy::extract_pbch() {
     }
     data.close();
 
-
+    /*
+     * Compute PBCH CP length
+     */
     int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * scs/15e3;
     int cp_lengths_pbch[num_symbols_per_subframe_pbch];
     int cum_sum_pbch[num_symbols_per_subframe_pbch];
@@ -325,6 +327,7 @@ int phy::extract_pbch() {
 
     /*
      * Extracting DMRS AND PBCH modulation symbols
+     * ref is the reference grid for resource element demapper
      */
     vector<complex<float>> temp_mod_symbols, temp_mod_symbols2,temp_mod_symbols_dmrs;
 
@@ -390,6 +393,9 @@ int phy::extract_pbch() {
             }
         }
     }
+    /*
+     * Channel demapping using computed ref grid
+     */
     free5GRAN::phy::signal_processing::channel_demapper(ssb_symbols, ref, new int[2]{free5GRAN::SIZE_SSB_PBCH_SYMBOLS,free5GRAN::SIZE_SSB_DMRS_SYMBOLS}, new complex<float>*[2] {pbch_symbols,dmrs_symbols}, new int **[2] {pbch_indexes,dmrs_indexes}, 2, free5GRAN::NUM_SYMBOL_PBCH_SSB, free5GRAN::NUM_SC_SSB);
 
     /*
@@ -427,13 +433,12 @@ int phy::extract_pbch() {
         }
     }
 
-    // Equalize the transport_channel
+    // Equalize transport_channel
     for (int i = 0; i < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; i ++){
         final_pbch_modulation_symbols[i] = (pbch_symbols[i]) * conj(coefficients[i_b_ssb][pbch_indexes[0][i]][pbch_indexes[1][i]]) / (float) pow(abs(coefficients[i_b_ssb][pbch_indexes[0][i]][pbch_indexes[1][i]]),2);
     }
 
     this->i_b_ssb = i_b_ssb;
-    //this-> i_ssb = i_b_ssb%4 ;
     if (l_max == 4){
         this-> i_ssb = i_b_ssb % 4;
     }else {
@@ -441,6 +446,10 @@ int phy::extract_pbch() {
     }
     this->pci = pci;
 
+    /*
+     * Physical and transport channel decoding
+     * MIB parsing
+     */
     int bch_bits[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
     free5GRAN::phy::physical_channel::decode_pbch(final_pbch_modulation_symbols, i_ssb, pci, bch_bits);
     mib_bits = new int[free5GRAN::BCH_PAYLOAD_SIZE];
@@ -512,7 +521,9 @@ void phy::search_pdcch(bool &dci_found) {
      * \param[out] dci_found: returns true if blind decode succeeds.
     */
 
-
+    /*
+     * If SSB offset is greater than 23, PDCCH is not present in the current BWP
+     */
     if(mib_object.k_ssb > 23){
         dci_found = false;
         return;
@@ -524,7 +535,7 @@ void phy::search_pdcch(bool &dci_found) {
 
 
     /*
-     * Computing CP lengths of SSB/PBCH and  recovering SSB position in frame
+     * Computing CP lengths of SSB/PBCH and recovering SSB position in frame
      */
     int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * scs/15e3;
     int cp_lengths_pbch[num_symbols_per_subframe_pbch];
@@ -552,7 +563,9 @@ void phy::search_pdcch(bool &dci_found) {
     BOOST_LOG_TRIVIAL(trace) << "## FFT SIZE: " + to_string(fft_size);
 
     /*
-     * Getting two candidate frames in received 30 ms signal.
+     * Getting two candidate frames in received signal.
+     * frame_indexes are the beginning and ending indexes of the two candidate frames
+     * frame_numbers stores SFN for each candidate frame
      */
     int frame_indexes[2][2];
     int frame_numbers[2];
@@ -594,7 +607,7 @@ void phy::search_pdcch(bool &dci_found) {
     BOOST_LOG_TRIVIAL(trace) << "## FRAME 2 FROM: " + to_string(1e3 * frame_indexes[1][0]/rf_device->getSampleRate()) + " TO: " + to_string(1e3 * frame_indexes[1][1]/rf_device->getSampleRate()) + " ms";
 
     /*
-     * Conputing PDCCH Search Space information
+     * Computing PDCCH Search Space information
      */
     pdcch_ss_mon_occ = free5GRAN::phy::signal_processing::compute_pdcch_t0_ss_monitoring_occasions(mib_object.pdcch_config, scs, mib_object.scs * 1e3, i_ssb);
     pdcch_ss_mon_occ.n0 = (int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) % num_slots_per_frame;
@@ -604,7 +617,7 @@ void phy::search_pdcch(bool &dci_found) {
     BOOST_LOG_TRIVIAL(trace) << "## ODD/EVEN ?: " + to_string(pdcch_ss_mon_occ.sfn_parity);
 
     /*
-     * Checking where PDCCH is sent (even or odd frames)
+     * Getting candidate frame which satisfies Search Space SFN parity
      */
     int frame;
     if (frame_numbers[0] % 2 == pdcch_ss_mon_occ.sfn_parity){
@@ -693,9 +706,7 @@ void phy::search_pdcch(bool &dci_found) {
     int R = 2;
     int C = pdcch_ss_mon_occ.n_rb_coreset / (height_reg_rb * R);
     int j;
-
     int reg_index[C * R];
-
     for (int c = 0; c < C; c ++){
         for (int r = 0; r < R; r ++){
             j = c * R + r;
@@ -707,7 +718,7 @@ void phy::search_pdcch(bool &dci_found) {
     }
 
     /*
-     * Computing BWP CP lengths
+     * Computing current BWP CP lengths
      */
     int num_symbols_per_subframe_pdcch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * mib_object.scs/15;
     int cp_lengths_pdcch[num_symbols_per_subframe_pdcch];
@@ -720,6 +731,9 @@ void phy::search_pdcch(bool &dci_found) {
 
 
     int **dmrs_indexes, **pdcch_indexes, dmrs_count, pdcch_count, *reg_bundles, *reg_bundles_ns, *dci_decoded_bits, K, freq_domain_ra_size;
+    /*
+     * Number of bits for Frequency domain allocation in DCI
+     */
     freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset*(pdcch_ss_mon_occ.n_rb_coreset+1) / 2));
     /*
      * K is the DCI payload size including CRC
@@ -743,20 +757,22 @@ void phy::search_pdcch(bool &dci_found) {
         pdcch_ss_mon_occ.monitoring_slot = monitoring_slot;
         BOOST_LOG_TRIVIAL(trace) << "## MONITORING SLOT: "+ to_string(monitoring_slot);
         /*
-         * Extract corresponding CORESET0 samples
+         * Extract corresponding CORESET0 samples. CORESET0 number of symbols is given by PDCCH config in MIB
          */
         for (int symb = 0; symb < pdcch_ss_mon_occ.n_symb_coreset; symb ++){
             global_sequence[symb] = new complex<float>[pdcch_ss_mon_occ.n_rb_coreset * 3 ];
             /*
-             * Generate DMRS sequence
+             * Generate DMRS sequence for corresponding symbols
              */
             free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, pdcch_ss_mon_occ.n0 + monitoring_slot, pdcch_ss_mon_occ.first_symb_index + symb, global_sequence[symb], pdcch_ss_mon_occ.n_rb_coreset * 3);
+            /*
+             * Prepare input signal for FFT
+             */
             for (int i = 0; i < fft_size; i++){
                 fft_in[i][0] = real(frame_data[i + (pdcch_ss_mon_occ.n0 + monitoring_slot) * frame_size / num_slots_per_frame + cum_sum_pdcch[(pdcch_ss_mon_occ.first_symb_index + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdcch[pdcch_ss_mon_occ.first_symb_index + symb]]);
                 fft_in[i][1] = imag(frame_data[i + (pdcch_ss_mon_occ.n0 + monitoring_slot)  * frame_size / num_slots_per_frame + cum_sum_pdcch[(pdcch_ss_mon_occ.first_symb_index + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdcch[pdcch_ss_mon_occ.first_symb_index + symb]]);
             }
             fftw_execute(fft_plan);
-
             /*
              * Build frequency domain signal from FFT out signal
              */
@@ -766,7 +782,7 @@ void phy::search_pdcch(bool &dci_found) {
             }
         }
         /*
-         * Loop over possible aggregation level (from 2 to 4 included)
+         * Loop over possible aggregation level (from 2 to 4 included) and candidates
          */
         for (int i = 2; i < 5; i ++){
             agg_level = pow(2, i);
@@ -794,6 +810,9 @@ void phy::search_pdcch(bool &dci_found) {
                     vector<complex<float>> pdcch_symbols(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9);
                     reg_bundles = new int[agg_level];
                     reg_bundles_ns = new int[agg_level];
+                    /*
+                     * Extract REG bundles for current candidate and aggregation level
+                     */
                     for (int l = 0; l < agg_level; l ++){
                         reg_bundles[l] = reg_index[l + p * agg_level];
                         reg_bundles_ns[l] = reg_index[l + p * agg_level];
@@ -983,6 +1002,9 @@ void phy::extract_pdsch() {
 
     fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
 
+    /*
+     * Compute number of additionnal DMRS positions
+     */
     int additionnal_position;
     if (mapping_type == "A"){
         additionnal_position = 2;
@@ -1091,9 +1113,10 @@ void phy::extract_pdsch() {
             pdsch_ofdm_symbols[symb] = new complex<float>[12 * pdcch_ss_mon_occ.n_rb_coreset];
             pdsch_samples[symb] = new complex<float>[12 * lrb];
 
+            /*
+             * Prepare FFT input signal
+             */
             for (int i = 0; i < fft_size; i++){
-
-
                 fft_in[i][0] = real(frame_data[i + (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) * frame_size / num_slots_per_frame + cum_sum_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP]]);
                 fft_in[i][1] = imag(frame_data[i + (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0)  * frame_size / num_slots_per_frame + cum_sum_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP]]);
             }
