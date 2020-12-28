@@ -81,11 +81,13 @@ int phy::cell_synchronization(float &received_power) {
     buff.resize(num_samples / 2);
 
     complex<float> j(0, 1);
-
     // Get samples from RF layer and put them in buff variable
     time_first_pss = chrono::high_resolution_clock::now();
-    rf_device->get_samples(&buff_2_ssb_periods, time_first_sample);
-
+    try {
+        rf_device->get_samples(&buff_2_ssb_periods, time_first_sample);
+    }catch (const exception& e) {
+        return 1;
+    }
     int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * scs/15e3;
     int cp_lengths_pbch[num_symbols_per_subframe_pbch];
     int cum_sum_pbch[num_symbols_per_subframe_pbch];
@@ -113,7 +115,6 @@ int phy::cell_synchronization(float &received_power) {
     int symbol_duration = fft_size + common_cp_length;
     int pss_start_index = synchronisation_index - symbol_duration + 1;
     int sss_init_index = pss_start_index + 2 * symbol_duration + common_cp_length; // = (synchronisation_index - symbol_duration + 1) + 2 * symbol_duration;
-
     /*
      * If highest correlation peak is not fully in buffer, cell is not found
      */
@@ -211,7 +212,12 @@ int phy::extract_pbch() {
     double second_frame_time;
     // Getting samples
     auto now = chrono::high_resolution_clock::now();
-    rf_device->get_samples(&buff, second_frame_time);
+    try {
+        rf_device->get_samples(&buff, second_frame_time);
+    }catch (const exception& e) {
+        return 1;
+    }
+
     /*
      * SYNCHRONIZING IN THE NEW RECEIVED FRAME
      * Computing approximate PSS index inside the received buffer using the time reference of the first PSS index SSB initial search

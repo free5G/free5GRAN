@@ -128,7 +128,6 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
     fftw_execute(ifft_plan_2);
 
     vector<complex<float>> time_signal_pss_0(cp_length + fft_size),time_signal_pss_1(cp_length + fft_size),time_signal_pss_2(cp_length + fft_size);
-
     /*
      * Transform fftw complex signals into vectors of complex values and add cyclic prefix
      */
@@ -150,10 +149,10 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
 
     }
 
-
     size_t num_samples = buff.size();
-
-    complex<float> corr_0[num_samples + fft_size + cp_length - 1], corr_1[num_samples + fft_size + cp_length - 1], corr_2[num_samples + fft_size + cp_length - 1];
+    complex<float> *corr_0 = new complex<float>[num_samples + fft_size + cp_length - 1];
+    complex<float> *corr_1 = new complex<float>[num_samples + fft_size + cp_length - 1];
+    complex<float> *corr_2 = new complex<float>[num_samples + fft_size + cp_length - 1];
 
     /*
      * Correlate different PSS signals with different CP length with signal obtained from PHY layer
