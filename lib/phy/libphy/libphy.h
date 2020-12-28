@@ -50,6 +50,8 @@ namespace free5GRAN {
 
             int compute_nre(int num_symb_pdsch, int num_dmrs_symb);
 
+            void fft(vector<complex<float>> time_domain_signal, complex<float> **output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset);
+
         }
     }
 }

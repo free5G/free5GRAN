@@ -325,12 +325,6 @@ int phy::extract_pbch() {
     //vector<complex<float>>* pbch_modulation_symbols = pbch_object.getModulationSymbols();
     vector<complex<float>> pbch_modulation_symbols(free5GRAN::SIZE_SSB_PBCH_SYMBOLS), final_pbch_modulation_symbols(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
 
-    // Initializing fft parameters
-    fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-    fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-
-    fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
-
     /*
      * Extracting DMRS AND PBCH modulation symbols
      * ref is the reference grid for resource element demapper
@@ -356,49 +350,25 @@ int phy::extract_pbch() {
 
 
 
-    auto **ssb_symbols = new complex<float> *;
-    *ssb_symbols = new complex<float> [free5GRAN::NUM_SYMBOLS_SSB - 1];
-    //Looping over 3 OFDM symbols containing DMRS and PBCH
-    for (int symbol = 1; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
-        ssb_symbols[symbol-1] = new complex<float>[free5GRAN::NUM_SC_SSB];
-        ref[0][symbol - 1] = new int [free5GRAN::NUM_SC_SSB];
-        ref[1][symbol - 1] = new int [free5GRAN::NUM_SC_SSB];
-        // Filling fft input signal with current symbol IQ
-        for (int i = 0; i < fft_size; i++){
-            fft_in[i][0] = real(ssb_signal[i + symbol * symbol_duration + common_cp_length]);
-            fft_in[i][1] = imag(ssb_signal[i + symbol * symbol_duration + common_cp_length]);
+    auto **ssb_symbols = new complex<float> *[free5GRAN::NUM_SYMBOLS_SSB - 1];
+
+    int cum_sum_fft[free5GRAN::NUM_SYMBOLS_SSB];
+    for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
+        if (symbol < free5GRAN::NUM_SYMBOLS_SSB - 1){
+            ssb_symbols[symbol] = new complex<float>[free5GRAN::NUM_SC_SSB];
         }
-        // Execute the fft
-        fftw_execute(fft_plan);
-        // Building the RE grid from 0 to 239 from the 256 sized fft output
-        for (int i = 0; i < free5GRAN::NUM_SC_SSB / 2; i++){
-            ssb_symbols[symbol-1][free5GRAN::NUM_SC_SSB / 2 + i ] = complex<float>(fft_out[i][0],fft_out[i][1]);
-            ssb_symbols[symbol-1][free5GRAN::NUM_SC_SSB / 2 - i - 1] = complex<float>(fft_out[fft_size - i - 1][0],fft_out[fft_size - i - 1][1]);
-        }
-        // Creating Resource element de-mapper reference grid
-        for (int i = 0; i < free5GRAN::NUM_SC_SSB; i++){
-            if (symbol == 1 || symbol == 3){
-                if (pci % 4 != i % 4){
-                    ref[0][symbol - 1][i] = 1;
-                    ref[1][symbol - 1][i] = 0;
-                }else{
-                    ref[0][symbol - 1][i] = 0;
-                    ref[1][symbol - 1][i] = 1;
-                }
-            }else if (symbol == 2){
-                if (pci % 4 != i % 4 && (i < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || i > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1])){
-                    ref[0][symbol - 1][i] = 1;
-                    ref[1][symbol - 1][i] = 0;
-                } else if (i < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || i > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1]){
-                    ref[0][symbol - 1][i] = 0;
-                    ref[1][symbol - 1][i] = 1;
-                }else{
-                    ref[0][symbol - 1][i] = 0;
-                    ref[1][symbol - 1][i] = 0;
-                }
-            }
-        }
+        cum_sum_fft[symbol] = symbol * symbol_duration;
     }
+    /*
+     * Recover RE grid from time domain signal
+     */
+    free5GRAN::phy::signal_processing::fft(ssb_signal, ssb_symbols,fft_size,cp_lengths_pbch,&cum_sum_fft[0],free5GRAN::NUM_SYMBOLS_SSB - 1,free5GRAN::NUM_SC_SSB,1,0);
+
+    for (int symbol = 1; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++) {
+        ref[0][symbol - 1] = new int[free5GRAN::NUM_SC_SSB];
+        ref[1][symbol - 1] = new int[free5GRAN::NUM_SC_SSB];
+    }
+    free5GRAN::phy::physical_channel::compute_pbch_indexes(ref, pci);
     /*
      * Channel demapping using computed ref grid
      */
@@ -693,18 +663,6 @@ void phy::search_pdcch(bool &dci_found) {
         coreset_0_samples[i] = new complex<float>[num_sc_coreset_0];
         coefficients[i] = new complex<float>[num_sc_coreset_0];
     }
-
-    /*
-    * Create fftw complex arrays
-    */
-    fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-    fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-
-    /*
-     * Create a FFT plan
-     */
-    fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
-
     /*
      * Compute CCE-to-REG mapping From TS38.211 7.3.2.2
      */
@@ -765,27 +723,17 @@ void phy::search_pdcch(bool &dci_found) {
         /*
          * Extract corresponding CORESET0 samples. CORESET0 number of symbols is given by PDCCH config in MIB
          */
+        /*
+         * Recover RE grid from time domain signal
+         */
+        free5GRAN::phy::signal_processing::fft(frame_data, coreset_0_samples,fft_size,cp_lengths_pdcch,cum_sum_pdcch,pdcch_ss_mon_occ.n_symb_coreset,num_sc_coreset_0,pdcch_ss_mon_occ.first_symb_index, (pdcch_ss_mon_occ.n0 + monitoring_slot) * frame_size / num_slots_per_frame);
+
         for (int symb = 0; symb < pdcch_ss_mon_occ.n_symb_coreset; symb ++){
             global_sequence[symb] = new complex<float>[pdcch_ss_mon_occ.n_rb_coreset * 3 ];
             /*
              * Generate DMRS sequence for corresponding symbols
              */
             free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, pdcch_ss_mon_occ.n0 + monitoring_slot, pdcch_ss_mon_occ.first_symb_index + symb, global_sequence[symb], pdcch_ss_mon_occ.n_rb_coreset * 3);
-            /*
-             * Prepare input signal for FFT
-             */
-            for (int i = 0; i < fft_size; i++){
-                fft_in[i][0] = real(frame_data[i + (pdcch_ss_mon_occ.n0 + monitoring_slot) * frame_size / num_slots_per_frame + cum_sum_pdcch[(pdcch_ss_mon_occ.first_symb_index + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdcch[pdcch_ss_mon_occ.first_symb_index + symb]]);
-                fft_in[i][1] = imag(frame_data[i + (pdcch_ss_mon_occ.n0 + monitoring_slot)  * frame_size / num_slots_per_frame + cum_sum_pdcch[(pdcch_ss_mon_occ.first_symb_index + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdcch[pdcch_ss_mon_occ.first_symb_index + symb]]);
-            }
-            fftw_execute(fft_plan);
-            /*
-             * Build frequency domain signal from FFT out signal
-             */
-            for (int i = 0; i < free5GRAN::NUMBER_REG_PER_CCE * pdcch_ss_mon_occ.n_rb_coreset; i++){
-                coreset_0_samples[symb][i + free5GRAN::NUMBER_REG_PER_CCE * pdcch_ss_mon_occ.n_rb_coreset] = complex<float>(fft_out[i][0], fft_out[i][1]);
-                coreset_0_samples[symb][free5GRAN::NUMBER_REG_PER_CCE * pdcch_ss_mon_occ.n_rb_coreset - i - 1] = complex<float>(fft_out[fft_size - i - 1][0], fft_out[fft_size - i - 1][1]);
-            }
         }
         /*
          * Loop over possible aggregation level (from 2 to 4 included) and candidates
@@ -1087,6 +1035,16 @@ void phy::extract_pdsch() {
          */
         free5GRAN::phy::signal_processing::compute_phase_decomp(cp_lengths_pdsch, cum_sum_pdsch, rf_device->getSampleRate(),phase_offset,num_symbols_per_subframe_pdsch,phase_decomp);
 
+        for (int symb = 0; symb < L; symb ++){
+            pdsch_ofdm_symbols[symb] = new complex<float>[12 * pdcch_ss_mon_occ.n_rb_coreset];
+            pdsch_samples[symb] = new complex<float>[12 * lrb];
+        }
+        /*
+         * Recover RE grid from time domain signal
+         */
+        free5GRAN::phy::signal_processing::fft(frame_data, pdsch_ofdm_symbols,fft_size,cp_lengths_pdsch,cum_sum_pdsch,L,12 * pdcch_ss_mon_occ.n_rb_coreset,S, (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) * frame_size / num_slots_per_frame);
+
+
         /*
          * PDSCH extraction
          */
@@ -1116,25 +1074,6 @@ void phy::extract_pdsch() {
 
             coefficients[symb] = new complex<float>[12 * lrb];
 
-            pdsch_ofdm_symbols[symb] = new complex<float>[12 * pdcch_ss_mon_occ.n_rb_coreset];
-            pdsch_samples[symb] = new complex<float>[12 * lrb];
-
-            /*
-             * Prepare FFT input signal
-             */
-            for (int i = 0; i < fft_size; i++){
-                fft_in[i][0] = real(frame_data[i + (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) * frame_size / num_slots_per_frame + cum_sum_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP]]);
-                fft_in[i][1] = imag(frame_data[i + (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0)  * frame_size / num_slots_per_frame + cum_sum_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP] + cp_lengths_pdsch[(S + symb) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP]]);
-            }
-            fftw_execute(fft_plan);
-
-            /*
-             * Build frequency domain signal from FFT out signal
-             */
-            for (int i = 0; i < 6 * pdcch_ss_mon_occ.n_rb_coreset; i++){
-                pdsch_ofdm_symbols[symb][i + 6 * pdcch_ss_mon_occ.n_rb_coreset] = complex<float>(fft_out[i][0], fft_out[i][1]) * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + symb];
-                pdsch_ofdm_symbols[symb][6 * pdcch_ss_mon_occ.n_rb_coreset - i - 1] = complex<float>(fft_out[fft_size - i - 1][0], fft_out[fft_size - i - 1][1]) * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + symb];
-            }
             for (int i = 0; i < 12 * lrb; i ++){
                 pdsch_samples[symb][i] = pdsch_ofdm_symbols[symb][12 * rb_start + i];
             }

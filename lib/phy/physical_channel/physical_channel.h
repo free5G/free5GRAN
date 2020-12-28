@@ -26,6 +26,8 @@ namespace free5GRAN {
             void decode_pdsch(vector<complex<float>> pdsch_samples, double *unscrambled_soft_bits, int pci);
 
             void decode_pbch(vector<complex<float>> pbch_symbols, int i_ssb, int pci, int *bch_bits);
+
+            void compute_pbch_indexes(int *** ref, int pci);
         }
     }
 }

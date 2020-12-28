@@ -19,6 +19,7 @@
 #include <complex>
 #include <vector>
 #include <algorithm>
+#include <fftw3.h>
 using namespace std;
 
 
@@ -543,4 +544,43 @@ int free5GRAN::phy::signal_processing::compute_nre(int num_symb_pdsch, int num_d
      * \return number of PDSCH RE per RB
     */
     return 12 * (num_symb_pdsch - num_dmrs_symb);
+}
+
+void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_signal, complex<float> **output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset){
+    /**
+     * \fn fft
+     * \brief Perform FFT on time domain signal to recover frequency domain signal (= RE grid)
+     * \param[in] time_domain_signal: Input time domain signal
+     * \param[out] output_signal: Output RE grid
+     * \param[in] fft_size: FFT size (Number of samples per symbol, excluding CP)
+     * \param[in] cp_lengths: Array of CP lengths for 1 subframe (= 1ms)
+     * \param[in] cum_sum_symb: Cumulative sum of symbols length in one subframe
+     * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
+     * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
+     * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
+     * \param[in] offset: Number of samples to be left before extracting. Can be used while extracting specific slots in a radio frame.
+    */
+    // Initializing fft parameters
+    fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+    fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+
+    fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
+
+    int symb_index;
+
+    for (int symbol = 0; symbol < num_symbols; symbol ++){
+        symb_index = (first_symb_index + symbol) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
+        // Filling fft input signal with current symbol IQ
+        for (int i = 0; i < fft_size; i++){
+            fft_in[i][0] = real(time_domain_signal[i + offset + cum_sum_symb[symb_index] + cp_lengths[symb_index]]);
+            fft_in[i][1] = imag(time_domain_signal[i + offset + cum_sum_symb[symb_index] + cp_lengths[symb_index]]);
+        }
+        // Execute the fft
+        fftw_execute(fft_plan);
+        // Building the RE grid
+        for (int i = 0; i < num_sc_output / 2; i++){
+            output_signal[symbol][num_sc_output / 2 + i ] = complex<float>(fft_out[i][0],fft_out[i][1]);
+            output_signal[symbol][num_sc_output / 2 - i - 1] = complex<float>(fft_out[fft_size - i - 1][0],fft_out[fft_size - i - 1][1]);
+        }
+    }
 }

@@ -131,3 +131,38 @@ void free5GRAN::phy::physical_channel::decode_pbch(vector<complex<float>> pbch_s
      */
     free5GRAN::utils::common_utils::scramble(pbch_bits, c_seq, bch_bits, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 }
+
+void free5GRAN::phy::physical_channel::compute_pbch_indexes(int *** ref, int pci){
+    /**
+     * \fn compute_pbch_indexes
+     * \brief Compute PBCH and DMRS symbols indexes
+     * \param[out] ref: Reference grid for RE demapper
+     * \param[in] pci: Physical Cell ID
+    */
+    //Looping over 3 OFDM symbols containing DMRS and PBCH
+    for (int symbol = 1; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
+        // Creating Resource element de-mapper reference grid
+        for (int i = 0; i < free5GRAN::NUM_SC_SSB; i++){
+            if (symbol == 1 || symbol == 3){
+                if (pci % 4 != i % 4){
+                    ref[0][symbol - 1][i] = 1;
+                    ref[1][symbol - 1][i] = 0;
+                }else{
+                    ref[0][symbol - 1][i] = 0;
+                    ref[1][symbol - 1][i] = 1;
+                }
+            }else if (symbol == 2){
+                if (pci % 4 != i % 4 && (i < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || i > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1])){
+                    ref[0][symbol - 1][i] = 1;
+                    ref[1][symbol - 1][i] = 0;
+                } else if (i < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || i > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1]){
+                    ref[0][symbol - 1][i] = 0;
+                    ref[1][symbol - 1][i] = 1;
+                }else{
+                    ref[0][symbol - 1][i] = 0;
+                    ref[1][symbol - 1][i] = 0;
+                }
+            }
+        }
+    }
+}
