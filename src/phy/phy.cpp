@@ -758,8 +758,6 @@ void phy::search_pdcch(bool &dci_found) {
                     pdcch_indexes[1] = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
                     dmrs_symbols = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
                     temp_pdcch_symbols = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
-                    dmrs_count = 0;
-                    pdcch_count = 0;
                     dmrs_sequence = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
                     vector<complex<float>> pdcch_symbols(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9);
                     reg_bundles = new int[agg_level];
@@ -772,30 +770,30 @@ void phy::search_pdcch(bool &dci_found) {
                         reg_bundles_ns[l] = reg_index[l + p * agg_level];
                     }
                     sort(reg_bundles, reg_bundles+agg_level);
+
+                    /*
+                     * ref[0] -> indexes of PDCCH resource elements
+                     * ref[1] -> indexes of DMRS resource elements
+                     */
+                    int ***ref;
+                    ref = new int **[2];
+                    ref[0] = new int *[pdcch_ss_mon_occ.n_symb_coreset];
+                    ref[1] = new int *[pdcch_ss_mon_occ.n_symb_coreset];
+
+                    for (int symbol = 0; symbol < pdcch_ss_mon_occ.n_symb_coreset; symbol ++) {
+                        ref[0][symbol] = new int[12 * pdcch_ss_mon_occ.n_rb_coreset];
+                        ref[1][symbol] = new int[12 * pdcch_ss_mon_occ.n_rb_coreset];
+                    }
+
                     /*
                      * PDCCH samples extraction
                      */
-                    for (int symb = 0; symb < pdcch_ss_mon_occ.n_symb_coreset; symb ++){
-                        for (int k = 0 ; k < agg_level ; k ++) {
-                            for (int reg = 0; reg < free5GRAN::NUMBER_REG_PER_CCE; reg++) {
-                                if (reg % pdcch_ss_mon_occ.n_symb_coreset == symb){
-                                    for (int s = 0; s < 12; s++) {
-                                        if (s % 4 == 1){
-                                            dmrs_indexes[0][dmrs_count] = symb;
-                                            dmrs_indexes[1][dmrs_count] = reg_bundles[k] * 12 * height_reg_rb + (reg/pdcch_ss_mon_occ.n_symb_coreset) * 12 + s;
-                                            dmrs_symbols[dmrs_count] = coreset_0_samples[symb][reg_bundles[k]  * 12 * height_reg_rb + (reg/pdcch_ss_mon_occ.n_symb_coreset) * 12 + s];
-                                            dmrs_count++;
-                                        }else {
-                                            pdcch_indexes[0][pdcch_count] = symb;
-                                            pdcch_indexes[1][pdcch_count] = reg_bundles[k] * 12 * height_reg_rb + (reg/pdcch_ss_mon_occ.n_symb_coreset) * 12 + s;
-                                            temp_pdcch_symbols[pdcch_count] = coreset_0_samples[symb][reg_bundles[k]  * 12 * height_reg_rb + (reg/pdcch_ss_mon_occ.n_symb_coreset) * 12 + s];
-                                            pdcch_count++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    free5GRAN::phy::physical_channel::compute_pdcch_indexes(ref, pdcch_ss_mon_occ, agg_level, reg_bundles, height_reg_rb);
+                    /*
+                     * Channel de-mapping
+                     */
+                    free5GRAN::phy::signal_processing::channel_demapper(coreset_0_samples, ref, new int[2]{0,0}, new complex<float>*[2] {temp_pdcch_symbols,dmrs_symbols}, new int **[2] {pdcch_indexes,dmrs_indexes}, 2, pdcch_ss_mon_occ.n_symb_coreset, 12 * pdcch_ss_mon_occ.n_rb_coreset);
+
                     /*
                      * DMRS CCE-to-REG de-mapping/de-interleaving
                      */
@@ -1044,6 +1042,7 @@ void phy::extract_pdsch() {
          */
         free5GRAN::phy::signal_processing::fft(frame_data, pdsch_ofdm_symbols,fft_size,cp_lengths_pdsch,cum_sum_pdsch,L,12 * pdcch_ss_mon_occ.n_rb_coreset,S, (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) * frame_size / num_slots_per_frame);
 
+        bool dmrs_symbol_array[L];
 
         /*
          * PDSCH extraction
@@ -1059,6 +1058,7 @@ void phy::extract_pdsch() {
                     break;
                 }
             }
+            dmrs_symbol_array[symb] = dmrs_symbol;
 
             temp_dmrs_sequence = new complex<float>[6 * pdcch_ss_mon_occ.n_rb_coreset];
             /*
@@ -1080,6 +1080,7 @@ void phy::extract_pdsch() {
 
             ref[0][symb] = new int [12 * lrb];
             ref[1][symb] = new int [12 * lrb];
+            /*
             // Creating Resource element de-mapper reference grid
             for (int i = 0; i < 12 * lrb; i++){
                 if (dmrs_symbol){
@@ -1096,8 +1097,10 @@ void phy::extract_pdsch() {
                     ref[1][symb][i] = 0;
                 }
             }
-
+             */
         }
+
+        free5GRAN::phy::physical_channel::compute_pdsch_indexes(ref, dmrs_symbol_array, L, lrb);
 
         complex<float> *pdsch_samples_only, *dmrs_samples_only;
         pdsch_samples_only = new complex<float>[12 * lrb * (L - num_symbols_dmrs)];
