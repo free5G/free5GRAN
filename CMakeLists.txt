@@ -57,3 +57,6 @@ target_link_libraries(free5GRAN asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} b
 install(TARGETS free5GRAN DESTINATION /usr/local/bin)
 install(DIRECTORY config DESTINATION /root/.config/free5GRAN)
 install(FILES config/search_cell.cfg DESTINATION /root/.config/free5GRAN/config RENAME free5GRAN.cfg)
+install(FILES analyse.py DESTINATION /root/.files/free5GRAN/)
+install(DIRECTORY DESTINATION /root/.files/free5GRAN/execution_raw_files)
+install(DIRECTORY DESTINATION /root/.files/free5GRAN/visualization_files)

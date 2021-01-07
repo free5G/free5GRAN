@@ -59,11 +59,11 @@ Before running free5GRAN, USRP B210 device has to be configured:
 
 `free5GRAN` should be available globally after installation. Configuration files are located in `/root/.config/free5GRAN/config`. There is two possible options for running free5GRAN:
 * Run `sudo free5GRAN` to run `free5GRAN` with default config file `/root/.config/free5GRAN/config/free5GRAN.cfg`.
-* Run `sudo free5GRAN CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
+* Run `sudo free5GRAN RELATIVE_CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
 
 ### Debugging
 
-free5GRAN writes logs in `/var/log/free5GRAN/free5GRAN.log`. It can be used for debugging. Foremost, free5RGAN writes some data files in `EXECUTION_DIRECTORY/output_files` directory (if it exists). For plotting those files, run `python analyse.py` in `free5gran/` git directory. This python script generates files that are stored in `free5gran/files` directory.
+free5GRAN writes logs in `/var/log/free5GRAN/free5GRAN.log`. It can be used for debugging. Foremost, free5RGAN writes some data files in `/root/.files/free5GRAN/execution_raw_files/` directory (if it exists). For plotting those files, run `python analyse.py` in `/root/.files/free5GRAN/`. This python script generates files that are stored in `/root/.files/visualization_files/` directory.
 
 ## Testing note 
 
