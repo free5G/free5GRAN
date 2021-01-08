@@ -249,7 +249,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
                  * Power down-ramping to avoid saturation
                  */
                 BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
-                while (received_power > -2){
+                while (received_power > -2 && rf_device.getGain() > 0){
                     rf_device.setGain(rf_device.getGain()-10);
                     phy_layer.cell_synchronization(received_power);
                     BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
@@ -365,7 +365,7 @@ void search_cell_with_defined_params(double frequency, double ssb_period, string
         cout << "Received power: "+ to_string(received_power) + " dB" << endl;
         BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
 
-        while (received_power > -2){
+        while (received_power > -2 && rf_device.getGain() > 0){
             rf_device.setGain(rf_device.getGain()-10);
             phy_layer.cell_synchronization(received_power);
             cout << "New gain: "+ to_string(rf_device.getGain()) + " dB" << endl;
