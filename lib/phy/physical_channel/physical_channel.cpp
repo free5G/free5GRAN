@@ -168,6 +168,15 @@ void free5GRAN::phy::physical_channel::compute_pbch_indexes(int *** ref, int pci
 }
 
 void free5GRAN::phy::physical_channel::compute_pdcch_indexes(int ***ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb){
+    /**
+     * \fn compute_pdcch_indexes
+     * \brief Compute PDCCH and DMRS samples Position
+     * \param[out] ref: Reference grid for RE demapper.
+     * \param[in] pdcch_ss_mon_occ: Search Space configuration
+     * \param[in] agg_level: PDCCH candidate aggregation level
+     * \param[in] reg_bundles: REG positions after CCE-to-REG interleaving
+     * \param[in] height_reg_rb: Frequency-domain REG height, in RB
+    */
     for (int symb = 0; symb < pdcch_ss_mon_occ.n_symb_coreset; symb ++){
         for (int k = 0 ; k < agg_level ; k ++) {
             for (int reg = 0; reg < free5GRAN::NUMBER_REG_PER_CCE; reg++) {
@@ -188,6 +197,14 @@ void free5GRAN::phy::physical_channel::compute_pdcch_indexes(int ***ref, free5GR
 }
 
 void free5GRAN::phy::physical_channel::compute_pdsch_indexes(int ***ref, bool dmrs_symbol_array[], int L, int lrb){
+    /**
+     * \fn compute_pdsch_indexes
+     * \brief Compute PDSCH and DMRS samples Position
+     * \param[out] ref: Reference grid for RE demapper.
+     * \param[in] dmrs_symbol_array: True if symbol contains DMRS, false else
+     * \param[in] L: Number of symbols for PDSCH
+     * \param[in] lrb: Number of RB for PDSCH
+    */
     // Creating Resource element de-mapper reference grid
     for (int symb = 0; symb < L; symb ++){
         for (int i = 0; i < 12 * lrb; i++){

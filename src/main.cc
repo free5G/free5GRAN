@@ -53,8 +53,8 @@ typedef struct found_cell_ {
 
 } found_cell;
 
-void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band);
-void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period,string rf_address);
+void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band, int input_gain);
+void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period,string rf_address, int input_gain);
 void init_logging(string level);
 
 
@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
         BOOST_LOG_TRIVIAL(info) << "Initializing free5GRAN";
         string func = cfg.lookup("function");
         string rf_address = cfg.lookup("rf_address");
+        int gain = cfg.lookup("gain");
         const libconfig::Setting& root = cfg.getRoot();
         if (func == "CELL_SEARCH"){
             cout << "##  CELL SEARCH  ##" << endl;
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
                         if (!cell_info.lookupValue("ssb_frequency", frequency)){
                             frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
                         }
-                        search_cell_with_defined_params(frequency, ssb_period, rf_address,band_obj);
+                        search_cell_with_defined_params(frequency, ssb_period, rf_address,band_obj, gain);
                     }
                     else {
                         cerr << "Missing parameters (frequency or GSCN) in config file" << endl;
@@ -165,19 +166,19 @@ int main(int argc, char *argv[]) {
                 // Default ssb period to 20 ms
                 ssb_period = 0.02;
             }
-            scan_bands(band_array, ssb_period, rf_address);
+            scan_bands(band_array, ssb_period, rf_address, gain);
         }
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        cerr << "Missing function in config file" << endl;
+        cerr << "Missing function, RF device address of gain in config file" << endl;
     }
 
     return EXIT_SUCCESS;
 }
 
 
-void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_address){
+void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_address, int input_gain){
     /*
      * USRP parameters
      */
@@ -190,7 +191,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
      */
     double freq(1000e6);
     double rate(3.84e6);
-    double gain(100);
+    double gain(input_gain);
     double bw(3.84e6);
 
     free5GRAN::band current_band;
@@ -309,7 +310,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
 
 
 
-void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band){
+void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band, int input_gain){
     /*
      * USRP parameters
      */
@@ -320,7 +321,7 @@ void search_cell_with_defined_params(double frequency, double ssb_period, string
     /*
      * Cell parameters
      */
-    double gain(100);
+    double gain(input_gain);
     free5GRAN::bandwidth_info band_info;
     if (frequency < 3000e6){
         band_info = free5GRAN::BANDWIDTH_15_KHZ;
