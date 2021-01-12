@@ -78,14 +78,6 @@ int free5GRAN::POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[] = {
         959, 1011, 1013, 895, 1006, 1014, 1017, 1018, 991, 1020, 1007, 1015, 1019, 1021, 1022, 1023
 };
 
-int free5GRAN::FFT_SIZE_3_84_MHZ_SCS_30_KHZ = 128;
-
-int free5GRAN::FFT_SIZE_7_68_MHZ_SCS_30_KHZ = 256;
-
-int free5GRAN::FFT_SIZE_1_92_MHZ_SCS_15_KHZ = 128;
-
-int free5GRAN::FFT_SIZE_3_84_MHZ_SCS_15_KHZ = 256;
-
 int free5GRAN::SIZE_SSB_PBCH_SYMBOLS = 432;
 
 int free5GRAN::SIZE_SSB_DMRS_SYMBOLS = 144;
@@ -217,16 +209,6 @@ float free5GRAN::TS_38_213_TABLE_13_11[16][4]={
         {5,1,1,2},
 };
 
-int free5GRAN::CP_LENGTH_128[] = {9, 32};
-
-int free5GRAN::CP_LENGTH_256[] = {18, 64};
-
-int free5GRAN::CP_LENGTH_512[] = {37, 128};
-
-int free5GRAN::CP_LENGTH_1024[] = {73, 256};
-
-int free5GRAN::CP_LENGTH_2048[] = {146, 512};
-
 int free5GRAN::TS_38_214_TABLE_5_1_2_1_1_2[16][2][4] = {
         {
                 {0,0,2,12},
@@ -345,4 +327,6 @@ int free5GRAN::TS_38_212_TABLE_5_3_2_1[8][8] = {
 int free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP = 14;
 
 int free5GRAN::NUMBER_REG_PER_CCE = 6;
+
+int free5GRAN::SI_RNTI[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 

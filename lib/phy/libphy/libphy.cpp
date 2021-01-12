@@ -20,11 +20,11 @@
 #include <vector>
 #include <algorithm>
 #include <fftw3.h>
+#include <iostream>
+
 using namespace std;
 
-
-
-void free5GRAN::phy::signal_processing::channelEstimation(complex<float> *pilots, complex<float> * reference_pilot, int ** pilot_indexes, complex<float> **coefficients,float &snr, int num_sc, int num_symbols, int pilot_size) {
+void free5GRAN::phy::signal_processing::channelEstimation(complex<float> * pilots, complex<float> * reference_pilot, vector<vector<int>> &pilot_indexes, vector<vector<complex<float>>> &coefficients, float &snr, int num_sc, int num_symbols, int pilot_size){
     /**
      * \fn channelEstimation
      * \brief Estimate channel coefficients for equalization
@@ -72,12 +72,6 @@ void free5GRAN::phy::signal_processing::channelEstimation(complex<float> *pilots
 
         if (found_indexes.size() != 0 ){
             symbols_with_pilot.push_back(symbol);
-
-            /*
-            for (int i = 1; i < found_indexes.size() - 1; i ++){
-                coefficients[symbol][found_indexes[i]] = (coefficients[symbol][found_indexes[i - 1]] + coefficients[symbol][found_indexes[i]] + coefficients[symbol][found_indexes[i + 1]]) / complex<float>(3.0,0);
-            }
-             */
             /*
              * Linear interpolation. Looping over each subcarrier of the current symbol
              */
@@ -301,7 +295,8 @@ void free5GRAN::phy::signal_processing::transpose_signal(vector<complex<float>> 
     }
 }
 
-void free5GRAN::phy::signal_processing::channel_demapper(complex<float> **input_signal, int ***ref, int *channel_sizes, complex<float> **output_channels, int ***output_indexes, int num_channels, int num_symbols, int num_sc) {
+
+void free5GRAN::phy::signal_processing::channel_demapper(vector<vector<complex<float>>> &input_signal, vector<vector<vector<int>>> &ref, complex<float> **output_channels, vector<vector<vector<int>>> &output_indexes, int num_channels, int num_symbols, int num_sc){
     /**
      * \fn channel_demapper
      * \brief Consumes an input signal and returns different channels containing corresponding data, based on ref indexes
@@ -314,7 +309,7 @@ void free5GRAN::phy::signal_processing::channel_demapper(complex<float> **input_
      * \param[in] num_symbols: Number of symbols in the OFDM grid
      * \param[in] num_sc: Number of subcarriers in the OFDM grid
      */
-    int *channel_counter = new int[num_channels];
+    int channel_counter[num_channels];
     for (int i = 0; i < num_channels; i ++){
         channel_counter[i] = 0;
     }
@@ -360,7 +355,7 @@ double free5GRAN::phy::signal_processing::compute_freq_from_gscn(int gscn){
         }
         N = (gscn - (M - 3)/2) / 3;
         freq = N * 1.2e6 + M * 50e3;
-    }else if (gscn >=7499 && gscn < 22256){
+    }else if (gscn < 22256){
         N = gscn - 7499;
         freq = 3e9 + N * 1.44e6;
     }else {
@@ -546,20 +541,20 @@ int free5GRAN::phy::signal_processing::compute_nre(int num_symb_pdsch, int num_d
     return 12 * (num_symb_pdsch - num_dmrs_symb);
 }
 
-void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_signal, complex<float> **output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset){
+void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_signal, vector<vector<complex<float>>> &output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset){
     /**
-     * \fn fft
-     * \brief Perform FFT on time domain signal to recover frequency domain signal (= RE grid)
-     * \param[in] time_domain_signal: Input time domain signal
-     * \param[out] output_signal: Output RE grid
-     * \param[in] fft_size: FFT size (Number of samples per symbol, excluding CP)
-     * \param[in] cp_lengths: Array of CP lengths for 1 subframe (= 1ms)
-     * \param[in] cum_sum_symb: Cumulative sum of symbols length in one subframe
-     * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
-     * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
-     * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
-     * \param[in] offset: Number of samples to be left before extracting. Can be used while extracting specific slots in a radio frame.
-    */
+ * \fn fft
+ * \brief Perform FFT on time domain signal to recover frequency domain signal (= RE grid)
+ * \param[in] time_domain_signal: Input time domain signal
+ * \param[out] output_signal: Output RE grid
+ * \param[in] fft_size: FFT size (Number of samples per symbol, excluding CP)
+ * \param[in] cp_lengths: Array of CP lengths for 1 subframe (= 1ms)
+ * \param[in] cum_sum_symb: Cumulative sum of symbols length in one subframe
+ * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
+ * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
+ * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
+ * \param[in] offset: Number of samples to be left before extracting. Can be used while extracting specific slots in a radio frame.
+*/
     // Initializing fft parameters
     fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
     fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
@@ -582,5 +577,41 @@ void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_s
             output_signal[symbol][num_sc_output / 2 + i ] = complex<float>(fft_out[i][0],fft_out[i][1]);
             output_signal[symbol][num_sc_output / 2 - i - 1] = complex<float>(fft_out[fft_size - i - 1][0],fft_out[fft_size - i - 1][1]);
         }
+    }
+}
+
+void free5GRAN::phy::signal_processing::get_candidates_frames_indexes(vector<vector<int>> &frame_indexes, int *frame_numbers, int sfn, int index_first_pss, int num_samples_before_pss, int frame_size){
+    if (num_samples_before_pss < index_first_pss) {
+        if (num_samples_before_pss + 2 * frame_size < index_first_pss){
+            frame_indexes[0][0] = index_first_pss - num_samples_before_pss - 2 * frame_size;
+            frame_indexes[0][1] = index_first_pss - num_samples_before_pss - frame_size - 1;
+            frame_indexes[1][0] = index_first_pss - num_samples_before_pss - frame_size;
+            frame_indexes[1][1] = index_first_pss - num_samples_before_pss - 1;
+            frame_numbers[0] = sfn - 2;
+            frame_numbers[1] = sfn - 1;
+        }
+        else if (num_samples_before_pss + frame_size < index_first_pss){
+            frame_indexes[0][0] = index_first_pss - num_samples_before_pss - frame_size;
+            frame_indexes[0][1] = index_first_pss - num_samples_before_pss - 1;
+            frame_indexes[1][0] = index_first_pss - num_samples_before_pss;
+            frame_indexes[1][1] = index_first_pss - num_samples_before_pss + frame_size - 1;
+            frame_numbers[0] = sfn - 1;
+            frame_numbers[1] = sfn;
+        }
+        else {
+            frame_indexes[0][0] = index_first_pss - num_samples_before_pss;
+            frame_indexes[0][1] = index_first_pss - num_samples_before_pss + frame_size - 1;
+            frame_indexes[1][0] = index_first_pss - num_samples_before_pss + frame_size;
+            frame_indexes[1][1] = index_first_pss - num_samples_before_pss + 2 * frame_size - 1;
+            frame_numbers[0] = sfn;
+            frame_numbers[1] = sfn + 1;
+        }
+    }else {
+        frame_indexes[0][0] = index_first_pss - num_samples_before_pss + frame_size;
+        frame_indexes[0][1] = index_first_pss - num_samples_before_pss + 2 * frame_size - 1;
+        frame_indexes[1][0] = index_first_pss - num_samples_before_pss + 2 * frame_size;
+        frame_indexes[1][1] = index_first_pss - num_samples_before_pss + 3 * frame_size - 1;
+        frame_numbers[0] = sfn + 1;
+        frame_numbers[1] = sfn + 2;
     }
 }

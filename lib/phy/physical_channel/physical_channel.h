@@ -28,11 +28,11 @@ namespace free5GRAN {
 
             void decode_pbch(vector<complex<float>> pbch_symbols, int i_ssb, int pci, int *bch_bits);
 
-            void compute_pbch_indexes(int *** ref, int pci);
+            void compute_pbch_indexes(vector<vector<vector<int>>> &ref, int pci);
 
-            void compute_pdcch_indexes(int ***ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb);
+            void compute_pdcch_indexes(vector<vector<vector<int>>> &ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb);
 
-            void compute_pdsch_indexes(int ***ref, bool dmrs_symbol_array[], int L, int lrb);
+            void compute_pdsch_indexes(vector<vector<vector<int>>> &ref, bool dmrs_symbol_array[], int L, int lrb);
         }
     }
 }

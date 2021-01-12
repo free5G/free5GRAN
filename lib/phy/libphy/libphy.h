@@ -24,7 +24,7 @@ namespace free5GRAN {
     namespace phy {
         namespace signal_processing {
 
-            void channelEstimation(complex<float> * pilots, complex<float> * reference_pilot, int ** pilot_indexes, complex<float> ** coefficients, float &snr, int num_sc, int num_symbols, int pilot_size);
+            void channelEstimation(complex<float> * pilots, complex<float> * reference_pilot, vector<vector<int>> &pilot_indexes, vector<vector<complex<float>>> &coefficients, float &snr, int num_sc, int num_symbols, int pilot_size);
 
             void hard_demodulation(vector<complex<float>> signal, int * bits, int signal_length, int modulation_scheme);
 
@@ -34,7 +34,7 @@ namespace free5GRAN {
 
             void transpose_signal(vector<complex<float>> *input_signal, float freq_offset, int sample_rate, int input_length);
 
-            void channel_demapper(complex<float> **input_signal, int ***ref, int *channel_sizes, complex<float> **output_channels, int ***output_indexes, int num_channels, int num_symbols, int num_sc);
+            void channel_demapper(vector<vector<complex<float>>> &input_signal, vector<vector<vector<int>>> &ref, complex<float> **output_channels, vector<vector<vector<int>>> &output_indexes, int num_channels, int num_symbols, int num_sc);
 
             double compute_freq_from_gscn(int gscn);
 
@@ -50,7 +50,9 @@ namespace free5GRAN {
 
             int compute_nre(int num_symb_pdsch, int num_dmrs_symb);
 
-            void fft(vector<complex<float>> time_domain_signal, complex<float> **output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset);
+            void fft(vector<complex<float>> time_domain_signal, vector<vector<complex<float>>> &output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset);
+
+            void get_candidates_frames_indexes(vector<vector<int>> &frame_indexes, int *frame_numbers, int sfn, int index_first_pss, int num_samples_before_pss, int frame_size);
 
         }
     }

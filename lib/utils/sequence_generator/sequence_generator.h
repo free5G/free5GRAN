@@ -15,6 +15,7 @@
  */
 
 #include <complex>
+#include <vector>
 using namespace std;
 
 namespace free5GRAN {
@@ -30,6 +31,8 @@ namespace free5GRAN {
             void generate_c_sequence(long c_init, int length, int *output_sequence, int demod_type);
 
             void generate_pdcch_dmrs_sequence(int nid, int slot_number, int symbol_number, complex<float> *output_sequence, int size);
+
+            void generate_pdcch_dmrs_sequence(int nid, int slot_number, int symbol_number, vector<complex<float>> &output_sequence, int size);
 
             void generate_pdsch_dmrs_sequence(int n_symb_slot, int slot_number, int symbol_number, int n_scid, int n_id_scid, complex<float> *output_sequence, int size);
 

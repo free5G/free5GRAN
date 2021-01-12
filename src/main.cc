@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     catch(const libconfig::ParseException &pex)
     {
         cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-                  << " - " << pex.getError() << endl;
+             << " - " << pex.getError() << endl;
         return(EXIT_FAILURE);
     }
 
@@ -228,15 +228,12 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
             }
             BOOST_LOG_TRIVIAL(trace) << "Bandwidth informations are: ";
             BOOST_LOG_TRIVIAL(trace) << "SCS: " + to_string(band_info.scs);
-            BOOST_LOG_TRIVIAL(trace) << "BW PSS SSS: " + to_string(band_info.bandwidth_pss_sss);
-            BOOST_LOG_TRIVIAL(trace) << "BW SSB: " + to_string(band_info.bandwidth_ssb);
-            BOOST_LOG_TRIVIAL(trace) << "CP PSS SSS: " + to_string(band_info.cp_length_pss_sss[0]) + " / " + to_string(band_info.cp_length_pss_sss[1]);
-            BOOST_LOG_TRIVIAL(trace) << "CP SSB: " + to_string(band_info.cp_length_ssb[0]) + " / " + to_string(band_info.cp_length_ssb[1]);
 
+            int fft_size_pss = 128;
             rf_device.setCenterFrequency(freq);
-            rf_device.setSampleRate(band_info.bandwidth_pss_sss);
+            rf_device.setSampleRate(fft_size_pss * band_info.scs);
             rf_device.setGain(100);
-            phy phy_layer(&rf_device, ssb_period, band_info.fft_size_pss_sss, band_info.scs, current_band);
+            phy phy_layer(&rf_device, ssb_period, fft_size_pss, band_info.scs, current_band);
 
 
             cout << "\r## Searching in band n" + to_string(current_band.number) + " - " + to_string((((float) gscn - (float) current_band.min_gscn)/((float) current_band.max_gscn - (float) current_band.min_gscn)) * 100.0) + "% (found " + to_string(found_cells.size()) + " cells)";
@@ -330,20 +327,15 @@ void search_cell_with_defined_params(double frequency, double ssb_period, string
     }
     BOOST_LOG_TRIVIAL(trace) << "Bandwidth informations are: ";
     BOOST_LOG_TRIVIAL(trace) << "SCS: " + to_string(band_info.scs);
-    BOOST_LOG_TRIVIAL(trace) << "BW PSS SSS: " + to_string(band_info.bandwidth_pss_sss);
-    BOOST_LOG_TRIVIAL(trace) << "BW SSB: " + to_string(band_info.bandwidth_ssb);
-    BOOST_LOG_TRIVIAL(trace) << "CP PSS SSS: " + to_string(band_info.cp_length_pss_sss[0]) + " / " + to_string(band_info.cp_length_pss_sss[1]);
-    BOOST_LOG_TRIVIAL(trace) << "CP SSB: " + to_string(band_info.cp_length_ssb[0]) + " / " + to_string(band_info.cp_length_ssb[1]);
-
-
     /*
      * Instanciate a rf layer instance to provide exchanges with USRP device
      */
-    rf rf_device(band_info.bandwidth_pss_sss, frequency, gain, band_info.bandwidth_pss_sss, subdev, ant, ref, device_args);
+    int fft_size_pss = 128;
+    rf rf_device(fft_size_pss * band_info.scs, frequency, gain, fft_size_pss * band_info.scs, subdev, ant, ref, device_args);
 
     //FIX BAND SELECTION
 
-    phy phy_layer(&rf_device, ssb_period, band_info.fft_size_pss_sss, band_info.scs, band);
+    phy phy_layer(&rf_device, ssb_period, fft_size_pss, band_info.scs, band);
 
 
     cout << "\n";

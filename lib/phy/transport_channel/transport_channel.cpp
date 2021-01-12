@@ -84,9 +84,7 @@ void free5GRAN::phy::transport_channel::rate_recover(int *input_bits, int *outpu
      * \param[in] E: Rate matching output sequence length
      * \param[in] N: Rate matching input sequence length
     */
-    int *e, *y, i, j_n;
-    e = new int[E];
-    y = new int[N];
+    int i, j_n, e[E], y[N];
     /*
      * Coded bit-interleaving/de-interleaving TS38.212 5.4.1.3
      * No coded-bits interleaving
@@ -148,14 +146,9 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
      * \param[in] n_pc: Number of parity check bits
      * \param[in] n_wm_pc: Number of other parity check bits
     */
-    int *u, *q_0_n_1, count_seq, *q_i_n, *c_p, *pi_seq, i, j_n;
+    int q_0_n_1[N], count_seq, q_i_n[K + n_pc], c_p[K], pi_seq[K], i, j_n, u[N];
     int K_max = 164;
     bool found;
-    u = new int[N];
-    q_0_n_1 = new int[N];
-    q_i_n = new int[K + n_pc];
-    c_p = new int[K];
-    pi_seq = new int[K];
 
     /*
      * polar decoding using Gn inverse matrix (TS38.212 5.3.1.2)
@@ -314,7 +307,7 @@ void free5GRAN::phy::transport_channel::crc_validate(int *input_bits, int *crc_p
       * \param[in] length_input: Input size
       * \param[in] length_crc: Polynom size
      */
-    int num_steps, *seq1;
+    int num_steps, seq1[length_crc];
 
     /*
      * Getting index of first 1 in input_bits
@@ -329,7 +322,7 @@ void free5GRAN::phy::transport_channel::crc_validate(int *input_bits, int *crc_p
     /*
      * Creating a new input called temp_input by removing all 0 from the beginning of input_bits
      */
-    int * temp_input = new int[length_input - index_0];
+    int temp_input[length_input - index_0];
     for (int i = 0; i < length_input - index_0; i ++){
         temp_input[i] = input_bits[index_0 + i];
     }
@@ -340,7 +333,6 @@ void free5GRAN::phy::transport_channel::crc_validate(int *input_bits, int *crc_p
      * seq1 is the variable that will be XORed with crc_polynom step after step
      * Initializing seq1 variable to the first bits of temp_input
      */
-    seq1 = new int[length_crc];
     for (int i = 0; i < length_crc; i ++){
         seq1[i] = temp_input[i];
     }
@@ -426,7 +418,7 @@ void free5GRAN::phy::transport_channel::compute_crc(int *input_bits, int *crc_po
      * Creating a new input called temp_input by removing all 0 from the beginning of input_bits
      * Adding (length_crc - 1) zeros to complete temp_input
      */
-    int * temp_input = new int[length_input - index_0 + length_crc - 1];
+    int temp_input[length_input - index_0 + length_crc - 1];
     for (int i = 0; i < length_input - index_0; i ++){
         temp_input[i] = input_bits[index_0 + i];
     }
@@ -508,8 +500,8 @@ void free5GRAN::phy::transport_channel::compute_transport_block_size(int n_re, f
       * \param[in] nrb: Number of RB in PDSCH allocation
       * \param[out] tbs: Transport block size
      */
-    long nre = min(156, n_re) * nrb;
-    double n_info = nre * R * mod_order * num_layers;
+    long nre = (long) min(156, n_re) * nrb;
+    double n_info = (double) nre * R * mod_order * num_layers;
     if (n_info <= 3824){
         long n = (int) max(3.0, floor(log2(n_info)) - 6);
         long n_p_info = max(24.0, pow(2,n) * floor((double) n_info/pow(2,n)));
@@ -617,7 +609,7 @@ void free5GRAN::phy::transport_channel::rate_recover_ldpc(int *input_bits, int N
        * \param[out] output_sequence: Output bits
       */
     int N_cb = (i_lbrm == 0) ? N : min(N, 25344);
-    int *e = new int[E];
+    int e[E];
     int E_Q = (int) ((float) E / (float) mod_order);
     /*
      * Input de-interleaving
@@ -678,7 +670,7 @@ void free5GRAN::phy::transport_channel::rate_recover_ldpc(double *input_bits, in
        * \param[out] output_sequence: Output soft bits
       */
     int N_cb = (i_lbrm == 0) ? N : min(N, 25344);
-    double *e = new double[E];
+    double e[E];
     int E_Q = (int) ((float) E / (float) mod_order);
     /*
      * Input de-interleaving
@@ -791,7 +783,7 @@ void free5GRAN::phy::transport_channel::ldpc_decode_one_bit(vector<vector<int>> 
 
 
 
-void free5GRAN::phy::transport_channel::compute_H_matrix_ldpc(int Zc, int graph, int i_ls, int **matrix, int &size_i, int &size_j){
+void free5GRAN::phy::transport_channel::compute_H_matrix_ldpc(int Zc, int graph, int i_ls, vector<vector<int>> &matrix, int &size_i, int &size_j){
     /**
      * \fn compute_H_matrix_ldpc
      * \brief Compute Hbg matrix for LDPC
@@ -855,19 +847,13 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
      /*
       * H matrix generation
       */
-    int **H, size_i, size_j;
+    int size_i, size_j;
     size_i = 52;
     size_j = 42;
-    H = new int*[size_j];
-    for (int i = 0; i < size_j; i ++){
-        H[i] = new int[size_i];
-        for (int j = 0; j < size_i; j ++){
-            H[i][j] = -1;
-        }
-    }
-    compute_H_matrix_ldpc(Zc, graph, i_ls, H, ref(size_j), ref(size_i));
+    vector<vector<int>> H(size_j, vector<int>(size_i, -1));
+    compute_H_matrix_ldpc(Zc, graph, i_ls, H, size_j, size_i);
 
-    double *ldpc_input_bits = new double[N + 2 * Zc];
+    double ldpc_input_bits[N + 2 * Zc];
     for (int i = 0; i < 2 * Zc; i ++){
         ldpc_input_bits[i] = 0;
     }
@@ -913,9 +899,7 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
     }
 
     thread threads[N + 2 * Zc];
-    int rest, *final_bit;
-    final_bit = new int[N + 2 * Zc];
-
+    int rest, final_bit[N + 2 * Zc];
     /*
      * Looping over iteration
      */
@@ -924,7 +908,7 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
          * Decode every bits in a thread
          */
         for (int i = 0; i < N + 2 * Zc; i ++){
-            threads[i] = thread(ldpc_decode_one_bit, R[i], ldpc_input_bits, i, ref(new_bits[i]));
+            threads[i] = thread(ldpc_decode_one_bit, R[i], &ldpc_input_bits[0], i, ref(new_bits[i]));
         }
         for (int i = 0; i < N + 2 * Zc; i ++){
             threads[i].join();
@@ -941,7 +925,6 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
         for (int j = 0; j < size_j * Zc; j ++){
             rest = 0;
             for (int i = 0; i < R_tot[j].size(); i ++){
-
                 rest ^= final_bit[R_tot[j][i]];
             }
             if (rest == 1){
@@ -980,14 +963,7 @@ void free5GRAN::phy::transport_channel::decode_bch(int *bch_bits, bool &crc_vali
      */
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,free5GRAN::SIZE_PBCH_POLAR_DECODED,9);
     int N = pow(2,n);
-    int * rate_recovered_bits, *polar_decoded_bits, *remainder, *bch_payload, *bch_crc_recomputed, *bch_crc, *crc_masq;
-    rate_recovered_bits = new int[N];
-    polar_decoded_bits = new int[free5GRAN::SIZE_PBCH_POLAR_DECODED];
-    remainder = new int[free5GRAN::BCH_CRC_LENGTH + 1];
-    bch_payload = new int[free5GRAN::BCH_PAYLOAD_SIZE];
-    bch_crc_recomputed = new int[free5GRAN::BCH_CRC_LENGTH];
-    bch_crc = new int[free5GRAN::BCH_CRC_LENGTH];
-    crc_masq = new int[free5GRAN::BCH_CRC_LENGTH];
+    int rate_recovered_bits[N], polar_decoded_bits[free5GRAN::SIZE_PBCH_POLAR_DECODED], remainder[free5GRAN::BCH_CRC_LENGTH + 1], bch_payload[free5GRAN::BCH_PAYLOAD_SIZE], bch_crc_recomputed[free5GRAN::BCH_CRC_LENGTH], bch_crc[free5GRAN::BCH_CRC_LENGTH], crc_masq[free5GRAN::BCH_CRC_LENGTH];
     // Rate recover bch_bits to rate_recovered_bits
     free5GRAN::phy::transport_channel::rate_recover(bch_bits,rate_recovered_bits,0,free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,N, free5GRAN::SIZE_PBCH_POLAR_DECODED);
     // Polar decode rate_recovered_bits to polar_decoded_bits
@@ -1022,7 +998,7 @@ void free5GRAN::phy::transport_channel::decode_bch(int *bch_bits, bool &crc_vali
     int A = free5GRAN::BCH_PAYLOAD_SIZE;
     int A_bar = free5GRAN::BCH_PAYLOAD_SIZE - 8;
     int M = A - 3;
-    int * s_sequence, *c_seq, *bch_descrambled;
+    int s_sequence[A], bch_descrambled[free5GRAN::BCH_PAYLOAD_SIZE];
     int sfn_bits[4][2] = {
             {0,0},
             {0,1},
@@ -1032,9 +1008,8 @@ void free5GRAN::phy::transport_channel::decode_bch(int *bch_bits, bool &crc_vali
     // Find the correct value of v
     for (int v = 0 ; v < 4; v ++){
         // Generate de-scrambling sequence
-        c_seq = new int[free5GRAN::BCH_PAYLOAD_SIZE + v * M];
+        int c_seq[free5GRAN::BCH_PAYLOAD_SIZE + v * M];
         free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::BCH_PAYLOAD_SIZE + v * M, c_seq,0);
-        s_sequence = new int[A];
         int j = 0;
         // Generate s sequence
         for (int i = 0; i < A; i ++){
@@ -1045,7 +1020,6 @@ void free5GRAN::phy::transport_channel::decode_bch(int *bch_bits, bool &crc_vali
                 j ++;
             }
         }
-        bch_descrambled = new int[free5GRAN::BCH_PAYLOAD_SIZE];
         // De-scramble bch_payload to bch_descrambled
         free5GRAN::utils::common_utils::scramble(bch_payload, s_sequence, bch_descrambled, free5GRAN::BCH_PAYLOAD_SIZE, 0);
 
@@ -1104,11 +1078,7 @@ void free5GRAN::phy::transport_channel::decode_dci(int *dci_bits, int E, int K, 
     BOOST_LOG_TRIVIAL(trace) << "E = "+to_string(E) ;
     BOOST_LOG_TRIVIAL(trace) << "K = "+to_string(K);
 
-    int *rate_recovered, *polar_decoded, *remainder, *descrambled;
-    rate_recovered = new int[N];
-    polar_decoded = new int[K];
-    descrambled = new int[K + 24];
-    remainder = new int[25];
+    int rate_recovered[N], polar_decoded[K], remainder[25], descrambled[K + 24];
 
     int A = K-24;
     /*
@@ -1196,19 +1166,19 @@ vector<int> free5GRAN::phy::transport_channel::decode_dl_sch(double *dl_sch_bits
      * Rate recovering
      */
     double *rate_recovered = new double[N];
-    rate_recover_ldpc(dl_sch_bits, N, 1, E, dci_1_0_si_rnti.rv, 2,C,Zc,graph,K,K_p,rate_recovered);
+    rate_recover_ldpc(dl_sch_bits, N, 1, E, dci_1_0_si_rnti.rv, 2, C, Zc, graph, K, K_p, rate_recovered);
 
     /*
      * LDPC decoding
      */
-    int *ldpc_decoded = new int[K];
+    int ldpc_decoded[K];
     auto start = chrono::steady_clock::now();
     ldpc_decode(rate_recovered, N, Zc, graph, K, i_ls, ldpc_decoded);
     auto end = chrono::steady_clock::now();
     auto diff = end - start;
     BOOST_LOG_TRIVIAL(trace) << "## LDPC execution time " << chrono::duration <double, milli> (diff).count() << "ms";
 
-    int *desegmented = new int[B];
+    int desegmented[B];
     for (int i = 0; i < B; i ++){
         desegmented[i] = ldpc_decoded[i];
     }
@@ -1216,7 +1186,7 @@ vector<int> free5GRAN::phy::transport_channel::decode_dl_sch(double *dl_sch_bits
     /*
      * CRC validation
      */
-    int *remainder = new int[L];
+    int remainder[L];
     if (L == 24){
         crc_validate(desegmented, free5GRAN::G_CRC_24_C, remainder, B, L+1);
     }else {

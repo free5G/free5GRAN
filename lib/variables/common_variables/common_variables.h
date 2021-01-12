@@ -52,20 +52,6 @@ namespace free5GRAN{
     extern int POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[1024];
 
     /*
-     * FFT size for a 3.84 MHz bandwidth and 30 kHz SCS
-     */
-    extern int FFT_SIZE_3_84_MHZ_SCS_30_KHZ;
-
-    /*
-     * FFT size for a 7.68 MHz bandwidth and 30 kHz SCS
-     */
-    extern int FFT_SIZE_7_68_MHZ_SCS_30_KHZ;
-
-    extern int FFT_SIZE_1_92_MHZ_SCS_15_KHZ;
-
-    extern int FFT_SIZE_3_84_MHZ_SCS_15_KHZ;
-
-    /*
      * Number of PBCH symbols in SSB
      */
     extern int SIZE_SSB_PBCH_SYMBOLS;
@@ -179,16 +165,6 @@ namespace free5GRAN{
      */
     extern float TS_38_213_TABLE_13_11[16][4];
 
-    extern int CP_LENGTH_128[2];
-
-    extern int CP_LENGTH_256[2];
-
-    extern int CP_LENGTH_512[2];
-
-    extern int CP_LENGTH_1024[2];
-
-    extern int CP_LENGTH_2048[2];
-
     extern int TS_38_214_TABLE_5_1_2_1_1_2[16][2][4];
 
     extern int TS_38_214_TABLE_5_1_3_1_1[29][2];
@@ -202,6 +178,8 @@ namespace free5GRAN{
     extern int NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
 
     extern int NUMBER_REG_PER_CCE;
+
+    extern int SI_RNTI[16];
 
 }
 #endif

@@ -84,8 +84,7 @@ void free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(int pci, 
      * \param[out] output_sequence: output sequence
      */
     int c_init = pow(2,11) * (i_bar_ssb + 1) * (pci / 4 + 1) + pow(2,6) * (i_bar_ssb + 1) + (pci % 4);
-    int * seq;
-    seq = new int[2 * free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    int seq[2 * free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     generate_c_sequence(c_init, 2 * free5GRAN::SIZE_SSB_DMRS_SYMBOLS, seq, 0);
     for (int m = 0 ; m < free5GRAN::SIZE_SSB_DMRS_SYMBOLS; m++){
         output_sequence[m] = (float) (1 / sqrt(2)) * complex<float>(1 - 2 * seq[2 * m], 1 - 2 * seq[2 * m + 1]);
@@ -104,9 +103,7 @@ void free5GRAN::utils::sequence_generator::generate_c_sequence(long c_init, int 
      * \param[out] output_sequence: output sequence
      * \param[in] demod_type: Demodulation type (0 -> Hard demodulation (to be used by default) / 1 -> Soft demodulation)
      */
-    int * x1 = new int[1600 + length];
-    int * x2 = new int[1600 + length];
-    int * base_x2 = new int[32];
+    int x1[1600 + length], x2[1600 + length], base_x2[32];
 
     for (int j = 0; j < 31; j ++){
         base_x2[j] = ((int) c_init / (int) pow(2,j)) % 2;
@@ -142,8 +139,28 @@ void free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(int nid,
      * \param[in] size: Sequence size
      */
     long c_init = (long)(pow(2, 17) * (14 * slot_number + symbol_number + 1) * (2 * nid + 1) + 2 * nid) % (long)pow(2,31);
-    int * seq;
-    seq = new int[2 * size];
+    int seq[2 * size];
+    generate_c_sequence(c_init, 2 * size, seq, 0);
+    for (int m = 0; m < size; m++){
+        output_sequence[m] =  (float) (1 / sqrt(2)) * complex<float>(1 - 2 * seq[2 * m], 1 - 2 * seq[2 * m + 1]);
+    }
+}
+
+
+void free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(int nid, int slot_number, int symbol_number, vector<complex<float>> &output_sequence, int size){
+    /**
+     * \fn generate_pdcch_dmrs_sequence
+     * \brief Generic PDCCH DMRS sequence
+     * \standard TS 38.211 V15.2.0 Section 7.4.1.3.1
+     *
+     * \param[in] nid: Scrambling ID (cell PCI by default)
+     * \param[in] slot_number: Slot number within a frame
+     * \param[in] symbol_number: Symbol number within a slot
+     * \param[out] output_sequence: output sequence
+     * \param[in] size: Sequence size
+     */
+    long c_init = (long)(pow(2, 17) * (14 * slot_number + symbol_number + 1) * (2 * nid + 1) + 2 * nid) % (long)pow(2,31);
+    int seq[2 * size];
     generate_c_sequence(c_init, 2 * size, seq, 0);
     for (int m = 0; m < size; m++){
         output_sequence[m] =  (float) (1 / sqrt(2)) * complex<float>(1 - 2 * seq[2 * m], 1 - 2 * seq[2 * m + 1]);
@@ -165,8 +182,7 @@ void free5GRAN::utils::sequence_generator::generate_pdsch_dmrs_sequence(int n_sy
      * \param[in] size: Sequence size
      */
     long c_init = (long)(pow(2, 17) * (n_symb_slot * slot_number + symbol_number + 1) * (2 * n_id_scid + 1) + 2 * n_id_scid + n_scid) % (long)pow(2,31);
-    int * seq;
-    seq = new int[2 * size];
+    int seq[2 * size];
     generate_c_sequence(c_init, 2 * size, seq, 0);
     for (int m = 0; m < size; m++){
         output_sequence[m] =  (float) (1 / sqrt(2)) * complex<float>(1 - 2 * seq[2 * m], 1 - 2 * seq[2 * m + 1]);

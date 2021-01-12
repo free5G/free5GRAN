@@ -4,6 +4,12 @@ free5GRAN is an open-source 5G RAN stack. The current version includes a receive
 
 free5GRAN includes a library which can be reused for further developments. Documentation is available https://free5g.github.io/free5GRAN-documentation/.
 
+## LGTM scores
+
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/free5G/free5GRAN.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/free5G/free5GRAN/alerts/)
+
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/free5G/free5GRAN.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/free5G/free5GRAN/context:cpp)
+
 ## Installation & Running
 
 ### Requirements

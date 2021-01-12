@@ -205,6 +205,7 @@ int phy::extract_pbch() {
     BOOST_LOG_TRIVIAL(trace) << "Extracting PBCH";
     // Get at least 30ms of signal (=3 frames, at least 2 complete ones)
     size_t num_samples = max(0.03, ssb_period) * rf_device->getSampleRate();
+    //vector<complex<float>> buff(num_samples);
     buff.clear();
     buff.resize(num_samples);
 
@@ -329,71 +330,54 @@ int phy::extract_pbch() {
      */
     vector<complex<float>> temp_mod_symbols, temp_mod_symbols2,temp_mod_symbols_dmrs;
 
-    auto *pbch_symbols = new complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
-    auto *dmrs_symbols = new complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    complex<float> pbch_symbols[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
+    complex<float> dmrs_symbols[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     /*
      * ref[0] -> indexes of PBCH resource elements
      * ref[1] -> indexes of DMRS resource elements
      */
-    int ** dmrs_indexes, ** pbch_indexes, ***ref;
-    ref = new int **[2];
-    ref[0] = new int *[free5GRAN::NUM_SYMBOL_PBCH_SSB];
-    ref[1] = new int *[free5GRAN::NUM_SYMBOL_PBCH_SSB];
-    dmrs_indexes = new int *[2];
-    dmrs_indexes[0] = new int[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
-    dmrs_indexes[1] = new int[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
-    pbch_indexes = new int *[2];
-    pbch_indexes[0] = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
-    pbch_indexes[1] = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
+    vector<vector<vector<int>>> ref(2, vector<vector<int>>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS, vector<int>(free5GRAN::NUM_SC_SSB)));
+    /*
+     * channel_indexes[0] contains PBCH samples indexes
+     * channel_indexes[1] contains DMRS samples indexes
+     */
+    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)), vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS))};
 
-
-
-    auto **ssb_symbols = new complex<float> *[free5GRAN::NUM_SYMBOLS_SSB - 1];
+    vector<vector<complex<float>>> ssb_symbols(free5GRAN::NUM_SYMBOLS_SSB - 1, vector<complex<float>>(free5GRAN::NUM_SC_SSB));
 
     int cum_sum_fft[free5GRAN::NUM_SYMBOLS_SSB];
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
-        if (symbol < free5GRAN::NUM_SYMBOLS_SSB - 1){
-            ssb_symbols[symbol] = new complex<float>[free5GRAN::NUM_SC_SSB];
-        }
         cum_sum_fft[symbol] = symbol * symbol_duration;
     }
+
     /*
      * Recover RE grid from time domain signal
      */
     free5GRAN::phy::signal_processing::fft(ssb_signal, ssb_symbols,fft_size,cp_lengths_pbch,&cum_sum_fft[0],free5GRAN::NUM_SYMBOLS_SSB - 1,free5GRAN::NUM_SC_SSB,1,0);
 
-    for (int symbol = 1; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++) {
-        ref[0][symbol - 1] = new int[free5GRAN::NUM_SC_SSB];
-        ref[1][symbol - 1] = new int[free5GRAN::NUM_SC_SSB];
-    }
     free5GRAN::phy::physical_channel::compute_pbch_indexes(ref, pci);
     /*
      * Channel demapping using computed ref grid
      */
-    free5GRAN::phy::signal_processing::channel_demapper(ssb_symbols, ref, new int[2]{free5GRAN::SIZE_SSB_PBCH_SYMBOLS,free5GRAN::SIZE_SSB_DMRS_SYMBOLS}, new complex<float>*[2] {pbch_symbols,dmrs_symbols}, new int **[2] {pbch_indexes,dmrs_indexes}, 2, free5GRAN::NUM_SYMBOL_PBCH_SSB, free5GRAN::NUM_SC_SSB);
+    complex<float>* output_channels[] = {pbch_symbols,dmrs_symbols};
+    free5GRAN::phy::signal_processing::channel_demapper(ssb_symbols, ref, output_channels, channel_indexes, 2, free5GRAN::NUM_SYMBOL_PBCH_SSB, free5GRAN::NUM_SC_SSB);
 
     /*
      * Channel estimation and equalization
      * Creating coefficients arrays
      */
-    complex<float> **coefficients[free5GRAN::MAX_I_BAR_SSB];
-    for (int p = 0; p < free5GRAN::MAX_I_BAR_SSB; p ++){
-        coefficients[p] = new complex<float> * [free5GRAN::NUM_SYMBOL_PBCH_SSB];
-        for (int i = 0 ; i < free5GRAN::NUM_SYMBOL_PBCH_SSB; i ++){
-            coefficients[p][i] = new complex<float> [free5GRAN::NUM_SC_SSB];
-        }
-    }
+    vector<vector<vector<complex<float>>>> coefficients(free5GRAN::MAX_I_BAR_SSB, vector<vector<complex<float>>>(free5GRAN::NUM_SYMBOL_PBCH_SSB, vector<complex<float>>(free5GRAN::NUM_SC_SSB)));
 
-    complex<float> * dmrs_sequence;
+
+    complex<float> dmrs_sequence[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     float snr[free5GRAN::MAX_I_BAR_SSB];
 
     /*
      * For each possible iBarSSB value, estimate the corresponding transport_channel
      */
     for (int i = 0; i < free5GRAN::MAX_I_BAR_SSB; i ++){
-        dmrs_sequence = new complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
         free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci,i,dmrs_sequence);
-        free5GRAN::phy::signal_processing::channelEstimation(dmrs_symbols, dmrs_sequence, dmrs_indexes,coefficients[i], snr[i], free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOL_PBCH_SSB , free5GRAN::SIZE_SSB_DMRS_SYMBOLS);
+        free5GRAN::phy::signal_processing::channelEstimation(dmrs_symbols, dmrs_sequence, channel_indexes[1],coefficients[i], snr[i], free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOL_PBCH_SSB , free5GRAN::SIZE_SSB_DMRS_SYMBOLS);
     }
     /*
      * Choose the iBarSSB value that maximizes the SNR
@@ -409,7 +393,7 @@ int phy::extract_pbch() {
 
     // Equalize transport_channel
     for (int i = 0; i < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; i ++){
-        final_pbch_modulation_symbols[i] = (pbch_symbols[i]) * conj(coefficients[i_b_ssb][pbch_indexes[0][i]][pbch_indexes[1][i]]) / (float) pow(abs(coefficients[i_b_ssb][pbch_indexes[0][i]][pbch_indexes[1][i]]),2);
+        final_pbch_modulation_symbols[i] = (pbch_symbols[i]) * conj(coefficients[i_b_ssb][channel_indexes[0][0][i]][channel_indexes[0][1][i]]) / (float) pow(abs(coefficients[i_b_ssb][channel_indexes[0][0][i]][channel_indexes[0][1][i]]),2);
     }
 
     this->i_b_ssb = i_b_ssb;
@@ -426,7 +410,7 @@ int phy::extract_pbch() {
      */
     int bch_bits[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
     free5GRAN::phy::physical_channel::decode_pbch(final_pbch_modulation_symbols, i_ssb, pci, bch_bits);
-    mib_bits = new int[free5GRAN::BCH_PAYLOAD_SIZE];
+    int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
     free5GRAN::phy::transport_channel::decode_bch(bch_bits, crc_validated, mib_bits, pci);
     free5GRAN::utils::common_utils::parse_mib(mib_bits, mib_object);
     return 0;
@@ -511,7 +495,7 @@ void phy::search_pdcch(bool &dci_found) {
     /*
      * Computing CP lengths of SSB/PBCH and recovering SSB position in frame
      */
-    int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * scs/15e3;
+    int num_symbols_per_subframe_pbch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * (int) (scs/15e3);
     int cp_lengths_pbch[num_symbols_per_subframe_pbch];
     int cum_sum_pbch[num_symbols_per_subframe_pbch];
 
@@ -541,41 +525,9 @@ void phy::search_pdcch(bool &dci_found) {
      * frame_indexes are the beginning and ending indexes of the two candidate frames
      * frame_numbers stores SFN for each candidate frame
      */
-    int frame_indexes[2][2];
+    vector<vector<int>> frame_indexes(2, vector<int>(2));
     int frame_numbers[2];
-    if (num_samples_before_pss < index_first_pss) {
-        if (num_samples_before_pss + 2 * frame_size < index_first_pss){
-            frame_indexes[0][0] = index_first_pss - num_samples_before_pss - 2 * frame_size;
-            frame_indexes[0][1] = index_first_pss - num_samples_before_pss - frame_size - 1;
-            frame_indexes[1][0] = index_first_pss - num_samples_before_pss - frame_size;
-            frame_indexes[1][1] = index_first_pss - num_samples_before_pss - 1;
-            frame_numbers[0] = mib_object.sfn - 2;
-            frame_numbers[1] = mib_object.sfn - 1;
-        }
-        else if (num_samples_before_pss + frame_size < index_first_pss){
-            frame_indexes[0][0] = index_first_pss - num_samples_before_pss - frame_size;
-            frame_indexes[0][1] = index_first_pss - num_samples_before_pss - 1;
-            frame_indexes[1][0] = index_first_pss - num_samples_before_pss;
-            frame_indexes[1][1] = index_first_pss - num_samples_before_pss + frame_size - 1;
-            frame_numbers[0] = mib_object.sfn - 1;
-            frame_numbers[1] = mib_object.sfn;
-        }
-        else {
-            frame_indexes[0][0] = index_first_pss - num_samples_before_pss;
-            frame_indexes[0][1] = index_first_pss - num_samples_before_pss + frame_size - 1;
-            frame_indexes[1][0] = index_first_pss - num_samples_before_pss + frame_size;
-            frame_indexes[1][1] = index_first_pss - num_samples_before_pss + 2 * frame_size - 1;
-            frame_numbers[0] = mib_object.sfn;
-            frame_numbers[1] = mib_object.sfn + 1;
-        }
-    }else {
-        frame_indexes[0][0] = index_first_pss - num_samples_before_pss + frame_size;
-        frame_indexes[0][1] = index_first_pss - num_samples_before_pss + 2 * frame_size - 1;
-        frame_indexes[1][0] = index_first_pss - num_samples_before_pss + 2 * frame_size;
-        frame_indexes[1][1] = index_first_pss - num_samples_before_pss + 3 * frame_size - 1;
-        frame_numbers[0] = mib_object.sfn + 1;
-        frame_numbers[1] = mib_object.sfn + 2;
-    }
+    free5GRAN::phy::signal_processing::get_candidates_frames_indexes(frame_indexes,frame_numbers,mib_object.sfn, index_first_pss,num_samples_before_pss, frame_size);
 
     BOOST_LOG_TRIVIAL(trace) << "## FRAME 1 FROM: " + to_string(1e3 * frame_indexes[0][0]/rf_device->getSampleRate()) + " TO: " + to_string(1e3 * frame_indexes[0][1]/rf_device->getSampleRate()) + " ms";
     BOOST_LOG_TRIVIAL(trace) << "## FRAME 2 FROM: " + to_string(1e3 * frame_indexes[1][0]/rf_device->getSampleRate()) + " TO: " + to_string(1e3 * frame_indexes[1][1]/rf_device->getSampleRate()) + " ms";
@@ -654,13 +606,7 @@ void phy::search_pdcch(bool &dci_found) {
      * Initialize arrays
      */
     int num_sc_coreset_0 = 12 * pdcch_ss_mon_occ.n_rb_coreset;
-    complex<float> *dmrs_sequence, *dmrs_symbols, **coefficients, **global_sequence, *temp_pdcch_symbols, **coreset_0_samples;
-    coreset_0_samples = new complex<float>*[pdcch_ss_mon_occ.n_symb_coreset];
-    coefficients = new complex<float>*[pdcch_ss_mon_occ.n_symb_coreset];
-    for (int i = 0; i < pdcch_ss_mon_occ.n_symb_coreset; i ++){
-        coreset_0_samples[i] = new complex<float>[num_sc_coreset_0];
-        coefficients[i] = new complex<float>[num_sc_coreset_0];
-    }
+
     /*
      * Compute CCE-to-REG mapping From TS38.211 7.3.2.2
      */
@@ -687,12 +633,9 @@ void phy::search_pdcch(bool &dci_found) {
     int cum_sum_pdcch[num_symbols_per_subframe_pdcch];
     free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs, fft_size, is_extended_cp, num_symbols_per_subframe_pdcch, &cp_lengths_pdcch[0], &cum_sum_pdcch[0]);
 
-    int agg_level, num_candidates;
-
     ofstream data_pdcch;
 
-
-    int **dmrs_indexes, **pdcch_indexes, dmrs_count, pdcch_count, *reg_bundles, *reg_bundles_ns, *dci_decoded_bits, K, freq_domain_ra_size;
+    int K, freq_domain_ra_size;
     /*
      * Number of bits for Frequency domain allocation in DCI
      */
@@ -701,14 +644,14 @@ void phy::search_pdcch(bool &dci_found) {
      * K is the DCI payload size including CRC
      */
     K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 + 24;
+
     float snr;
-    dmrs_indexes = new int*[2];
-    pdcch_indexes = new int*[2];
-    dci_decoded_bits = new int[K-24];
-
-    global_sequence = new complex<float>*[pdcch_ss_mon_occ.n_symb_coreset];
-
     bool validated = false;
+    int agg_level, num_candidates, dci_decoded_bits[K-24];
+    vector<vector<complex<float>>> global_sequence(pdcch_ss_mon_occ.n_symb_coreset, vector<complex<float>>(pdcch_ss_mon_occ.n_rb_coreset * 3));
+    vector<vector<vector<int>>> ref(2, vector<vector<int>>(pdcch_ss_mon_occ.n_symb_coreset, vector<int>(12 * pdcch_ss_mon_occ.n_rb_coreset)));
+    vector<vector<complex<float>>> coreset_0_samples(pdcch_ss_mon_occ.n_symb_coreset, vector<complex<float>>(num_sc_coreset_0));
+    vector<vector<complex<float>>> coefficients(pdcch_ss_mon_occ.n_symb_coreset, vector<complex<float>>(num_sc_coreset_0));
 
     /*
      * PDCCH blind search. First, loop over every monitoring slot
@@ -717,16 +660,13 @@ void phy::search_pdcch(bool &dci_found) {
     for (int monitoring_slot = 0; monitoring_slot < 2; monitoring_slot ++){
         pdcch_ss_mon_occ.monitoring_slot = monitoring_slot;
         BOOST_LOG_TRIVIAL(trace) << "## MONITORING SLOT: "+ to_string(monitoring_slot);
+
         /*
          * Extract corresponding CORESET0 samples. CORESET0 number of symbols is given by PDCCH config in MIB
-         */
-        /*
          * Recover RE grid from time domain signal
          */
         free5GRAN::phy::signal_processing::fft(frame_data, coreset_0_samples,fft_size,cp_lengths_pdcch,cum_sum_pdcch,pdcch_ss_mon_occ.n_symb_coreset,num_sc_coreset_0,pdcch_ss_mon_occ.first_symb_index, (pdcch_ss_mon_occ.n0 + monitoring_slot) * frame_size / num_slots_per_frame);
-
         for (int symb = 0; symb < pdcch_ss_mon_occ.n_symb_coreset; symb ++){
-            global_sequence[symb] = new complex<float>[pdcch_ss_mon_occ.n_rb_coreset * 3 ];
             /*
              * Generate DMRS sequence for corresponding symbols
              */
@@ -738,6 +678,15 @@ void phy::search_pdcch(bool &dci_found) {
         for (int i = 2; i < 5; i ++){
             agg_level = pow(2, i);
             if (agg_level <= pdcch_ss_mon_occ.n_rb_coreset / height_reg_rb){
+                vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9)), vector<vector<int>>(2, vector<int>(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3))};
+                vector<complex<float>> pdcch_symbols((size_t) agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9);
+                complex<float> temp_pdcch_symbols[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
+                complex<float> dmrs_symbols[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
+                complex<float> dmrs_sequence[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
+                int reg_bundles[agg_level];
+                int reg_bundles_ns[agg_level];
+                int dci_bits[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2];
+
                 BOOST_LOG_TRIVIAL(trace) << "## AGGREGATION LEVEL"+ to_string(agg_level);
                 num_candidates = pdcch_ss_mon_occ.n_rb_coreset / (agg_level * height_reg_rb);
                 /*
@@ -745,23 +694,6 @@ void phy::search_pdcch(bool &dci_found) {
                  */
                 for (int p = 0; p < num_candidates; p ++){
                     BOOST_LOG_TRIVIAL(trace) << "## CANDIDATE "+ to_string(p);
-
-                    /*
-                     * Initialize arrays
-                     */
-                    dmrs_indexes[0] = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
-                    dmrs_indexes[1] = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
-                    pdcch_indexes[0] = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
-                    pdcch_indexes[1] = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
-                    dmrs_symbols = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
-                    temp_pdcch_symbols = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
-                    dmrs_count = 0;
-                    pdcch_count = 0;
-                    dmrs_sequence = new complex<float>[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
-                    vector<complex<float>> pdcch_symbols(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9);
-                    reg_bundles = new int[agg_level];
-                    reg_bundles_ns = new int[agg_level];
-
                     /*
                      * Extract REG bundles for current candidate and aggregation level
                      */
@@ -773,14 +705,7 @@ void phy::search_pdcch(bool &dci_found) {
                     /*
                      * PDCCH samples extraction
                      */
-                    int ***ref;
-                    ref = new int **[2];
-                    ref[0] = new int *[pdcch_ss_mon_occ.n_symb_coreset];
-                    ref[1] = new int *[pdcch_ss_mon_occ.n_symb_coreset];
-
                     for (int symbol = 0; symbol < pdcch_ss_mon_occ.n_symb_coreset; symbol ++) {
-                        ref[0][symbol] = new int[12 * pdcch_ss_mon_occ.n_rb_coreset];
-                        ref[1][symbol] = new int[12 * pdcch_ss_mon_occ.n_rb_coreset];
                         for (int sc = 0; sc < 12 * pdcch_ss_mon_occ.n_rb_coreset; sc ++){
                             ref[1][symbol][sc] = 0;
                             ref[0][symbol][sc] = 0;
@@ -790,13 +715,11 @@ void phy::search_pdcch(bool &dci_found) {
                      * Computing PDCCH candidate position in RE grid
                      */
                     free5GRAN::phy::physical_channel::compute_pdcch_indexes(ref, pdcch_ss_mon_occ, agg_level, reg_bundles, height_reg_rb);
-
                     /*
                      * Channel de-mapping
                      */
-                    free5GRAN::phy::signal_processing::channel_demapper(coreset_0_samples, ref, new int[2]{0,0}, new complex<float>*[2] {temp_pdcch_symbols,dmrs_symbols}, new int **[2] {pdcch_indexes,dmrs_indexes}, 2, pdcch_ss_mon_occ.n_symb_coreset, 12 * pdcch_ss_mon_occ.n_rb_coreset);
-
-
+                    complex<float>* output_channels[] = {temp_pdcch_symbols,dmrs_symbols};
+                    free5GRAN::phy::signal_processing::channel_demapper(coreset_0_samples, ref, output_channels, channel_indexes, 2, pdcch_ss_mon_occ.n_symb_coreset, 12 * pdcch_ss_mon_occ.n_rb_coreset);
                     /*
                      * DMRS CCE-to-REG de-mapping/de-interleaving
                      */
@@ -810,20 +733,18 @@ void phy::search_pdcch(bool &dci_found) {
                     /*
                      * Channel estimation
                      */
-                    free5GRAN::phy::signal_processing::channelEstimation(dmrs_symbols, dmrs_sequence, dmrs_indexes,coefficients, snr, 12 * pdcch_ss_mon_occ.n_rb_coreset, pdcch_ss_mon_occ.n_symb_coreset , agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3);
+                    free5GRAN::phy::signal_processing::channelEstimation(dmrs_symbols, dmrs_sequence, channel_indexes[1],coefficients, snr, 12 * pdcch_ss_mon_occ.n_rb_coreset, pdcch_ss_mon_occ.n_symb_coreset , agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3);
                     /*
                      * Channel equalization
                      */
                     for (int sc = 0; sc < agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9; sc ++){
-                        pdcch_symbols[sc] = (temp_pdcch_symbols[sc]) * conj(coefficients[pdcch_indexes[0][sc]][pdcch_indexes[1][sc]]) / (float) pow(abs(coefficients[pdcch_indexes[0][sc]][pdcch_indexes[1][sc]]),2);
+                        pdcch_symbols[sc] = (temp_pdcch_symbols[sc]) * conj(coefficients[channel_indexes[0][0][sc]][channel_indexes[0][1][sc]]) / (float) pow(abs(coefficients[channel_indexes[0][0][sc]][channel_indexes[0][1][sc]]),2);
                     }
-
-                    int *dci_bits = new int[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2];
                     /*
                      * PDCCH and DCI decoding
                      */
                     free5GRAN::phy::physical_channel::decode_pdcch(pdcch_symbols,dci_bits,agg_level, reg_bundles_ns, reg_bundles, pci);
-                    free5GRAN::phy::transport_channel::decode_dci(dci_bits, agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2, K, new int[16]{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}, validated, dci_decoded_bits);
+                    free5GRAN::phy::transport_channel::decode_dci(dci_bits, agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2, K, free5GRAN::SI_RNTI, validated, dci_decoded_bits);
                     /*
                      * If DCI CRC is validated, candidate is validated, blind search ends
                      */
@@ -947,16 +868,6 @@ void phy::extract_pdsch() {
     BOOST_LOG_TRIVIAL(trace) << "## MCS: Order " + to_string(mod_order) + " and code rate " + to_string(code_rate);
     BOOST_LOG_TRIVIAL(trace) << "## Slot number " + to_string(pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0);
 
-
-    complex<float> **pdsch_ofdm_symbols,**pdsch_samples;
-    pdsch_ofdm_symbols = new complex<float>*[L];
-    pdsch_samples = new complex<float>*[L];
-    // Initializing fft parameters
-    fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-    fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
-
-    fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
-
     /*
      * Compute number of additionnal DMRS positions
      */
@@ -977,54 +888,35 @@ void phy::extract_pdsch() {
      */
     free5GRAN::phy::signal_processing::get_pdsch_dmrs_symbols(mapping_type, L + S, additionnal_position, mib_object.dmrs_type_a_position, &dmrs_symbols, num_symbols_dmrs);
 
-    int ** dmrs_indexes, ** pdsch_indexes, ***ref;
-    complex<float> *dmrs_sequence, *temp_dmrs_sequence, **coefficients;
     float snr;
 
-    dmrs_sequence = new complex<float>[6 * lrb * num_symbols_dmrs];
-    coefficients = new complex<float>*[L];
-
-    ref = new int **[2];
-
-    /*
-     * ref is used for channel demapping
-     * ref[0] -> PDSCH symbols
-     * ref[1] -> DMRS symbols
-     */
-    ref[0] = new int *[L];
-    ref[1] = new int *[L];
-    dmrs_indexes = new int *[2];
-    dmrs_indexes[0] = new int[6 * lrb * num_symbols_dmrs];
-    dmrs_indexes[1] = new int[6 * lrb * num_symbols_dmrs];
-    pdsch_indexes = new int *[2];
-    pdsch_indexes[0] = new int[12 * lrb * (L - num_symbols_dmrs)];
-    pdsch_indexes[1] = new int[12 * lrb * (L - num_symbols_dmrs)];
+    complex<float> dmrs_sequence[6 * lrb * num_symbols_dmrs];
 
     int count_dmrs_symbol = 0;
     bool dmrs_symbol;
 
 
-    int *cp_lengths_pdsch, *cum_sum_pdsch;
     int num_symbols_per_subframe_pdsch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * mib_object.scs/15;
-    cp_lengths_pdsch = new int[num_symbols_per_subframe_pdsch];
-    cum_sum_pdsch = new int[num_symbols_per_subframe_pdsch];
+    int cp_lengths_pdsch[num_symbols_per_subframe_pdsch];
+    int cum_sum_pdsch[num_symbols_per_subframe_pdsch];
+
+    vector<vector<complex<float>>> pdsch_ofdm_symbols(L, vector<complex<float>>(12 * pdcch_ss_mon_occ.n_rb_coreset)), pdsch_samples(L, vector<complex<float>>(12 * lrb));
+    vector<vector<vector<int>>> ref(2, vector<vector<int>>(L, vector<int>(12 * lrb)));
+    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(12 * lrb * (L - num_symbols_dmrs))), vector<vector<int>>(2, vector<int>(6 * lrb * num_symbols_dmrs))};
+    vector<vector<complex<float>>> coefficients(L, vector<complex<float>>(12 * lrb));
+    complex<float> temp_dmrs_sequence[6 * pdcch_ss_mon_occ.n_rb_coreset], pdsch_samples_only[12 * lrb * (L - num_symbols_dmrs)], dmrs_samples_only[6 * lrb * num_symbols_dmrs];
 
     /*
      * Compute PDSCH CP lengths (same as PDCCH, as it is the same BWP)
      */
     free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs, fft_size, is_extended_cp, num_symbols_per_subframe_pdsch, cp_lengths_pdsch, cum_sum_pdsch);
 
-    for (int symb = 0; symb < L; symb ++){
-        pdsch_ofdm_symbols[symb] = new complex<float>[12 * pdcch_ss_mon_occ.n_rb_coreset];
-        pdsch_samples[symb] = new complex<float>[12 * lrb];
-    }
     /*
      * Recover RE grid from time domain signal
      */
     free5GRAN::phy::signal_processing::fft(frame_data, pdsch_ofdm_symbols,fft_size,cp_lengths_pdsch,cum_sum_pdsch,L,12 * pdcch_ss_mon_occ.n_rb_coreset,S, (pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) * frame_size / num_slots_per_frame);
 
     bool dmrs_symbol_array[L];
-
     /*
      * PDSCH extraction
      */
@@ -1040,8 +932,6 @@ void phy::extract_pdsch() {
             }
         }
         dmrs_symbol_array[symb] = dmrs_symbol;
-
-        temp_dmrs_sequence = new complex<float>[6 * pdcch_ss_mon_occ.n_rb_coreset];
         /*
          * Get DMRS sequence
          */
@@ -1056,23 +946,13 @@ void phy::extract_pdsch() {
         for (int i = 0; i < 12 * lrb; i ++){
             pdsch_samples[symb][i] = pdsch_ofdm_symbols[symb][12 * rb_start + i];
         }
-
-        coefficients[symb] = new complex<float>[12 * lrb];
-
-        ref[0][symb] = new int [12 * lrb];
-        ref[1][symb] = new int [12 * lrb];
     }
-
     free5GRAN::phy::physical_channel::compute_pdsch_indexes(ref, dmrs_symbol_array, L, lrb);
-
-    complex<float> *pdsch_samples_only, *dmrs_samples_only;
-    pdsch_samples_only = new complex<float>[12 * lrb * (L - num_symbols_dmrs)];
-    dmrs_samples_only = new complex<float>[6 * lrb * num_symbols_dmrs];
     /*
      * Channel de-mapping
      */
-    free5GRAN::phy::signal_processing::channel_demapper(pdsch_samples, ref, new int[2]{12 * lrb * (L - num_symbols_dmrs), 6 * lrb * num_symbols_dmrs}, new complex<float>*[2] {pdsch_samples_only,dmrs_samples_only}, new int **[2] {pdsch_indexes,dmrs_indexes}, 2, L, 12 * lrb);
-
+    complex<float>* output_channels[] = {pdsch_samples_only,dmrs_samples_only};
+    free5GRAN::phy::signal_processing::channel_demapper(pdsch_samples, ref, output_channels, channel_indexes, 2, L, 12 * lrb);
     bool validated;
     float f0 = 0;
     float phase_offset;
@@ -1086,33 +966,30 @@ void phy::extract_pdsch() {
         f0 += (phase_decomp_index % 2) * pow(2,mu) * 1e3;
         phase_offset = (phase_decomp_index % 2) ? f0 : -f0;
         BOOST_LOG_TRIVIAL(trace) << "PHASE DECOMP " << phase_offset ;
-        auto *phase_decomp = new complex<float>[num_symbols_per_subframe_pdsch];
-
+        complex<float> phase_decomp[num_symbols_per_subframe_pdsch];
         /*
          * Compute phase decompensation value for each symbol in  a subframe
          */
         free5GRAN::phy::signal_processing::compute_phase_decomp(cp_lengths_pdsch, cum_sum_pdsch, rf_device->getSampleRate(),phase_offset,num_symbols_per_subframe_pdsch,phase_decomp);
-
         /*
          * Phase de-compensation
          */
         for (int samp = 0; samp < 12 * lrb * (L - num_symbols_dmrs); samp ++){
-            pdsch_samples_only[samp] = pdsch_samples_only[samp] * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + pdsch_indexes[0][samp]];
+            pdsch_samples_only[samp] = pdsch_samples_only[samp] * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + channel_indexes[0][0][samp]];
         }
         for (int samp = 0; samp < 6 * lrb * num_symbols_dmrs; samp ++){
-            dmrs_samples_only[samp] = dmrs_samples_only[samp] * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + dmrs_indexes[0][samp]];
+            dmrs_samples_only[samp] = dmrs_samples_only[samp] * phase_decomp[((pdcch_ss_mon_occ.n0 + pdcch_ss_mon_occ.monitoring_slot + k0) % (num_slots_per_frame / 10)) * free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP + S + channel_indexes[1][0][samp]];
         }
-
         /*
          * Channel estimation
          */
-        free5GRAN::phy::signal_processing::channelEstimation(dmrs_samples_only, dmrs_sequence, dmrs_indexes,coefficients, snr, 12 * lrb, L, 6 * lrb * num_symbols_dmrs);
+        free5GRAN::phy::signal_processing::channelEstimation(dmrs_samples_only, dmrs_sequence, channel_indexes[1],coefficients, snr, 12 * lrb, L, 6 * lrb * num_symbols_dmrs);
         /*
          * Channel equalization
          */
-        vector<complex<float>> pdsch_samples_vector(12 * lrb * (L - num_symbols_dmrs));
+        vector<complex<float>> pdsch_samples_vector((size_t) 12 * lrb * (L - num_symbols_dmrs));
         for (int sc = 0; sc <  12 * lrb * (L - num_symbols_dmrs); sc ++){
-            pdsch_samples_vector[sc] = (pdsch_samples_only[sc]) * conj(coefficients[pdsch_indexes[0][sc]][pdsch_indexes[1][sc]]) / (float) pow(abs(coefficients[pdsch_indexes[0][sc]][pdsch_indexes[1][sc]]),2);
+            pdsch_samples_vector[sc] = (pdsch_samples_only[sc]) * conj(coefficients[channel_indexes[0][0][sc]][channel_indexes[0][1][sc]]) / (float) pow(abs(coefficients[channel_indexes[0][0][sc]][channel_indexes[0][1][sc]]),2);
         }
 
         ofstream data_pdsch;
@@ -1126,7 +1003,7 @@ void phy::extract_pdsch() {
         /*
          * PDSCH and DL-SCH decoding
          */
-        double *dl_sch_bits = new double[2 * pdsch_samples_vector.size()];
+        double dl_sch_bits[2 * pdsch_samples_vector.size()];
         free5GRAN::phy::physical_channel::decode_pdsch(pdsch_samples_vector, dl_sch_bits, pci);
         int n_re = free5GRAN::phy::signal_processing::compute_nre(L, num_symbols_dmrs);
 

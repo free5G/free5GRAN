@@ -44,14 +44,13 @@ void free5GRAN::phy::physical_channel::decode_pdcch(vector<complex<float>> pdcch
      * \param[in] reg_index_sorted: Sorted interleaved REG indexes
      * \param[in] pci: Cell PCI
     */
-    int * pdcch_bits;
-    pdcch_bits = new int[agg_level * 6 * 9 * 2];
+    int pdcch_bits[agg_level * 6 * 9 * 2];
     /*
      * Demodulate PBCH Signal
      */
     free5GRAN::phy::signal_processing::hard_demodulation(pdcch_symbols,pdcch_bits,agg_level * 6 * 9,1);
 
-    int * c_seq = new int[agg_level * 6 * 9 * 2];
+    int c_seq[agg_level * 6 * 9 * 2];
     free5GRAN::utils::sequence_generator::generate_c_sequence((long) pci % (long)pow(2,31), agg_level * 6 * 9 * 2, c_seq,0);
 
     /*
@@ -76,11 +75,11 @@ void free5GRAN::phy::physical_channel::decode_pdsch(vector<complex<float>> pdsch
      * \param[out] unscrambled_soft_bits: PDSCH decoded soft bits
      * \param[in] pci: Cell PCI
     */
-    int *c_seq, ds_sch_bits_length;
+    int ds_sch_bits_length;
     long c_init;
     ds_sch_bits_length = 2 * pdsch_samples.size();
-    c_seq = new int[ds_sch_bits_length];
-    double *soft_bits = new double[ds_sch_bits_length];
+    int c_seq[ds_sch_bits_length];
+    double soft_bits[ds_sch_bits_length];
     /*
      * Soft demodulation
      */
@@ -115,15 +114,14 @@ void free5GRAN::phy::physical_channel::decode_pbch(vector<complex<float>> pbch_s
      * \param[in] pci: Cell PCI
      * \param[out] bch_bits: PBCH decoded bits
     */
-    int * pbch_bits;
-    pbch_bits = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
+    int pbch_bits[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
     /*
      * Demodulate PBCH Signal
      */
     free5GRAN::phy::signal_processing::hard_demodulation(pbch_symbols,pbch_bits,free5GRAN::SIZE_SSB_PBCH_SYMBOLS,1);
 
     // Generate de-scrambling sequence
-    int * c_seq = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_ssb)];
+    int c_seq[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_ssb)];
     free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_ssb), c_seq,0);
 
     /*
@@ -132,7 +130,7 @@ void free5GRAN::phy::physical_channel::decode_pbch(vector<complex<float>> pbch_s
     free5GRAN::utils::common_utils::scramble(pbch_bits, c_seq, bch_bits, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 }
 
-void free5GRAN::phy::physical_channel::compute_pbch_indexes(int *** ref, int pci){
+void free5GRAN::phy::physical_channel::compute_pbch_indexes(vector<vector<vector<int>>> &ref, int pci){
     /**
      * \fn compute_pbch_indexes
      * \brief Compute PBCH and DMRS symbols indexes
@@ -167,7 +165,7 @@ void free5GRAN::phy::physical_channel::compute_pbch_indexes(int *** ref, int pci
     }
 }
 
-void free5GRAN::phy::physical_channel::compute_pdcch_indexes(int ***ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb){
+void free5GRAN::phy::physical_channel::compute_pdcch_indexes(vector<vector<vector<int>>> &ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb){
     /**
      * \fn compute_pdcch_indexes
      * \brief Compute PDCCH and DMRS samples Position
@@ -196,7 +194,7 @@ void free5GRAN::phy::physical_channel::compute_pdcch_indexes(int ***ref, free5GR
     }
 }
 
-void free5GRAN::phy::physical_channel::compute_pdsch_indexes(int ***ref, bool dmrs_symbol_array[], int L, int lrb){
+void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vector<int>>> &ref, bool dmrs_symbol_array[], int L, int lrb){
     /**
      * \fn compute_pdsch_indexes
      * \brief Compute PDSCH and DMRS samples Position

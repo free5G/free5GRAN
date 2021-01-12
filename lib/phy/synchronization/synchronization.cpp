@@ -84,10 +84,7 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
     /*
      * Generate and get PSS sequences
      */
-    int *pss_0_seq, *pss_1_seq, *pss_2_seq;
-    pss_0_seq = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    pss_1_seq = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    pss_2_seq = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    int pss_0_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL], pss_1_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL], pss_2_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL];
 
     free5GRAN::utils::sequence_generator::generate_pss_sequence(0, pss_0_seq);
     free5GRAN::utils::sequence_generator::generate_pss_sequence(1, pss_1_seq);
@@ -150,9 +147,7 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
     }
 
     size_t num_samples = buff.size();
-    complex<float> *corr_0 = new complex<float>[num_samples + fft_size + cp_length - 1];
-    complex<float> *corr_1 = new complex<float>[num_samples + fft_size + cp_length - 1];
-    complex<float> *corr_2 = new complex<float>[num_samples + fft_size + cp_length - 1];
+    complex<float> corr_0[num_samples + fft_size + cp_length - 1], corr_1[num_samples + fft_size + cp_length - 1], corr_2[num_samples + fft_size + cp_length - 1];
 
     /*
      * Correlate different PSS signals with different CP length with signal obtained from PHY layer
@@ -296,9 +291,8 @@ void free5GRAN::phy::synchronization::get_sss(int &n_id_1, float &peak_value, ve
      * Trying to correlate frequency domain signal to SSS sequences to find n_id_2
      * TODO: use mutlithreading instead of basic loop
      */
-    int *sss_seq;
     for (int i = 0; i < free5GRAN::MAX_N_ID_1; i ++){
-        sss_seq = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+        int sss_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL];
         free5GRAN::utils::sequence_generator::generate_sss_sequence(i, n_id_2, sss_seq);
         correlation_value = correlate(frequency_sss, sss_seq, free5GRAN::SIZE_PSS_SSS_SIGNAL);
         abs_value = abs(correlation_value);

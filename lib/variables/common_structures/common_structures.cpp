@@ -31,20 +31,6 @@ free5GRAN::band free5GRAN::BAND_N_78 = {78, (int) 30e3, 7711, 8051, 8, new int[8
 
 
 
-free5GRAN::bandwidth_info free5GRAN::BANDWIDTH_15_KHZ = {(int) 15e3,
-                                                         free5GRAN::FFT_SIZE_1_92_MHZ_SCS_15_KHZ,
-                                                         free5GRAN::FFT_SIZE_3_84_MHZ_SCS_15_KHZ,
-                                                         free5GRAN::CP_LENGTH_128,
-                                                         free5GRAN::CP_LENGTH_256,
-                                                     1.92e6,
-                                                     3.84e6
-};
+free5GRAN::bandwidth_info free5GRAN::BANDWIDTH_15_KHZ = {(int) 15e3};
 
-free5GRAN::bandwidth_info free5GRAN::BANDWIDTH_30_KHZ = {(int) 30e3,
-                                                         free5GRAN::FFT_SIZE_3_84_MHZ_SCS_30_KHZ,
-                                                         free5GRAN::FFT_SIZE_7_68_MHZ_SCS_30_KHZ,
-                                                         free5GRAN::CP_LENGTH_128,
-                                                         free5GRAN::CP_LENGTH_256,
-                                                    3.84e6,
-                                                    7.68e6
-};
+free5GRAN::bandwidth_info free5GRAN::BANDWIDTH_30_KHZ = {(int) 30e3};

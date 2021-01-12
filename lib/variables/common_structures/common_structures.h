@@ -53,9 +53,7 @@ namespace free5GRAN{
     } dci_1_0_si_rnti;
 
     typedef struct bandwidth_info_ {
-        int scs, fft_size_pss_sss, fft_size_ssb, *cp_length_pss_sss, *cp_length_ssb;
-        double bandwidth_pss_sss, bandwidth_ssb;
-
+        int scs;
     } bandwidth_info;
 
     /*

@@ -50,7 +50,7 @@ namespace free5GRAN {
 
             void ldpc_decode_one_bit(vector<vector<int>> R, double *soft_bits, int i, double &new_bit);
 
-            void compute_H_matrix_ldpc(int Zc, int graph, int i_ls, int **matrix, int &size_i, int &size_j);
+            void compute_H_matrix_ldpc(int Zc, int graph, int i_ls, vector<vector<int>> &matrix, int &size_i, int &size_j);
 
             void ldpc_decode(double *input_bits, int N, int Zc, int graph, int K, int i_ls, int*output_sequence);
 

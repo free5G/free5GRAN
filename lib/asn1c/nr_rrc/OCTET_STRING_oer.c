@@ -65,7 +65,7 @@ OCTET_STRING_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
             size -= len_len;
         } else if(len_len == 0) {
             ASN__DECODE_STARVED;
-        } else if(len_len < 0) {
+        } else if(len_len < 0) { // lgtm [cpp/constant-comparison]
             ASN__DECODE_FAILED;
         }
 
