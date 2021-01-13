@@ -897,21 +897,16 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
             }
         }
     }
-
-    thread threads[N + 2 * Zc];
     int rest, final_bit[N + 2 * Zc];
     /*
      * Looping over iteration
      */
     for (int iter = 0; iter < 10; iter ++){
         /*
-         * Decode every bits in a thread
+         * Decode bits
          */
         for (int i = 0; i < N + 2 * Zc; i ++){
-            threads[i] = thread(ldpc_decode_one_bit, R[i], &ldpc_input_bits[0], i, ref(new_bits[i]));
-        }
-        for (int i = 0; i < N + 2 * Zc; i ++){
-            threads[i].join();
+            ldpc_decode_one_bit( R[i], &ldpc_input_bits[0], i, ref(new_bits[i]));
         }
         for (int i = 0; i < N + 2 * Zc; i ++){
             ldpc_input_bits[i] = new_bits[i];

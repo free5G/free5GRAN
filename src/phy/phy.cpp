@@ -678,7 +678,7 @@ void phy::search_pdcch(bool &dci_found) {
         for (int i = 2; i < 5; i ++){
             agg_level = pow(2, i);
             if (agg_level <= pdcch_ss_mon_occ.n_rb_coreset / height_reg_rb){
-                vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9)), vector<vector<int>>(2, vector<int>(agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3))};
+                vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>((size_t) agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9)), vector<vector<int>>(2, vector<int>((size_t) agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3))};
                 vector<complex<float>> pdcch_symbols((size_t) agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9);
                 complex<float> temp_pdcch_symbols[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9];
                 complex<float> dmrs_symbols[agg_level * free5GRAN::NUMBER_REG_PER_CCE * 3];
@@ -902,7 +902,7 @@ void phy::extract_pdsch() {
 
     vector<vector<complex<float>>> pdsch_ofdm_symbols(L, vector<complex<float>>(12 * pdcch_ss_mon_occ.n_rb_coreset)), pdsch_samples(L, vector<complex<float>>(12 * lrb));
     vector<vector<vector<int>>> ref(2, vector<vector<int>>(L, vector<int>(12 * lrb)));
-    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(12 * lrb * (L - num_symbols_dmrs))), vector<vector<int>>(2, vector<int>(6 * lrb * num_symbols_dmrs))};
+    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>((size_t) 12 * lrb * (L - num_symbols_dmrs))), vector<vector<int>>(2, vector<int>((size_t) 6 * lrb * num_symbols_dmrs))};
     vector<vector<complex<float>>> coefficients(L, vector<complex<float>>(12 * lrb));
     complex<float> temp_dmrs_sequence[6 * pdcch_ss_mon_occ.n_rb_coreset], pdsch_samples_only[12 * lrb * (L - num_symbols_dmrs)], dmrs_samples_only[6 * lrb * num_symbols_dmrs];
 

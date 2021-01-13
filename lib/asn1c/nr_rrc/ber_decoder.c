@@ -212,12 +212,12 @@ ber_check_tags(const asn_codec_ctx_t *opt_codec_ctx,
 		case 0: RETURN(RC_WMORE);
 		}
 
-		/* lgtm [cpp/fixme-comment]
+		/* // lgtm [cpp/fixme-comment]
 		 * FIXME
 		 * As of today, the chain of tags
 		 * must either contain several indefinite length TLVs,
 		 * or several definite length ones.
-		 * No mixing is allowed.
+		 * No mixing is allowed. // lgtm [cpp/fixme-comment]
 		 */
 		if(tlv_len == -1) {
 			/*
