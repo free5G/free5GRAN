@@ -181,5 +181,26 @@ namespace free5GRAN{
 
     extern int SI_RNTI[16];
 
+    /**
+* FROM HERE, IT IS ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING !!
+*/
+
+
+    extern int INDEX_OF_UNUSED_BITS_IN_MIB[5];
+    extern int INDEX_OF_SFN_BITS_IN_MIB[10];
+    extern int INDEX_OF_PDDCHC_CONFIG_BITS_IN_MIB[8];
+    extern int INDEX_OF_K_SSB_BITS_IN_MIB[5];
+    extern int INDEX_OF_AVAILABLE_SCS_IN_MIB[1];
+    extern int INDEX_OF_CELL_BARRED_BITS_IN_MIB[1];
+    extern int INDEX_OF_DMRS_TYPE_A_POSITION_BITS_IN_MIB[1];
+    extern int INDEX_OF_INTRA_FREQ_RESELECTION_BITS_IN_MIB[1];
+
+    extern int INTERVAL_SSB_PSS[2];
+
+    extern int INTERVAL_SSB_SSS[2];
+
+    extern int SIZE_IFFT_SSB; /** This indicates the number of element in each symbols of SSB, before and after ifft */
+
+    extern int MIB_BITS_SIZE;
 }
 #endif

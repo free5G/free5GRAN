@@ -86,4 +86,14 @@ namespace free5GRAN{
 
 }
 
+
+/** Bellow, it's additions from Benoit. Be Carrful during merging */
+typedef struct usrp_info2_ {
+    float sampling_rate;
+    std::string subdev, ant, ref2;
+    std::string device_args;
+    float sample_rate;
+    float center_frequency, gain, bandwidth;
+} usrp_info2;
+
 #endif

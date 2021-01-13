@@ -49,7 +49,15 @@ add_executable(free5GRAN-UE
         ue/phy/phy.h)
 
 add_executable(free5GRAN-gNodeB
-        gnodeb/main.cpp)
+        gnodeb/main.cpp
+        gnodeb/phy/phy.cpp
+        gnodeb/phy/phy.h
+        gnodeb/rf/rf.cpp
+        gnodeb/rf/rf.h
+        lib/phy
+        lib/utils
+        lib/variables
+        )
 
 
 find_package(Boost)
@@ -64,6 +72,6 @@ install(TARGETS free5GRAN-UE DESTINATION /usr/local/bin)
 install(TARGETS free5GRAN-gNodeB DESTINATION /usr/local/bin)
 install(DIRECTORY config DESTINATION /root/.config/free5GRAN)
 install(FILES config/search_cell.cfg DESTINATION /root/.config/free5GRAN/config RENAME free5GRAN.cfg)
-install(FILES analyse.py DESTINATION /root/.files/free5GRAN/)
+
 install(DIRECTORY DESTINATION /root/.files/free5GRAN/execution_raw_files)
 install(DIRECTORY DESTINATION /root/.files/free5GRAN/visualization_files)
