@@ -41,20 +41,27 @@ target_link_libraries(free5GRAN_lib asn1c_lib)
 
 add_compile_options(-g)
 
-add_executable(free5GRAN
-        src/main.cc
-        src/rf/rf.cpp
-        src/rf/rf.h
-        src/phy/phy.cpp
-        src/phy/phy.h )
+add_executable(free5GRAN-UE
+        ue/main.cc
+        ue/rf/rf.cpp
+        ue/rf/rf.h
+        ue/phy/phy.cpp
+        ue/phy/phy.h)
+
+add_executable(free5GRAN-gNodeB
+        gnodeb/main.cpp)
+
 
 find_package(Boost)
 find_package (Threads)
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
-target_link_libraries(free5GRAN asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
+target_link_libraries(free5GRAN-UE asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
+target_link_libraries(free5GRAN-gNodeB asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
 
-install(TARGETS free5GRAN DESTINATION /usr/local/bin)
+
+install(TARGETS free5GRAN-UE DESTINATION /usr/local/bin)
+install(TARGETS free5GRAN-gNodeB DESTINATION /usr/local/bin)
 install(DIRECTORY config DESTINATION /root/.config/free5GRAN)
 install(FILES config/search_cell.cfg DESTINATION /root/.config/free5GRAN/config RENAME free5GRAN.cfg)
 install(FILES analyse.py DESTINATION /root/.files/free5GRAN/)
