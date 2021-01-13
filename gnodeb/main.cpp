@@ -17,6 +17,6 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    std::cout<<"bonjour"<<std::endl;
+    std::cout<<"bonjour_2"<<std::endl;
 }
 
