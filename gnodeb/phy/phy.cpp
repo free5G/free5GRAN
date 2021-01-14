@@ -410,7 +410,7 @@ void phy::encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int
     /** Scramble the 864 rate_matched_bch bits to get the 864 encoded_pbch bits, using c_seq2 */
     free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 
-    BOOST_LOG_TRIVIAL(info) << "function encod_pbch done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
+    BOOST_LOG_TRIVIAL(info) << "function encode_pbch done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
 }
 
 
@@ -425,6 +425,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 * \standard TS38.211 V15.2.0 Section 5.1
 * \param[in] *bits The input sequence of bits.
 * \param[in] bit_sequence_length number of bits.
+* \param[in] modulation_scheme. 0 if BPSK, 1 if QPSK.
 * \param[out] pbch_symbols the output sequence of IQ symbols.
 */
 
@@ -1108,7 +1109,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     n_id = convert_pci_into_nid2_and_nid1(pci);
     int n_id_1 = n_id[0];
     int n_id_2 = n_id[1];
-    std::cout<<"n_id_1 = "<< n_id_1 <<"; n_id_2 = "<< n_id_2 <<std::endl;
+    if (display_variable) {std::cout<<"n_id_1 = "<< n_id_1 <<"; n_id_2 = "<< n_id_2 <<std::endl;}
 
     /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
     int * pss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];

@@ -293,7 +293,6 @@ int main(int argc, char *argv[]) {
                                         &cum_sum_cp_lengths[0]);
     BOOST_LOG_TRIVIAL(info) << "COMPUTE CP LENGTH";
     std::cout << "" << std::endl;
-    std::cout << "cp_lengths[1] = " << cp_lengths[1] << std::endl;
     BOOST_LOG_TRIVIAL(info) << "cp_lengths[1] (which will be used) = "+std::to_string(cp_lengths[1]);
 
     /** ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED */
@@ -409,41 +408,41 @@ int main(int argc, char *argv[]) {
      *      to obtain a transmission of exactly ssb_period for a sampling rate at 7.68 Mhz
      */
 
-
-    std::cout << "ssb_period = " << ssb_period << std::endl;
-    std::cout << "sampling rate = " << sampling_rate << std::endl;
-    std::cout << "sampling rate USRP = " << std::to_string(usrp_info_object.sampling_rate)<< std::endl;
+std::cout<< "###### SSB"<<std::endl;
+    std::cout << "# ssb_period: " << ssb_period<<" second" << std::endl;
+    std::cout<<"# i_b_ssb: "<<i_b_ssb<<std::endl;
 
     BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = "+std::to_string(sampling_rate);
 
-    int Num_samples_per_symbol = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
-    std::cout << "Num_samples_per_symbol = " << Num_samples_per_symbol << std::endl;
-    BOOST_LOG_TRIVIAL(info) << "Num_samples_per_symbol of SSB (per symbols) = "+std::to_string(Num_samples_per_symbol);
-    int num_symbols = 4;
-    std::cout << "num_symbols = " << num_symbols << std::endl;
-    BOOST_LOG_TRIVIAL(info) << "num_symbols of SSB = "+std::to_string(num_symbols);
+    int Num_samples_per_symbol_SSB = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
+    std::cout << "# Num_samples_per_symbol_SSB: " << Num_samples_per_symbol_SSB << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Num_samples_per_symbol_SSB = "+std::to_string(Num_samples_per_symbol_SSB);
+    int num_symbols_SSB = 4;
+    std::cout << "# num_symbols_SSB: " << num_symbols_SSB << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "num_symbols_SSB of SSB: "+std::to_string(num_symbols_SSB);
     float sample_duration = 1 / sampling_rate;
-    std::cout << "sample_duration = " << sample_duration << std::endl;
-    BOOST_LOG_TRIVIAL(info) << "sample duration = "+std::to_string(sample_duration);
+    std::cout << "# sample_duration (1/sampling_rate): " << sample_duration <<" second"<< std::endl;
+    BOOST_LOG_TRIVIAL(info) << "sample duration: "+std::to_string(sample_duration);
 
-    int num_of_0_to_add = 1+ (ssb_period - (num_symbols * Num_samples_per_symbol * sample_duration)) / sample_duration;
-    std::cout << "num_of_0_to_add = " << num_of_0_to_add << std::endl;
+    int num_of_0_to_add = 1+ (ssb_period - (num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration)) / sample_duration;
+    std::cout << "# num_of_0_to_add to obtain 5 ms: " << num_of_0_to_add << std::endl;
+    std::cout<<""<<std::endl;
     BOOST_LOG_TRIVIAL(info) << "number of 0 added at the end of USRP (to obtain a precise time interval) = "+std::to_string(num_of_0_to_add);
 
 
 
     std::complex<float> **SSB_signal_time_domain_CP_5ms;
-    SSB_signal_time_domain_CP_5ms = new std::complex<float> *[num_symbols + 1];
-    SSB_signal_time_domain_CP_5ms[0] = new std::complex<float>[Num_samples_per_symbol];
-    SSB_signal_time_domain_CP_5ms[1] = new std::complex<float>[Num_samples_per_symbol];
-    SSB_signal_time_domain_CP_5ms[2] = new std::complex<float>[Num_samples_per_symbol];
-    SSB_signal_time_domain_CP_5ms[3] = new std::complex<float>[Num_samples_per_symbol];
+    SSB_signal_time_domain_CP_5ms = new std::complex<float> *[num_symbols_SSB + 1];
+    SSB_signal_time_domain_CP_5ms[0] = new std::complex<float>[Num_samples_per_symbol_SSB];
+    SSB_signal_time_domain_CP_5ms[1] = new std::complex<float>[Num_samples_per_symbol_SSB];
+    SSB_signal_time_domain_CP_5ms[2] = new std::complex<float>[Num_samples_per_symbol_SSB];
+    SSB_signal_time_domain_CP_5ms[3] = new std::complex<float>[Num_samples_per_symbol_SSB];
     SSB_signal_time_domain_CP_5ms[4] = new std::complex<float>[num_of_0_to_add];
 
     BOOST_LOG_TRIVIAL(info) << "Fill the variable SSB_signal_time_domain_CP_5ms";
-    for (int symbol = 0; symbol < num_symbols + 1; symbol++) {
+    for (int symbol = 0; symbol < num_symbols_SSB + 1; symbol++) {
         if (symbol != 4) {
-            for (int sample = 0; sample < Num_samples_per_symbol; sample++) {
+            for (int sample = 0; sample < Num_samples_per_symbol_SSB; sample++) {
                 /* Use this line for the generated SSB signal: */
                 SSB_signal_time_domain_CP_5ms[symbol][sample] = SSB_signal_time_domain_CP[symbol][sample];
 
@@ -461,26 +460,23 @@ int main(int argc, char *argv[]) {
     }
 
 
-    //phy_variable.display_signal_float(SSB_signal_time_domain_CP_5ms, 5, Num_samples_per_symbol, "SSB_signal_time_domain_CP_5ms from main ");
+    //phy_variable.display_signal_float(SSB_signal_time_domain_CP_5ms, 5, Num_samples_per_symbol_SSB, "SSB_signal_time_domain_CP_5ms from main ");
 
     if (display_variables) {
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[0], Num_samples_per_symbol,
-                                               "SSB_5ms symbol 0 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[1], Num_samples_per_symbol,
-                                               "SSB_5ms symbol 1 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[2], Num_samples_per_symbol,
-                                               "SSB_5ms symbol 2 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[3], Num_samples_per_symbol,
-                                               "SSB_5ms symbol 3 = ");
+        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[0], Num_samples_per_symbol_SSB,
+                                           "SSB_5ms symbol 0 = ");
+        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[1], Num_samples_per_symbol_SSB,
+                                           "SSB_5ms symbol 1 = ");
+        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[2], Num_samples_per_symbol_SSB,
+                                           "SSB_5ms symbol 2 = ");
+        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[3], Num_samples_per_symbol_SSB,
+                                           "SSB_5ms symbol 3 = ");
         phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[4], num_of_0_to_add,
                                                "SSB_5ms symbol 4 = ");
     }
     BOOST_LOG_TRIVIAL(info) << "USRP serial = "+usrp_info_object.device_args;
-    //std::string subdev("A:A");
     BOOST_LOG_TRIVIAL(info) << "USRP subdev = "+usrp_info_object.subdev;
-    //std::string ant("TX/RX");
     BOOST_LOG_TRIVIAL(info) << "USRP ant = "+usrp_info_object.ant;
-    //std::string ref2("internal");
     BOOST_LOG_TRIVIAL(info) << "USRP ref2 = "+usrp_info_object.ref2;
 
 
@@ -489,11 +485,6 @@ int main(int argc, char *argv[]) {
     //rf rf_variable(usrp_info_object.sample_rate, 3699.84e6, 55, 7.68e6, "A:A", usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
 
-
-    if (run_with_usrp == true) {
-
-
-    }
     /** Emission for SCS = 15 KHz */
     //rf rf_variable(3.846, 3699.84e6, 75, 3.84e6, subdev, ant, ref2, device_args);
 
@@ -506,7 +497,7 @@ int main(int argc, char *argv[]) {
     /** Filling buff_main with normal signal */
     std::vector<std::complex<double>> buff_main;
     for (int symbol = 0; symbol < 4; symbol++) {
-        for (int sample = 0; sample < Num_samples_per_symbol; sample++) {
+        for (int sample = 0; sample < Num_samples_per_symbol_SSB; sample++) {
             buff_main.push_back(SSB_signal_time_domain_CP[symbol][sample]);
         }
     }
@@ -518,7 +509,7 @@ int main(int argc, char *argv[]) {
     /** We note that last symbol (number 4) is not really a 'symbol' */
     for (int symbol = 0; symbol < 5; symbol++) {
         if (symbol != 4) {
-            for (int sample = 0; sample < Num_samples_per_symbol; sample++) {
+            for (int sample = 0; sample < Num_samples_per_symbol_SSB; sample++) {
                 buff_main_5ms.push_back(SSB_signal_time_domain_CP_5ms[symbol][sample]);
             }
         }
@@ -535,7 +526,7 @@ int main(int argc, char *argv[]) {
     std::ofstream file_ben_main_SSB_5ms;
     file_ben_main_SSB_5ms.open("file_ben_SSB_5ms.txt");
 
-    for (int i = 0; i < Num_samples_per_symbol * 4 + num_of_0_to_add; i++) {
+    for (int i = 0; i < Num_samples_per_symbol_SSB * 4 + num_of_0_to_add; i++) {
         file_ben_main_SSB_5ms << buff_main_5ms[i];
         file_ben_main_SSB_5ms << "\n";
     }
@@ -543,17 +534,24 @@ int main(int argc, char *argv[]) {
 
 
     /** Display some useful information */
+    std::cout<<"###### CELL & MIB"<<std::endl;
+    std::cout<<"# Size of buff_main_5ms: "<<buff_main_5ms.size()<<std::endl;
+    std::cout<<"# SFN: "<<mib_object.sfn<<std::endl;
+    std::cout<<"# pddchc_config: "<<mib_object.pdcch_config<<std::endl;
+    std::cout<<"# k_ssb: "<<mib_object.k_ssb<<std::endl;
+    std::cout<<"# SCS: "<<mib_object.scs<<std::endl;
+    std::cout<<"# cell_barred: "<<mib_object.cell_barred<<std::endl;
+    std::cout<<"# dmrs_type_a_position: "<<mib_object.dmrs_type_a_position<<std::endl;
+    std::cout<<"# intra_freq_reselection: "<<mib_object.intra_freq_reselection<<std::endl;
+    std::cout<<"# PCI: "<<pci<<std::endl;
     std::cout<<""<<std::endl;
-    std::cout<<"Size of buff_main_5ms = "<<buff_main_5ms.size()<<std::endl;
-    std::cout<<""<<std::endl;
-    std::cout<<"Mib informations: "<<" SFN ="<<mib_object.sfn<<"; pddchc_config ="<<mib_object.pdcch_config<<"; k_ssb ="<<mib_object.k_ssb<<"; scs ="<<mib_object.scs<<"; cell_barred ="<<mib_object.cell_barred<<"; dmrs_type_a_position ="<<mib_object.dmrs_type_a_position<<"; intra_freq_reselection ="<<mib_object.intra_freq_reselection<<std::endl;
-    std::cout<<""<<std::endl;
+
     /** Sending buff_main_5ms via USRP, continuously*/
-    std::cout<<"PCI ="<<pci<<"; i_b_ssb ="<<i_b_ssb<<"; ssb_period ="<<ssb_period<<std::endl;
-    std::cout<<"Sampling rate = "<<usrp_info_object.sampling_rate<<" Hz"<<std::endl;
-    std::cout<<"Bandwidth ="<<usrp_info_object.bandwidth<<" Hz"<<std::endl;
-    std::cout<<"Center frequency ="<<usrp_info_object.center_frequency<<" Hz"<<std::endl;
-    std::cout<<"Emission Gain = "<<usrp_info_object.gain<<" dB"<<std::endl;
+    std::cout<<"###### USRP"<<std::endl;
+    std::cout<<"# Sampling rate: "<<usrp_info_object.sampling_rate<<" Hz"<<std::endl;
+    std::cout<<"# Bandwidth: "<<usrp_info_object.bandwidth<<" Hz"<<std::endl;
+    std::cout<<"# Center frequency: "<<usrp_info_object.center_frequency<<" Hz"<<std::endl;
+    std::cout<<"# Emission Gain: "<<usrp_info_object.gain<<" dB"<<std::endl;
     std::cout<<""<<std::endl;
 
 
@@ -566,15 +564,20 @@ int main(int argc, char *argv[]) {
                                    usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
                                    usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
-            std::cout<<" ################ SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
+            std::cout<<" ################ free5GRAN SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
             rf_variable.send_from_file(buff_main_5ms);
         }
 
 
 
+
+
+
+
+
     /** Create a radio-frame of 10 ms. SSB will be placed in it in function of i_b_ssb, SCS and ssb_period */
 
-    float SSB_duration = num_symbols * Num_samples_per_symbol * sample_duration;
+    float SSB_duration = num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration;
     std::cout<<"SSB_duration = "<<SSB_duration<<std::endl;
 
     int Num_sample_per_frame = (1e-2)*sampling_rate; /** This corresponds to divide the frame duration (10 ms) by the sample_duration. */
