@@ -402,13 +402,13 @@ int main(int argc, char *argv[]) {
     //----------------------------------------------------------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-/** FROM HERE, THE CODE AIMS TO SEND THE SIGNAL GENERATED VIA USRP B210 */
+    /** FROM HERE, THE CODE AIMS TO SEND THE SIGNAL GENERATED VIA USRP B210 */
 
     /** Filling a signal SSB_signal_time_domain_CP_5ms with some 0 values
      *      to obtain a transmission of exactly ssb_period for a sampling rate at 7.68 Mhz
      */
 
-std::cout<< "###### SSB"<<std::endl;
+    std::cout<< "###### SSB"<<std::endl;
     std::cout << "# ssb_period: " << ssb_period<<" second" << std::endl;
     std::cout<<"# i_b_ssb: "<<i_b_ssb<<std::endl;
 
@@ -521,7 +521,6 @@ std::cout<< "###### SSB"<<std::endl;
     }
     BOOST_LOG_TRIVIAL(info) << "Fill buff_main_5ms (used to send SSB every 5ms only)";
 
-c
     /** Filling a txt file file_ben_SSB_5ms with buff_main_5ms to verify spectogram on Python */
     std::ofstream file_ben_main_SSB_5ms;
     file_ben_main_SSB_5ms.open("file_ben_SSB_5ms.txt");

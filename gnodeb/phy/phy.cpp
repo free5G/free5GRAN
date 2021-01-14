@@ -889,7 +889,7 @@ void phy::display_signal_float(std::complex<float> ** signal_to_display, int num
 
 void phy::display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size, char* vector_name){
     /**
-* \fn ph_ben * display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
+    * \fn ph_ben * display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
 * \brief This function aims to display a vector in the console, using the command std::cout.
 *
 * \param[in] vector_to_display
