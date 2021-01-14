@@ -521,7 +521,7 @@ std::cout<< "###### SSB"<<std::endl;
     }
     BOOST_LOG_TRIVIAL(info) << "Fill buff_main_5ms (used to send SSB every 5ms only)";
 
-
+ff
     /** Filling a txt file file_ben_SSB_5ms with buff_main_5ms to verify spectogram on Python */
     std::ofstream file_ben_main_SSB_5ms;
     file_ben_main_SSB_5ms.open("file_ben_SSB_5ms.txt");
