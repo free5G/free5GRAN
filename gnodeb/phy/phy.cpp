@@ -440,7 +440,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 
         }
     }
-
+s
     /**  QPSK modulation (modulation_scheme == 1)
     * For the QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3 */
 
