@@ -32,6 +32,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <cstdlib>
 #include "../lib/phy/libphy/libphy.h"
+#include "../lib/utils/common_utils/common_utils.h"
 
 namespace logging = boost::log;
 
@@ -88,8 +89,8 @@ void init_logging(std::string level)
 int main(int argc, char *argv[]) {
 
 
-    bool display_variables = false; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool display_variables = true; /** indicates if you want to display variables in the console */
+    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -256,7 +257,8 @@ int main(int argc, char *argv[]) {
 
     /** MIB GENERATION -> Generating mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
-    phy_variable.encode_mib(mib_object, mib_bits);
+    //phy_variable.encode_mib(mib_object, mib_bits);
+    free5GRAN::utils::common_utils::encode_mib(mib_object, mib_bits);
     BOOST_LOG_TRIVIAL(info) << "MIB GENERATION";
 
     if(display_variables){
@@ -662,11 +664,12 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /** Display one_frame_2 */
+    /** Display one_frame_2
 
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
         phy_variable.display_complex_float(one_frame_2[symbol], symbols_size_one_frame[symbol], "one_frame_2, one symbol = ");
     }
+     */
 
 
 

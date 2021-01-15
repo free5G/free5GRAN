@@ -24,6 +24,12 @@ namespace free5GRAN {
             void scramble(int * input_bits, int * c_seq, int * output_bits, int length, int offset);
 
             void scramble(double * input_bits, int * c_seq, double * output_bits, int length, int offset);
+
+            /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
+
+            void encode_mib(free5GRAN::mib mib_object, int *mib_bits);
+
+            void convert_decimal_to_binary(int size, int decimal, int* table_output);
         }
     }
 }

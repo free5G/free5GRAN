@@ -42,11 +42,13 @@
 
 
 
-bool display_variable = false; /** indicates if you want to display all variables in the Console */
+bool display_variable = true; /** indicates if you want to display all variables in the Console */
 
+
+/** THIS FONCTION encode_mib IS NOW IN THE LIB --> TO BE DELETED FROM HERE
 void phy::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
 
-    /**
+
 * \fn ph_ben * encode_mib (free5GRAN::mib mib_object, int* mib_bits)
 * \brief This function aims to transforms the MIB informations (decimal) into the mib bits sequence.
 * In our case, the mib bits sequence is 32 bits long.
@@ -54,66 +56,67 @@ void phy::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
 *
 * \param[in] mib_object object MIB created in common_structures.h, including sfn, scs, cell_barred...
 * \param[out] mib_bits bit sequence returned by the function.
-*/
 
-    /** These following mib_bits are unused and set to 0 according to TS38.331 V15.11.0 Section 6.2.2 */
+
+    //These following mib_bits are unused and set to 0 according to TS38.331 V15.11.0 Section 6.2.2
     int unused_bits_size = 5;
     for (int i = 0; i < unused_bits_size; i++) {
         mib_bits[free5GRAN::INDEX_OF_UNUSED_BITS_IN_MIB[i]] = 0;
     }
 
-    /** Convert sfn (Sequence Frame Number) from decimal to binary. */
+    //Convert sfn (Sequence Frame Number) from decimal to binary.
     int sfn_binary_size = 10;
     int sfn_binary[sfn_binary_size];
     convert_decimal_to_binary(sfn_binary_size, mib_object.sfn, sfn_binary);
 
-    /** Put sfn bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put sfn bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2
     for (int i = 0; i < sfn_binary_size; i++) {
         mib_bits[free5GRAN::INDEX_OF_SFN_BITS_IN_MIB[i]] = sfn_binary[i];
     }
 
-    /** Convert pddchc_config from decimal to binary */
+    //Convert pddchc_config from decimal to binary
     int pddchc_config_binary_size = 8;
     int pddchc_config_binary[pddchc_config_binary_size];
     convert_decimal_to_binary(pddchc_config_binary_size, mib_object.pdcch_config, pddchc_config_binary);
 
-    /** Put the pddchc_config bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put the pddchc_config bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2
     for (int i = 0; i < pddchc_config_binary_size; i++) {
         mib_bits[free5GRAN::INDEX_OF_PDDCHC_CONFIG_BITS_IN_MIB[i]] = pddchc_config_binary[i];
     }
 
-    /** Convert k_ssb from decimal to binary */
+    //Convert k_ssb from decimal to binary
     int k_ssb_binary_size = 5;
     int k_ssb_binary[k_ssb_binary_size];
     convert_decimal_to_binary(k_ssb_binary_size, mib_object.k_ssb, k_ssb_binary);
 
-    /** Put the k_ssb bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put the k_ssb bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2
     for (int i = 0; i < k_ssb_binary_size; i++) {
         mib_bits[free5GRAN::INDEX_OF_K_SSB_BITS_IN_MIB[i]] = k_ssb_binary[i];
     }
 
 
-    int available_scs[2] = {15, 30}; /** In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz */
+    int available_scs[2] = {15, 30}; //In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz
     for (int i = 0; i < 2; i++) {
-        /** Put SCS (Sub Carrier Spacing) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
+        //Put SCS (Sub Carrier Spacing) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2
         if (mib_object.scs == available_scs[i]) {
             mib_bits[free5GRAN::INDEX_OF_AVAILABLE_SCS_IN_MIB[0]] = i;
         }
     }
 
 
-    /** The following mib information are not needed to be converted into bits as they are stored on only 1 bit */
+    //The following mib information are not needed to be converted into bits as they are stored on only 1 bit
 
-    /** Put the cell_barred bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put the cell_barred bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2
     mib_bits[free5GRAN::INDEX_OF_CELL_BARRED_BITS_IN_MIB[0]] = mib_object.cell_barred;
 
-    /** Put the DMRS type A position (position of first DM-RS for downlink) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put the DMRS type A position (position of first DM-RS for downlink) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2
     mib_bits[free5GRAN::INDEX_OF_DMRS_TYPE_A_POSITION_BITS_IN_MIB[0]] = mib_object.dmrs_type_a_position - 2;
 
-    /** Put the intra frequency reselection bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
+    //Put the intra frequency reselection bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2
     mib_bits[free5GRAN::INDEX_OF_INTRA_FREQ_RESELECTION_BITS_IN_MIB[0]] = mib_object.intra_freq_reselection;
     BOOST_LOG_TRIVIAL(info) << "function encode_mib done";
 }
+*/
 
 
 void phy::bch_interleaving(int *mib_bits, int *mib_bits_interleaved) {
@@ -440,7 +443,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 
         }
     }
-s
+
     /**  QPSK modulation (modulation_scheme == 1)
     * For the QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3 */
 
@@ -1645,3 +1648,4 @@ void phy::AY_decode_mib(int* mib_bits, free5GRAN::mib &mib_object) {
 phy::phy() {
 
 }
+
