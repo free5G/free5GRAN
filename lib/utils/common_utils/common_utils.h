@@ -16,6 +16,11 @@
 
 #include "../../variables/common_structures/common_structures.h"
 
+/** BELOW ARE INCLUDE FROM BENOIT. BE CAREFUL WHEN MERGING */
+
+#include <complex>
+#include <vector>
+
 namespace free5GRAN {
     namespace utils {
         namespace common_utils {
@@ -25,11 +30,21 @@ namespace free5GRAN {
 
             void scramble(double * input_bits, int * c_seq, double * output_bits, int length, int offset);
 
+
+
+
+
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
             void encode_mib(free5GRAN::mib mib_object, int *mib_bits);
 
             void convert_decimal_to_binary(int size, int decimal, int* table_output);
+
+            void display_signal_float(std::complex<float> ** signal_to_display, int num_symbols, int num_sc, char* signal_name);
+            void display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size, char* vector_name);
+            void display_complex_double(std::complex<double> *vector_to_display, int vector_size, char* vector_name);
+            void display_complex_float(std::complex<float> *vector_to_display, int vector_size, char* vector_name);
+            void display_table(int* table_to_display, int size, char* table_name);
         }
     }
 }

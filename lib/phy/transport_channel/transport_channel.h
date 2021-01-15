@@ -60,6 +60,20 @@ namespace free5GRAN {
 
             vector<int>  decode_dl_sch(double *dl_sch_bits, int n_re, float R, int nrb, int E, bool &validated, free5GRAN::dci_1_0_si_rnti dci_1_0_si_rnti);
 
+
+            /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
+
+            void bch_payload_integration(int *mib_bits, int *mib_bits_interleaved);
+
+            void scrambling_bch(int v, int pci, int *mib_bits_interleaved, int *bch_payload);
+
+            void polar_encoding(int N, int *input_bits, int *output_encoded_bits);
+
+            void rate_matching_polar_coding(int *polar_encode_bch, int *rate_matched_bch);
+
+            void bch_encoding(int * mib_bits, int pci, int N, int * rate_matched_bch);
+
+            //int *pi_seq;
         }
     }
 }

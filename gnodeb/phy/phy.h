@@ -34,7 +34,7 @@ private:
     rf *rf_device_ben;
     int bch_crc[24]; // erreur ?
     bool crc_validated;
-    int *pi_seq;
+    //int *pi_seq; TO BE DELETED
     int i_ssb;
     int i_b_ssb;
     int l_max;
@@ -49,11 +49,12 @@ public:
     void encode_bch(free5GRAN::mib, int* rate_matched_bch);
 
     static void convert_decimal_to_binary(int size, int decimal, int* table_output);
-    void encode_mib(free5GRAN::mib, int* mib_bits);
-    void bch_interleaving(int* mib_bits, int* mib_bits_interleaved);
-    void scrambling_bch(int v, int pci, int* mib_bits_interleaved, int* bch_payload);
+
+    // void encode_mib(free5GRAN::mib, int* mib_bits); TO BE DELETED
+    // void bch_interleaving(int* mib_bits, int* mib_bits_interleaved); TO BE DELETED
+    // void scrambling_bch(int v, int pci, int* mib_bits_interleaved, int* bch_payload); TO BE DELETED
     void adding_crc(int* bch_payload, int*bch_payload_with_crc);
-    void polar_encode_bch(int N, int* bch_payload_with_crc, int* polar_encoded_bch);
+    // void polar_encode_bch(int N, int* input_bits, int* output_encoded_bits); TO BE DELETED
     void rate_matching(int* polar_encoded_bch, int* rate_matched_bch);
 
     void encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch);

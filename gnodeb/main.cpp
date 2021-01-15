@@ -89,8 +89,8 @@ void init_logging(std::string level)
 int main(int argc, char *argv[]) {
 
 
-    bool display_variables = true; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool display_variables = false; /** indicates if you want to display variables in the console */
+    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -267,7 +267,9 @@ int main(int argc, char *argv[]) {
 
     /** ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
     int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
-    phy_variable.encode_bch(mib_bits, pci, N, rate_matched_bch);
+    phy_variable.encode_bch(mib_bits, pci, N, rate_matched_bch); //TO BE DELETED
+    //free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch);
+
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH";
 
     /** ENCODE PBCH -> Generate pbch_symbols2 (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */

@@ -1210,3 +1210,309 @@ vector<int> free5GRAN::phy::transport_channel::decode_dl_sch(double *dl_sch_bits
 
     return output_bits;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+/** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
+
+
+void free5GRAN::phy::transport_channel::bch_payload_integration(int *mib_bits, int *mib_bits_interleaved) {
+
+    /**
+* \fn bch_payload_integration (int* mib_bits, int* mib_bits_interleaved)
+* \brief This function aims to interleave the MIB (Master Information Block) 32 bits sequence.
+* \standard TS38.212 V15.2.0 Section 7.1.1
+*
+* \param[in] mib_bits MIB (Master Information Block) bits sequence, 32 bits long.
+* \param[out] mib_bits_interleaved MIB bits sequence interleaved, 32 bits long.
+*/
+
+    /** Initialize the begin values used in the for loop */
+    int A_bar = free5GRAN::BCH_PAYLOAD_SIZE - 8; // = 24
+    int j_sfn = 0;
+    int j_hrf = 10;
+    int j_ssb = 11;
+    int j_other = 14;
+
+
+    /** For each i going from 0 to 31, the ith bits of mib_bits_interleaved is settled in function of the mib_bits and according to the PBCH payload interleaver pattern, in TS38.212 V15.2.0 Section 7.1.1 */
+    for (int i = 0; i < free5GRAN::MIB_BITS_SIZE; i++) {
+        if (i == 24 || i == 25 || i == 26 || i == 27 || i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6) {
+            mib_bits_interleaved[free5GRAN::PBCH_PAYLOAD_INTERLEAVER[j_sfn]] = mib_bits[i];
+            j_sfn++;
+        } else if (i == 28) {
+            mib_bits_interleaved[free5GRAN::PBCH_PAYLOAD_INTERLEAVER[j_hrf]] = mib_bits[i];
+        } else if (i >= A_bar + 5 && i <= A_bar + 7) {
+            mib_bits_interleaved[free5GRAN::PBCH_PAYLOAD_INTERLEAVER[j_ssb]] = mib_bits[i];
+            j_ssb++;
+        } else {
+            mib_bits_interleaved[free5GRAN::PBCH_PAYLOAD_INTERLEAVER[j_other]] = mib_bits[i];
+            j_other++;
+        }
+    }
+    BOOST_LOG_TRIVIAL(info) << "function bch_interleaving done. At this point, we have "+std::to_string(free5GRAN::MIB_BITS_SIZE)+ " bits";
+
+}
+
+
+void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_bits_interleaved, int *bch_payload) {
+
+    /**
+* \fn scrambling_bch (int v, int pci, int* mib_bits_interleaved, int* bch_payload)
+* \brief This function aims to scramble the 32 bits of mib bits (interleaved) to get the bch_payload (still 32 bits long)
+* \details
+* - First, a c_seq is generated from the pci, v and BCH payload size.
+* - Then, a s_sequence is generated using c_seq.
+* - Finally, the mib_bits_interleaved is scrambled into bch_payload sequence, using s_sequence.
+* \standard TS38.212 V15.2.0 Section 7.1.2
+*
+* \param[in] v v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN). It is an integer between 0 and 3.
+* \param[in] pci pci is the Physical Cell Id (also called N cell ID)
+* \param[in] mib_bits_interleaved MIB (Master Information Block) bits sequence, interleaved, 32 bits long.
+* \param[out] bch_payload bch_payload, 32 bits long.
+*/
+
+
+    /** Initialize some variables */
+    int *s_sequence, *c_seq;
+    int A = free5GRAN::BCH_PAYLOAD_SIZE; // =32
+    int M = A - 3;
+    c_seq = new int[free5GRAN::BCH_PAYLOAD_SIZE + v * M];
+    s_sequence = new int[A];
+
+    /** Generate the c_sequence, according to TS38.211 5.2.1  V15.2.0 with c_init = pci */
+    free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::BCH_PAYLOAD_SIZE + v * M, c_seq, 0);
+
+    /** Generate s_sequence from c_sequence, according to TS38.212 V15.2.0 Section 7.1.2 */
+    int j = 0;
+    for (int i = 0; i < A; i++) {
+        if (i == 0 || i == 6 || i == 24) {
+            s_sequence[i] = 0;
+        } else {
+            s_sequence[i] = c_seq[j + v * M];
+            j++;
+        }
+    }
+
+    /** Scramble mib_bits_interleaved using s_sequence to get bch_payload */
+    free5GRAN::utils::common_utils::scramble(mib_bits_interleaved, s_sequence, bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, 0);
+    BOOST_LOG_TRIVIAL(info) << "function scrambling_bch done. At this point, we have "+std::to_string(free5GRAN::MIB_BITS_SIZE)+ " bits";
+}
+
+
+void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int *output_encoded_bits) {
+    /**
+* \fn ph_ben * polar_encoding (int N, int* input_bits, int* output_encoded_bits)
+* \brief This function aims to transform the 56 bits sequence input_bits into a 512 bits sequence output_encoded_bits.
+* \details
+ * First, a pi_sequence is generated (56 bits long in our case).
+ * Then, a c_p sequence is generated from this pi_sequence and from the input_bits bits sequence.
+ * Then, a q_0_n_1 sequence is generated.
+ * Then, a q_i_n sequence is generated from this q_0_n_1 sequence.
+ * Then, a u sequence is generated from the c_p sequence using the q_i_n sequence.
+ * Finally, the output_encoded_bits bits sequence is generated from the u sequence using the G9 matrix.
+ *
+* \standard TS38.212 V15.2.0 Section 5.3.1
+* \param[in] N indicates the length of output_encoded_bits bits sequence. In our case, N depends on the size of SSB PBCH Symbols and on the size of PBCH POLAR DECODED bit sequence. In our case, N=512.
+* \param[in] input_bits Bits sequence. 56 bits long in our case.
+* \param[out] output_encoded_bits Bits sequence. 512 bits long in our case.
+*/
+
+
+    /** Initializing variables */
+    int n_pc = 0;
+    int i_il = 1;
+    int nmax = 9;
+    int n_wm_pc = 0;
+    bool found;
+    int K = free5GRAN::SIZE_PBCH_POLAR_DECODED; // = 56
+    int K_max = 164;
+    int *c_p = new int[56];
+    int *q_0_n_1;
+    q_0_n_1 = new int[N];
+    int *q_i_n = new int[K + n_pc];
+    int *u = new int[N];
+    int *pi_seq = new int[56];
+    int count_seq = 0;
+
+
+    /** Generate pi sequence according to TS38.212 V15.2.0 Section 5.3.1.1 */
+    for (int m = 0; m < K_max; m++) {
+        if (free5GRAN::INTERLEAVING_PATTERN[m] >= K_max - K) {
+            pi_seq[count_seq] = free5GRAN::INTERLEAVING_PATTERN[m] - (K_max - K);
+            count_seq++;
+        }
+    }
+
+
+    /** Generating c_p sequence from input_bits using pi_seq, according to TS38.212 V15.2.0 Section 5.3.1.1 */
+    for (int k = 0; k < 56; k++) {
+        c_p[k] = input_bits[pi_seq[k]];  // modified
+    }
+
+    /** Generating q_0_n_1 according to TS38.212 V15.2.0 Section 5.3.1.2 */
+    count_seq = 0;
+    for (int n = 0; n < 1024; n++) {
+        if (free5GRAN::POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[n] < N) {
+            q_0_n_1[count_seq] = free5GRAN::POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[n];
+            count_seq++;
+        }
+    }
+
+
+    /** Generate q_i_n sequance from q_0_n_1 according to TS38.212 V15.2.0 Section 5.3.1.2 */
+    for (int n = 0; n < K + n_pc; n++) {
+        q_i_n[n] = q_0_n_1[N - (K + n_pc) + n];
+    }
+
+
+    /** Polar coding apply to c_p to get u (using q_i_n) according to TS38.212 V15.2.0 Section 5.3.1.2 */
+    count_seq = 0;
+    for (int n = 0; n < N; n++) {
+        found = false;
+        for (int p = 0; p < K + n_pc; p++) {
+            if (q_i_n[p] == n) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            u[n] = c_p[count_seq];
+            count_seq++;
+        } else {
+            u[n] = 0;
+        }
+    }
+
+
+    /** polar coding apply to u to get output_encoded_bits using G9 matrix according to TS38.212 V15.2.0 Section 5.3.1.2 */
+    for (int n = 0; n < N; n++) {
+        output_encoded_bits[n] = 0;
+        for (int p = 0; p < N; p++) {
+            output_encoded_bits[n] ^= (u[p] * free5GRAN::G9[p][n]);  //G9 to be verified
+        }
+    }
+    BOOST_LOG_TRIVIAL(info) << "function polar_encoding done. At this point, we have "+std::to_string(N)+ " bits";
+
+}
+
+
+
+void free5GRAN::phy::transport_channel::rate_matching_polar_coding(int *polar_encode_bch, int *rate_matched_bch) {
+
+    /**
+* \fn rate_matching_polar_coding (int* polar_encode_bch, int* rate_matched_bch)
+* \brief This function aims to apply the rate matching to the 512 bits sequence polar_encoded_bch to get a 864 bits long rate_matched_bch.
+* \details
+     * First the bits contained in polar_encoded_bch are interleaved (again).
+     * Then, the 352 first bits of polar_encoded_bch are added at the end of this sequence, to get a 864 bits long sequence
+* \standard TS38.212 V15.2.0 Section 5.4.1
+* \param[in] polar_encode_bch polar_encode_bch, 512 bits long.
+* \param[out] rate_matched_bch contains the final BCH 864 bits sequence.
+*/
+
+    /** Initialize variables */
+    // Be carreful : replace compute_N by compute_N_olar_code when merging
+    int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, free5GRAN::SIZE_PBCH_POLAR_DECODED, 9);
+    int N = pow(2, n);
+    int E = free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2;
+    int i;
+    int j_n;
+    int *b1 = new int[N];
+
+    /** Interleaving apply to polar_encode_bch to get the b1 sequence */
+    for (int n = 0; n < N; n++) {
+        i = floor(32 * (double) n / (double) N);
+        j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
+        b1[n] = polar_encode_bch[j_n];
+    }
+
+    /** Add 352 bits at the end of b1 to get rate_matched_bch */
+    for (int n = 0; n < E; n++) {
+        if (n < N) {
+            rate_matched_bch[n] = b1[n];
+        } else {
+            rate_matched_bch[n] = b1[n - N];
+        }
+    }
+    BOOST_LOG_TRIVIAL(info) << "function rate_matching_polar_coding done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
+
+}
+
+
+void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int N, int *rate_matched_bch) {
+
+    /**
+      * \fn bch_encoding(int * mib_bits, int pci, int N, int * rate_matched_bch)
+      * \brief This function aims to transform the mib_bits into a rate_matched_bch bits sequence.
+      * \details Here are the steps of this function: INTERLEAVING, SCRAMBLING, ADDING CRC, POLAR ENCODING and RATE MATCHING.
+      * \standard TS38.212 V15.2.0 Section 7.1
+      * \standard TS38.212 V15.2.0 Section 5
+      *
+      * \param[in] mib_bits. In our case, it is a 32 long bits sequence.
+      * \param[in] pci. Physical Cell ID.
+      * \param[in] N. It is the length of the BCH payload after polar encode. It's a power of 2. In our case, it's 512.
+      * \param[out] rate_matched_bch. The output bits sequence. 864 bits long in our case.
+      */
+
+    /** INTERLEAVING -> Generating mib_bits_interleaved (32 bits long in our case) from mib_bits. TS38.212 V15.2.0 Section 7.1.1 */
+    int mib_bits_interleaved[free5GRAN::BCH_PAYLOAD_SIZE];
+    free5GRAN::phy::transport_channel::bch_payload_integration(mib_bits, mib_bits_interleaved);
+
+    bool display_variable = true;
+    if(display_variable){
+        free5GRAN::utils::common_utils::display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from phy");}
+
+    /** SCRAMBLING -> Generating bch_payload (32 bits long in our case) from mib_bits_interleaved. TS38.212 V15.2.0 Section 7.1.2 */
+    int bch_payload[free5GRAN::BCH_PAYLOAD_SIZE];
+    int v = mib_bits[25] * 2 + mib_bits[26]; /** v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN). */
+    if (display_variable){std::cout <<"v (depends on SFN, 3rd and 2nd LSB "<<v<< std::endl;}
+    free5GRAN::phy::transport_channel::scrambling_bch(v, pci, mib_bits_interleaved, bch_payload);
+
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, "bch_payload from phy");}
+
+    /** CRC -> Generating bch_payload_with_crc (56 bits long in our case) from bch_payload. TS38.212 V15.2.0 Section 5.1 */
+    int bch_payload_with_crc[free5GRAN::SIZE_PBCH_POLAR_DECODED];
+    //free5GRAN::phy::transport_channel::adding_crc(bch_payload, bch_payload_with_crc); TO BE DELETED
+        /** Generate the 24 bits sequence CRC (bch_crc) of bch_payload, using the table G_CRC_24_C */
+        free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_payload_with_crc, 32, 25);
+
+        /** Complete the 32 first bits of bch_payload_with_crc with the bch_payload bits sequence */
+        for (int i = 0; i < free5GRAN::BCH_PAYLOAD_SIZE; i++) {
+            bch_payload_with_crc[i] = bch_payload[i];
+        }
+
+        /** Completing the 24 last bits of bch_payload_wit_crc with the bch_crc bits sequence */
+        for (int i = 0; i < 24; i++) {
+            bch_payload_with_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_payload_with_crc[i];
+        }
+
+
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(bch_payload_with_crc, free5GRAN::SIZE_PBCH_POLAR_DECODED, "bch_payload_with_crc from phy");}
+
+    /** POLAR ENCODING -> Generating polar encoded_bch (512 bits long in our case) from bch_payload_with_crc. TS38.212 V15.2.0 Section 5.3.1 */
+    int *polar_encoded_bch = new int[N];
+    free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_with_crc, polar_encoded_bch);
+
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(polar_encoded_bch, N, "polar_encoded_bch from phy");}
+
+    /** RATE MATCHING -> Generating rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "rate_matched_bch from phy");}
+
+
+
+}

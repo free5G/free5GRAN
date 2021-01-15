@@ -117,6 +117,16 @@ void free5GRAN::utils::common_utils::scramble(double *input_bits, int *c_seq, do
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING ! */
 
 
@@ -196,7 +206,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
 void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int decimal, int *table_output) {
     /**
-      * \fn ph_ben * convert_decimal_to_binary (int size, int decimal, int* table_output)
+      * \fn convert_decimal_to_binary (int size, int decimal, int* table_output)
       * \brief This function aims to convert an integer number into a binary bit sequence.
       *
       * \param[in] size Indicates the number of bits in the output sequence. Please verify that decimal <= 2^size.
@@ -212,9 +222,113 @@ void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int dec
             table_output[size-i] = 0;
         }
     }
+}
 
+
+void free5GRAN::utils::common_utils::display_signal_float(std::complex<float> **signal_to_display, int num_symbols,
+                                                          int num_sc, char *signal_name){
+    for (int symbols = 0; symbols < num_symbols; symbols++){
+        std::cout<<""<<std::endl;
+        std::cout<<""<<std::endl;
+        std::cout<<signal_name<< "of symbol "<<symbols<<" = "<<std::ends;
+        display_complex_float(signal_to_display[symbols], num_sc, "");
+    }
+}
+
+
+void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size,
+                                                    char *vector_name){
+/**
+    * \fn display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
+* \brief This function aims to display a vector in the console, using the command std::cout.
+*
+* \param[in] vector_to_display
+* \param[in] vector_size number of element in the vector
+* \param[in] vector_name name to display
+*/
+    for (int i=0; i<vector_size; i++){
+        if (i==0){
+            std::cout <<""<< std::endl;
+            std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
+        }
+        if (i% 10 == 0){         /** 10 here means that every 10 elements displayed, a line break is done */
+            std::cout <<""<< std::endl;
+        }
+        std::cout<<vector_to_display[i]<<"  "<< std::ends;
+    }
 
 }
+
+
+void free5GRAN::utils::common_utils::display_complex_double(std::complex<double> *vector_to_display, int vector_size,
+                                                            char *vector_name){
+/**
+* \fn display_complex_double (std::complex<double> *vector_to_display, int vector_size, char* vector_name)
+* \brief This function aims to display a vector in the console, using the command std::cout.
+*
+* \param[in] vector_to_display
+* \param[in] vector_size number of element in the vector
+* \param[in] vector_name name to display
+*/
+    for (int i=0; i<vector_size; i++){
+        if (i % 10 == 0){        /** 10 here means that every 10 elements displayed, a line break is done*/
+            std::cout <<""<< std::endl;
+        }
+        if (i == 0){
+            std::cout << +vector_name << ": "<<std::ends;
+        }
+        std::cout<<vector_to_display[i] <<"   "<< std::ends;
+    }
+}
+
+
+void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *vector_to_display, int vector_size,
+                                                           char *vector_name){
+/**
+* \fn display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
+* \brief This function aims to display a vector in the console, using the command std::cout.
+*
+* \param[in] vector_to_display
+* \param[in] vector_size number of element in the vector
+* \param[in] vector_name name to display
+*/
+    for (int i=0; i<vector_size; i++){
+        if (i % 1000 == 0){        /** 10 here means that every 10 elements displayed, a line break is done */
+            std::cout <<""<< std::endl;
+        }
+        if (i == 0){
+            std::cout << +vector_name << ": "<<std::ends;
+        }
+        std::cout<<vector_to_display[i] <<"   "<< std::ends;
+    }
+}
+
+
+void free5GRAN::utils::common_utils::display_table(int *table_to_display, int size, char *table_name) {
+/**
+   * \fn display_table (int* table_to_display, int size, char* table_name)
+   * \brief This function aims to display a table in the console, using the command std::cout.
+   *
+   * \param[in] table_to_display
+   * \param[in] size number of element in the table
+   * \param[in] table_name name to display
+   */
+
+    for (int i = 0; i<size; i++) {
+        if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
+            std::cout <<""<< std::endl;
+        }
+        if (i == 0){
+            std::cout << +table_name << ": "<<std::ends;
+        }
+        std::cout<<table_to_display[i] <<" "<< std::ends;
+
+    }
+    std::cout <<""<< std::endl;
+}
+
+
+
 
 
 
