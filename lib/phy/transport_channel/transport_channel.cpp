@@ -1470,7 +1470,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
 
     bool display_variable = true;
     if(display_variable){
-        free5GRAN::utils::common_utils::display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from phy");}
+        free5GRAN::utils::common_utils::display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from transport_channel");}
 
     /** SCRAMBLING -> Generating bch_payload (32 bits long in our case) from mib_bits_interleaved. TS38.212 V15.2.0 Section 7.1.2 */
     int bch_payload[free5GRAN::BCH_PAYLOAD_SIZE];
@@ -1479,13 +1479,16 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     free5GRAN::phy::transport_channel::scrambling_bch(v, pci, mib_bits_interleaved, bch_payload);
 
     if (display_variable){
-        free5GRAN::utils::common_utils::display_table(bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, "bch_payload from phy");}
+        free5GRAN::utils::common_utils::display_table(bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, "bch_payload from transport_channel");}
 
     /** CRC -> Generating bch_payload_with_crc (56 bits long in our case) from bch_payload. TS38.212 V15.2.0 Section 5.1 */
     int bch_payload_with_crc[free5GRAN::SIZE_PBCH_POLAR_DECODED];
+    int bch_crc[24];
     //free5GRAN::phy::transport_channel::adding_crc(bch_payload, bch_payload_with_crc); TO BE DELETED
         /** Generate the 24 bits sequence CRC (bch_crc) of bch_payload, using the table G_CRC_24_C */
-        free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_payload_with_crc, 32, 25);
+        //free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_payload_with_crc, 32, 25);
+        free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_crc, 32, 25);
+        if (display_variable) {free5GRAN::utils::common_utils::display_table(bch_crc, 24, "bch_crc from transport_channel");}
 
         /** Complete the 32 first bits of bch_payload_with_crc with the bch_payload bits sequence */
         for (int i = 0; i < free5GRAN::BCH_PAYLOAD_SIZE; i++) {
@@ -1494,24 +1497,24 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
 
         /** Completing the 24 last bits of bch_payload_wit_crc with the bch_crc bits sequence */
         for (int i = 0; i < 24; i++) {
-            bch_payload_with_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_payload_with_crc[i];
+            bch_payload_with_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_crc[i];
         }
 
 
     if (display_variable){
-        free5GRAN::utils::common_utils::display_table(bch_payload_with_crc, free5GRAN::SIZE_PBCH_POLAR_DECODED, "bch_payload_with_crc from phy");}
+        free5GRAN::utils::common_utils::display_table(bch_payload_with_crc, free5GRAN::SIZE_PBCH_POLAR_DECODED, "bch_payload_with_crc from transport_channel");}
 
     /** POLAR ENCODING -> Generating polar encoded_bch (512 bits long in our case) from bch_payload_with_crc. TS38.212 V15.2.0 Section 5.3.1 */
     int *polar_encoded_bch = new int[N];
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_with_crc, polar_encoded_bch);
 
     if (display_variable){
-        free5GRAN::utils::common_utils::display_table(polar_encoded_bch, N, "polar_encoded_bch from phy");}
+        free5GRAN::utils::common_utils::display_table(polar_encoded_bch, N, "polar_encoded_bch from transport_channel");}
 
     /** RATE MATCHING -> Generating rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
     free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch);
     if (display_variable){
-        free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "rate_matched_bch from phy");}
+        free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "rate_matched_bch from transport_channel");}
 
 
 
