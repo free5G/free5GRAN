@@ -60,6 +60,20 @@ namespace free5GRAN {
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
             void modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols);
+
+            void build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref); //Nbs d'entrée variables
+
+            void channel_mapper(std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc);
+
+            void increase_size_ssb(std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output);
+
+            void reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc);
+
+            void ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float> ** out_time_domain_channel, int fft_size, int sc_number);
+
+            void adding_cp(std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp);
+
+            void generate_time_domain_ssb(std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain);
         }
     }
 }

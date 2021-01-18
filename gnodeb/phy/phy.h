@@ -62,7 +62,7 @@ public:
     void generate_dmrs_of_pbch(int pci, int i_b_ssb, std::complex<float> *dmrs_symbols);
     int * convert_pci_into_nid2_and_nid1(int pci);
 
-    void construct_reference_grid(int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref);
+    void construct_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref);
     void channel_mapper(std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc);
     void increase_size_ssb(std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output);
     void reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc);

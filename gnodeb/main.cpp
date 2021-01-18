@@ -33,6 +33,7 @@
 #include <cstdlib>
 #include "../lib/phy/libphy/libphy.h"
 #include "../lib/utils/common_utils/common_utils.h"
+#include "../lib/phy/physical_channel/physical_channel.h"
 
 namespace logging = boost::log;
 
@@ -277,8 +278,11 @@ int main(int argc, char *argv[]) {
     /** ENCODE PBCH -> Generate pbch_symbols2 (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
     std::complex<float> *pbch_symbols2;
     pbch_symbols2 = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
-    phy_variable.encode_pbch_and_modulation(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols2);
+    //phy_variable.encode_pbch_and_modulation(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols2); //TO BE DELETED
+    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols2);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH";
+
+    if (display_variables){free5GRAN::utils::common_utils::display_complex_float(pbch_symbols2, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols2 from main");}
 
     /** GENERATE SSB -> Generate SSB_signal_time_domain (4 * 256 symbols in our case) from pbch_symbols2. TS38.211 V15.2.0 Section 7.4 */
     std::complex<float> **SSB_signal_time_domain;
@@ -289,7 +293,9 @@ int main(int argc, char *argv[]) {
     SSB_signal_time_domain[3] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
 
     phy_variable.generate_SSB_time(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
+    //free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB";
+
 
 
     /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
@@ -309,8 +315,10 @@ int main(int argc, char *argv[]) {
     SSB_signal_time_domain_CP[2] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
     SSB_signal_time_domain_CP[3] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
 
-    phy_variable.adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB,
-                               cp_lengths[1], (std::complex<float> **) SSB_signal_time_domain_CP);
+    //phy_variable.adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, cp_lengths[1], (std::complex<float> **) SSB_signal_time_domain_CP);
+
+    free5GRAN::phy::signal_processing::adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, cp_lengths[1], (std::complex<float> **) SSB_signal_time_domain_CP);
+
     BOOST_LOG_TRIVIAL(info) << "ADD CP (Cyclic Prefix) to the SSB (time domain)";
 
     if(display_variables) {

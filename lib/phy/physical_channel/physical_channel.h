@@ -37,6 +37,8 @@ namespace free5GRAN {
 
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
+            void encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch);
+
             void pbch_encoding(int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2);
         }
     }

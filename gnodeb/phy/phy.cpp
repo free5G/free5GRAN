@@ -373,9 +373,12 @@ void phy::rate_matching(int *polar_encode_bch, int *rate_matched_bch) {
 }
 */
 
+
+
+/**
 void phy::encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch) {
 
-    /**
+
 * \fn ph_ben * encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch)
 * \brief This function aims to scramble the 864 rate_matched_bch bits to get 864 encoded_pbch bits.
 * \details
@@ -391,34 +394,37 @@ void phy::encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int
 * \param[out] encoded_pbch encoded pbch 864 bits sequence.
 */
 
-    /** Initialize variables */
+    /** Initialize variables
     double frequency;
     double ssb_period;
     frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
 
-    /** Calculate l_max in function of the carrier frequency (designated by gscn) */
+    /** Calculate l_max in function of the carrier frequency (designated by gscn)
     if (frequency > 3000000000){
         l_max = 8;
     }else{
         l_max = 4;
     }
 
-    /** Calculate i_ssb (sometimes called v) in function of l_max and i_b_ssb */
+    /** Calculate i_ssb (sometimes called v) in function of l_max and i_b_ssb
     if (l_max == 4){
         i_ssb = i_b_ssb % 4; //also called v in Aymeric's documentation.
     }else {
         i_ssb = i_b_ssb; //also called v in Aymeric's documentation.
     }
 
-    /** Generate a c_seq2 sequence in function of pci and i_ssb */
+    /** Generate a c_seq2 sequence in function of pci and i_ssb
     int * c_seq2 = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_ssb)];
     free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_ssb), c_seq2,0);
 
-    /** Scramble the 864 rate_matched_bch bits to get the 864 encoded_pbch bits, using c_seq2 */
+    /** Scramble the 864 rate_matched_bch bits to get the 864 encoded_pbch bits, using c_seq2
     free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 
     BOOST_LOG_TRIVIAL(info) << "function encode_pbch done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
 }
+*/
+
+
 
 /** TO BE DELETED. Now, this function is in the lib
 void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols){
@@ -462,24 +468,29 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 }
 */
 
+
+
+/** TO BE DELETED. THIS FUNCTION IS NOW INTEGRATED IN generate_time_domain_ssb
 void phy::generate_dmrs_of_pbch(int pci, int i_b_ssb, std::complex<float> *dmrs_symbols){
 
-    /**
+
 * \fn ph_ben * generate_dmrs_of_pbch (int pci, int i_b_ssb, std::complex<float> *pbch_symbols, std::complex<float> *dmrs_symbols)
 * \brief This function aims to generate the DMRS (Demodulation Reference Signal).
 * \standard TS38.211 V15.2.0 Section 7.4.1.4.1
 * \param[in] pci Physical Cell Id
 * \param[in] i_b_ssb. It is the SSB index
 * \param[out] dmrs_symbols. In our case, it is a 144 symbols sequence length.
-*/
+
     free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
     BOOST_LOG_TRIVIAL(info) << "function generate_dmrs_of_pbch done. It will give "+std::to_string(free5GRAN::SIZE_SSB_DMRS_SYMBOLS)+ " complex symbols";
 }
+*/
 
 
-void phy::construct_reference_grid(int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref) {
-/**
-* \fn ph_ben * construct_reference_grid (int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref)
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
+void phy::construct_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref) {
+
+* \fn ph_ben * construct_reference_grid (int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref)
 * \brief This function aims to construct a reference grid (called ref) to build the SSB signal.
 * \details
  * In our case, there are 4 channels to build on the SSB signal:  PSS (127 symbols), SSS (127 symbols), PBCH (432 symbols) and DMRS (144 symbols).
@@ -488,6 +499,7 @@ void phy::construct_reference_grid(int num_sc_ssb, int num_symbols_ssb, int pci,
  * If the value of ref[channel][symbol][sc] is 1, it means that a symbol of this channel has to be placed at SSB[symbol][sc].
  *
 * \standard TS38.211 V15.2.0 Section 7.4.3
+* \param[in] num_channels. The number of channels as input of this function. In our case, this value is 4.
 * \param[in] num_sc_ssb. The number of sub-carrier (sc) in the SSB. In our case, this value is 240.
 * \param[in] num_symbols_ssb. The number of symbols in the SSB. In our case, this value is 4.
  *\param[in] pci. Physical Cell Id. It is used to calculate DMRS index.
@@ -499,88 +511,98 @@ void phy::construct_reference_grid(int num_sc_ssb, int num_symbols_ssb, int pci,
  *
  */
 
+    /**Loop over the channels
+    for (int channel = 0; channel < num_channels; channel++) {
+        ref[channel] = new int *[num_symbols_ssb];
+        /** Loop over the symbols
+        for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
+            /**Initialize the 3 dimensions table ref
+            ref[channel][symbol] = new int[num_sc_ssb];
+        }
+    }
+            /**TO BE DELETED */
+            /**Initialize the 3 dimensions table ref
+            ref[0][symbol] = new int [num_sc_ssb];
+            ref[1][symbol] = new int [num_sc_ssb];
+            ref[2][symbol] = new int [num_sc_ssb];
+            ref[3][symbol] = new int [num_sc_ssb];
 
-/** Loop over the symbols */
-    for (int symbol = 0; symbol < num_symbols_ssb; symbol ++){
-        /**Initialize the 3 dimensions table ref */
-        ref[0][symbol] = new int [num_sc_ssb];
-        ref[1][symbol] = new int [num_sc_ssb];
-        ref[2][symbol] = new int [num_sc_ssb];
-        ref[3][symbol] = new int [num_sc_ssb];
+    /**Loop over the symbols
+    for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
+            /** Loop over the subcarriers
+            for (int sc = 0; sc < num_sc_ssb; sc++) {
 
-        /** Loop over the subcarriers */
-        for (int sc = 0; sc < num_sc_ssb; sc++){
-
-            /** Filling the ref table for each symbol and for each channel, according to TS38.211 V15.2.0 Section 7.4.3 */
-            if (symbol == 0){
-                if (sc >= free5GRAN::INTERVAL_SSB_PSS[0] && sc <= free5GRAN::INTERVAL_SSB_PSS[1]){
-                    ref[0][symbol][sc] = 1;
-                }else{
-                    ref[0][symbol][sc] = 0;
-                }
-                ref[1][symbol][sc] = 0;
-                ref[2][symbol][sc] = 0;
-                ref[3][symbol][sc] = 0;
-            }
-
-            if (symbol == 1){
-                ref[0][symbol][sc] = 0;
-                ref[1][symbol][sc] = 0;
-                if (sc % 4 != pci % 4){
-                    ref[2][symbol][sc] = 1;
-                    ref[3][symbol][sc] = 0;
-                }else{
-                    /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
-                    ref[2][symbol][sc] = 0;
-                    ref[3][symbol][sc] = 1;
-                }
-            }
-
-            if (symbol == 2){
-                ref[0][symbol][sc] = 0;
-                if (sc >= free5GRAN::INTERVAL_SSB_SSS[0] && sc <= free5GRAN::INTERVAL_SSB_SSS[1]){
-                    ref[1][symbol][sc] = 1;
-                    ref[2][symbol][sc] = 0;
-                    ref[3][symbol][sc] = 0;
-                }else {
+                /** Filling the ref table for each symbol and for each channel, according to TS38.211 V15.2.0 Section 7.4.3
+                if (symbol == 0) {
+                    if (sc >= free5GRAN::INTERVAL_SSB_PSS[0] && sc <= free5GRAN::INTERVAL_SSB_PSS[1]) {
+                        ref[0][symbol][sc] = 1;
+                    } else {
+                        ref[0][symbol][sc] = 0;
+                    }
                     ref[1][symbol][sc] = 0;
+                    ref[2][symbol][sc] = 0;
+                    ref[3][symbol][sc] = 0;
                 }
-                if (sc < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || sc > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1]){
-                    if (sc % 4 != pci % 4){
+
+                if (symbol == 1) {
+                    ref[0][symbol][sc] = 0;
+                    ref[1][symbol][sc] = 0;
+                    if (sc % 4 != pci % 4) {
                         ref[2][symbol][sc] = 1;
                         ref[3][symbol][sc] = 0;
-                    }else{
-                        /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
+                    } else {
+                        /** A DMRS symbol is placed every 4 symbols, beginning at pci%4
                         ref[2][symbol][sc] = 0;
                         ref[3][symbol][sc] = 1;
                     }
-                }else{
-                    ref[2][symbol][sc] = 0;
-                    ref[3][symbol][sc] = 0;
                 }
-            }
 
-            if (symbol == 3){
-                ref[0][symbol][sc] = 0;
-                ref[1][symbol][sc] = 0;
-                if (sc % 4 != pci % 4){
-                    ref[2][symbol][sc] = 1;
-                    ref[3][symbol][sc] = 0;
-                }else{
-                    /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
-                    ref[2][symbol][sc] = 0;
-                    ref[3][symbol][sc] = 1;
+                if (symbol == 2) {
+                    ref[0][symbol][sc] = 0;
+                    if (sc >= free5GRAN::INTERVAL_SSB_SSS[0] && sc <= free5GRAN::INTERVAL_SSB_SSS[1]) {
+                        ref[1][symbol][sc] = 1;
+                        ref[2][symbol][sc] = 0;
+                        ref[3][symbol][sc] = 0;
+                    } else {
+                        ref[1][symbol][sc] = 0;
+                    }
+                    if (sc < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || sc > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1]) {
+                        if (sc % 4 != pci % 4) {
+                            ref[2][symbol][sc] = 1;
+                            ref[3][symbol][sc] = 0;
+                        } else {
+                            /** A DMRS symbol is placed every 4 symbols, beginning at pci%4
+                            ref[2][symbol][sc] = 0;
+                            ref[3][symbol][sc] = 1;
+                        }
+                    } else {
+                        ref[2][symbol][sc] = 0;
+                        ref[3][symbol][sc] = 0;
+                    }
+                }
+
+                if (symbol == 3) {
+                    ref[0][symbol][sc] = 0;
+                    ref[1][symbol][sc] = 0;
+                    if (sc % 4 != pci % 4) {
+                        ref[2][symbol][sc] = 1;
+                        ref[3][symbol][sc] = 0;
+                    } else {
+                        /** A DMRS symbol is placed every 4 symbols, beginning at pci%4
+                        ref[2][symbol][sc] = 0;
+                        ref[3][symbol][sc] = 1;
+                    }
                 }
             }
         }
+        BOOST_LOG_TRIVIAL(info) << "function construct_reference_grid done";
     }
-    BOOST_LOG_TRIVIAL(info) << "function construct_reference_grid done";
-}
+*/
 
-
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::channel_mapper(std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc){
 
-    /**
+
 * \fn ph_ben * channel_mapper (std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc)
 * \brief This function aims to fill the SSB signal with the 4 channels (PSS, SSS, PBCH and DMRS) using the ref table constructed before.
 * \standard TS38.211 V15.2.0 Section 7.4.3
@@ -594,17 +616,17 @@ void phy::channel_mapper(std::complex<float> **input_channels, int ***ref, std::
 */
 
 
-    /** Initialize channel_counter for each channel */
+    /** Initialize channel_counter for each channel
     int *channel_counter = new int[num_channels];
     for (int channel =0; channel < num_channels; channel++){
         channel_counter[channel] = 0;
     }
 
-    /** Loop over all channels (4 in our case) */
+    /** Loop over all channels (4 in our case)
     for (int channel =0; channel < num_channels; channel ++){
-        /** Loop over all symbols (4 in our case) */
+        /** Loop over all symbols (4 in our case)
         for (int symbol = 0; symbol < num_symbols; symbol ++){
-            /** Loop over all subcarrier (240 in our case) */
+            /** Loop over all subcarrier (240 in our case)
             for (int sc = 0; sc < num_sc; sc++){
 
                 if (ref[channel][symbol][sc] == 1){
@@ -616,12 +638,12 @@ void phy::channel_mapper(std::complex<float> **input_channels, int ***ref, std::
     }
     BOOST_LOG_TRIVIAL(info) << "function channel_mapper done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
 }
+*/
 
 
-
-
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::increase_size_ssb(std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output){
-/**
+
 * \fn ph_ben * increase_size_ssb (std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output)
 * \brief This function aims to increase the size of a signal, to prepare it for an IFFT (Inverse Fast Fourier Transform).
 * \details
@@ -635,10 +657,10 @@ void phy::increase_size_ssb(std::complex<float> ** input_channel, std::complex<f
 * \param[out] std::complex<float> ** output_channel. 2 dimensions table of complexes. In our case, it is the SSB signal extended (4*256 symbols)
 */
 
-    /** Loop over all symbols */
+    /** Loop over all symbols
     for (int symbol = 0; symbol < num_symbols; symbol++){
         int sc_in_counter = 0;
-        /** Loop over all subcarriers of output signal */
+        /** Loop over all subcarriers of output signal
         for (int sc_out = 0; sc_out < num_sc_output; sc_out++){
             if (sc_out < ((num_sc_output - num_sc_input)/2) || sc_out > num_sc_output - ((num_sc_output - num_sc_input)/2)){
                 output_channel[symbol][sc_out] = {0,0};
@@ -650,9 +672,11 @@ void phy::increase_size_ssb(std::complex<float> ** input_channel, std::complex<f
     }
     BOOST_LOG_TRIVIAL(info) << "function increase_size_ssb done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc_output)+ " complex symbols";
 }
+     */
 
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc){
-/**
+
 * \fn ph_ben * reverse_ssb (std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc)
 * \brief This function aims to inverse the 2 half of the SSB signal. This is done to put the frequency values at the right place, before making ifft.
 * \param[in] std::complex<float> **input_ssb. 2 dimensions table of complexes. In our case, it is the SSB signal extended (4*256 symbols)
@@ -661,28 +685,28 @@ void phy::reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** o
 * \param[out] std::complex<float> ** output_reversed_ssb. 2 dimensions table of complexes. In our case, it is the SSB signal extended and reversed(4*256 symbols)
 */
 
-    /** Loop over all symbols */
+    /** Loop over all symbols
     for (int symbol = 0; symbol < num_symbols; symbol++){
         int sc_counter1 = num_sc/2;
         int sc_counter2 = 0;
-        /** Loop over all subcarriers of output signal */
+        /** Loop over all subcarriers of output signal
         for (int sc = 0; sc < num_sc ; sc++){
             if (sc < num_sc/2){
 
                 output_reversed_ssb[symbol][sc] = input_ssb[symbol][sc_counter1];
-                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere */
+                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere
                 sc_counter1++;
             }else{
 
                 output_reversed_ssb[symbol][sc] = input_ssb[symbol][sc_counter2];
-                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere */
+                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere
                 sc_counter2++;
             }
         }
     }
 
 
-    /** Divide each element by a facotr (here, it's 1000) to let the enhance the radio transmission */
+    /** Divide each element by a facotr (here, it's 1000) to let the enhance the radio transmission
 
 
     float dividing_factor = 200;
@@ -695,12 +719,13 @@ void phy::reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** o
 
     BOOST_LOG_TRIVIAL(info) << "function reverse_ssb done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
 }
+*/
 
 
 
-
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float> ** out_time_domain_channel, int fft_size, int sc_number) {
-/**
+
 * \fn ph_ben * ifft (std::complex<double> ** in_freq_domain_channel, std::complex<double> ** out_time_domain_channel, int fft_size, int sc_number)
 * \brief This function aims to perform ifft (Inverse Fast Fourier Transform) to transform a frequency_domain signal into a time_domain signal. .
 * \standard !! TS TO BE ADDED !!
@@ -708,33 +733,33 @@ void phy::ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float
 * \param[in] int fft_size. Size of the fft. In our case, it is 256.
 * \param[in] int sc_number. Number of sub_carrier per symbol in the input signal. In our case, it is 256.
 * \param[out] std::complex<double> ** out_time_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB time signal (4*256 symbols)
-*/
+
 
     std::ofstream in_file_ben;
     in_file_ben.open("in_freq_ssb_ben.txt");
 
-    /** Loop over all symbols */
+    /** Loop over all symbols
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
 
 
-        /** Generate complex arrays to store IFFT signals */
+        /** Generate complex arrays to store IFFT signals
 
         fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * fft_size);
         fftw_complex *signal_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * fft_size);
 
-        /** Generate plans */
+        /** Generate plans
         fftw_plan ifft_plan = fftw_plan_dft_1d(fft_size, signal_in, signal_out, FFTW_BACKWARD, FFTW_MEASURE);
 
 
 
-        /** Initialize arrays */
+        /** Initialize arrays
         for (int i = 0; i < fft_size; i++) {
             signal_in[i][0] = 0;
             signal_out[i][1] = 0;
         }
 
 
-        /** Filling signal_in with the input signal */
+        /** Filling signal_in with the input signal
 
         for (int sc = 0; sc < sc_number; sc++) {
             signal_in[sc][0] = in_freq_domain_channel[symbol][sc].real();
@@ -743,7 +768,7 @@ void phy::ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float
 
 
 
-        /** Filling a txt file in_freq_ssb_ben to verify with signal_in for only 1 symbol */
+        /** Filling a txt file in_freq_ssb_ben to verify with signal_in for only 1 symbol
 
         for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
             in_file_ben << in_freq_domain_channel[symbol][sc];
@@ -753,18 +778,18 @@ void phy::ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float
         in_file_ben.close();
 
 
-        /** Execute the IFFT */
+        /** Execute the IFFT
         fftw_execute(ifft_plan);
 
 
-        /** Filling output signal with signal_out*/
+        /** Filling output signal with signal_out
         for (int sc = 0; sc < sc_number; sc++) {
             out_time_domain_channel[symbol][sc] = {signal_out[sc][0], signal_out[sc][1]};
         }
     }
 
 
-    /** Filling a txt file to verify the ifft, for all symbols */
+    /** Filling a txt file to verify the ifft, for all symbols
     std::ofstream out_file_ben;
     out_file_ben.open("out_time_ssb_ben.txt");
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
@@ -776,7 +801,7 @@ void phy::ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float
     out_file_ben.close();
     BOOST_LOG_TRIVIAL(info) << "function ifft done. It will give "+std::to_string(free5GRAN::NUM_SYMBOLS_SSB)+ " * "+std::to_string(free5GRAN::SIZE_IFFT_SSB)+ " complex symbols";
 }
-
+*/
 
 void phy::compute_cp_lengths(int scs, int nfft, int is_extended_cp, int num_symb_per_subframes, int *cp_lengths, int *cum_sum_cp_lengths){
     /**
@@ -811,9 +836,9 @@ void phy::compute_cp_lengths(int scs, int nfft, int is_extended_cp, int num_symb
 
 
 
-
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::adding_cp(std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp){
-    /**
+
         * \fn phy * adding_cp (std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp)
         * \brief This function aims to add the CP (Cyclic Prefix) to the SSB signal (time_domain).
         * \standard !! TS TO BE ADDED !!
@@ -822,11 +847,11 @@ void phy::adding_cp(std::complex<float> ** input_channel, int num_symbols, int n
         * \param[in] int num_sc_in. Number of elements in each symbols. In our case, it is 256/
         * \param[in] int cp_lengths. Number of symbols the Cyclic Prefix should contain
         * \param[out] std::complex<float> ** output_channel_with_cp. In our case, it is the SSB with CP.
-       */
 
-    /** Loop over all symbols */
+
+    /** Loop over all symbols
     for (int symbol = 0; symbol < num_symbols; symbol++ ) {
-        /** Loop over all subcarriers */
+        /** Loop over all subcarriers
         for (int sc_out = 0; sc_out < num_sc_in + cp_lengths; sc_out++) {
             if (sc_out < cp_lengths) {
                 output_channel_with_cp[symbol][sc_out] = input_channel[symbol][num_sc_in - cp_lengths + sc_out];
@@ -837,7 +862,7 @@ void phy::adding_cp(std::complex<float> ** input_channel, int num_symbols, int n
     }
 
 
-    /** Filling a txt file to verify our ssb_time_cp */
+    /** Filling a txt file to verify our ssb_time_cp
     std::ofstream out_file_ben;
     out_file_ben.open("time_ssb_ben_cp.txt");
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
@@ -849,7 +874,7 @@ void phy::adding_cp(std::complex<float> ** input_channel, int num_symbols, int n
     out_file_ben.close();
     BOOST_LOG_TRIVIAL(info) << "function adding_cp done. It will give "+std::to_string(free5GRAN::NUM_SYMBOLS_SSB)+ " * "+std::to_string(free5GRAN::SIZE_IFFT_SSB + cp_lengths)+ " complex symbols";
 }
-
+*/
 
 
 
@@ -1065,28 +1090,30 @@ void phy::encode_bch(int * mib_bits, int pci, int N, int * rate_matched_bch){
 
 }
 
-void phy::encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2){
-    /**
-    * \fn ph_ben * encode_pbch_and_modulation (int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2)
-    * \brief This function aims to transform a rate_matched_bch bits sequence into a pbch symbols sequence.
-    * \details The 2 main steps are ENCODING and MODULATION.
-    * \standard TS38.211 V15.2.0 Section 7.3.3.1
-    * \standard TS38.211 V15.2.0 Section 5.1.3
-    *
-    * \param[in] rate_matched_bch. In our case, it is a 864 long bits sequence.
-    * \param[in] pci. Physical Cell ID.
-    * \param[in] gscn. Global Synchronization Channel Number.
-    * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
-    * \param[out] pbch_symbols2. The output symbols sequence. 432 symbols long in our case.
-    */
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB/PHYSICAL_CHANNEL. NEW NAME : PBCH_ENCODING
 
-    /** ENCODING -> Generating encoded_pbch (864 bits long in our case) from rate_matching_bch. TS38.211 V15.2.0 Section 7.3.3.1 */
+void phy::encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2){
+
+  * \fn ph_ben * encode_pbch_and_modulation (int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2)
+  * \brief This function aims to transform a rate_matched_bch bits sequence into a pbch symbols sequence.
+  * \details The 2 main steps are ENCODING and MODULATION.
+  * \standard TS38.211 V15.2.0 Section 7.3.3.1
+  * \standard TS38.211 V15.2.0 Section 5.1.3
+  *
+  * \param[in] rate_matched_bch. In our case, it is a 864 long bits sequence.
+  * \param[in] pci. Physical Cell ID.
+  * \param[in] gscn. Global Synchronization Channel Number.
+  * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
+  * \param[out] pbch_symbols2. The output symbols sequence. 432 symbols long in our case.
+  */
+
+    /** ENCODING -> Generating encoded_pbch (864 bits long in our case) from rate_matching_bch. TS38.211 V15.2.0 Section 7.3.3.1
     int *encoded_pbch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2];
     encode_pbch(gscn, pci, i_b_ssb, rate_matched_bch, encoded_pbch);
     if (display_variable){
         display_table(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "encoded_pbch from phy");}
 
-    /** MODULATION -> Generating pbch_symbols2 (432 symbols long in our case) from encoded_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
+    /** MODULATION -> Generating pbch_symbols2 (432 symbols long in our case) from encoded_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3
 
     //modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols2);
     free5GRAN::phy::signal_processing::modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols2);
@@ -1094,6 +1121,8 @@ void phy::encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, 
         display_complex_float(pbch_symbols2, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols2 from phy");}
 
 }
+*/
+
 
 void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain){
     /**
@@ -1111,7 +1140,8 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     /** DMRS -> Generating dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
     std::complex<float> *dmrs_symbols;
     dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
-    generate_dmrs_of_pbch(pci, i_b_ssb, dmrs_symbols);
+    free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
+    //generate_dmrs_of_pbch(pci, i_b_ssb, dmrs_symbols); TO BE DELETED
     if (display_variable){
         display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
                               "dmrs_symbols from phy");}
@@ -1164,7 +1194,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     ref[2] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
     ref[3] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
 
-    construct_reference_grid(free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
+    free5GRAN::phy::signal_processing::build_reference_grid(4,free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
 
     /** DISPLAY ref */
 
@@ -1192,7 +1222,8 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     SSB_signal_freq_domain[2] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
     SSB_signal_freq_domain[3] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
 
-    channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    //channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    free5GRAN::phy::signal_processing::channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
     if (display_variable){
         display_signal_float(SSB_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "SSB_signal_freq_domain from phy");}
 
@@ -1205,7 +1236,8 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     SSB_signal_extended[2] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
     SSB_signal_extended[3] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
 
-    increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, free5GRAN::SIZE_IFFT_SSB);
+    //increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, free5GRAN::SIZE_IFFT_SSB);
     if (display_variable){
         display_signal_float(SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended from phy");}
 
@@ -1217,13 +1249,15 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     SSB_signal_extended_reversed[2] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
     SSB_signal_extended_reversed[3] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
 
-    reverse_ssb(SSB_signal_extended, SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB);
+    //reverse_ssb(SSB_signal_extended, SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::reverse_ssb(SSB_signal_extended, SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB);
     if (display_variable){
         display_signal_float(SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended_reversed from phy");}
 
 
     /**IFFT --> SSB from frequency domain to time domain */
-    ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
+    //ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
     if (display_variable){
         display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from phy");}
 

@@ -16,6 +16,8 @@
 
 #include "libphy.h"
 #include "../../variables/common_variables/common_variables.h"
+#include "../../utils/sequence_generator/sequence_generator.h"
+#include "../../utils/common_utils/common_utils.h"
 #include <complex>
 #include <vector>
 #include <algorithm>
@@ -661,4 +663,473 @@ void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_l
 
     //BOOST_LOG_TRIVIAL(info) << "function modulation done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)+ " complex symbols";
 
+}
+
+
+void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci,
+                                                             int ***ref) {
+/**
+* \fn build_reference_grid (int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref)
+* \brief This function aims to construct a reference grid (called ref) to build the SSB signal.
+* \details
+ * In our case, there are 4 channels to build on the SSB signal:  PSS (127 symbols), SSS (127 symbols), PBCH (432 symbols) and DMRS (144 symbols).
+ * In our case, the SSB contains 4 symbols of each 240 subcarriers (sc).
+ * The goal here is to construct a reference grid that will allow, at the next step, to fill the SSB with teh 4 channels.
+ * If the value of ref[channel][symbol][sc] is 1, it means that a symbol of this channel has to be placed at SSB[symbol][sc].
+ *
+* \standard TS38.211 V15.2.0 Section 7.4.3
+* \param[in] num_channels. The number of channels as input of this function. In our case, this value is 4.
+* \param[in] num_sc_ssb. The number of sub-carrier (sc) in the SSB. In our case, this value is 240.
+* \param[in] num_symbols_ssb. The number of symbols in the SSB. In our case, this value is 4.
+ *\param[in] pci. Physical Cell Id. It is used to calculate DMRS index.
+* \param[out] ref. A 3 dimensions table of int (0 or 1). ref[channel][symbol][subcarrier].
+ *             In our case,     ref[0] -> index of PSS channel
+ *                              ref[1] -> index of SSS channel
+ *                              ref[2] -> index of PBCH channel
+ *                              ref[3] -> index of DMRS channel
+ *
+ */
+
+    /**Loop over the channels */
+    for (int channel = 0; channel < num_channels; channel++) {
+        ref[channel] = new int *[num_symbols_ssb];
+        /** Loop over the symbols */
+        for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
+            /**Initialize the 3 dimensions table ref */
+            ref[channel][symbol] = new int[num_sc_ssb];
+        }
+    }
+
+    /**Loop over the symbols */
+    for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
+        /** Loop over the subcarriers */
+        for (int sc = 0; sc < num_sc_ssb; sc++) {
+
+            /** Filling the ref table for each symbol and for each channel, according to TS38.211 V15.2.0 Section 7.4.3 */
+            if (symbol == 0) {
+                if (sc >= free5GRAN::INTERVAL_SSB_PSS[0] && sc <= free5GRAN::INTERVAL_SSB_PSS[1]) {
+                    ref[0][symbol][sc] = 1;
+                } else {
+                    ref[0][symbol][sc] = 0;
+                }
+                ref[1][symbol][sc] = 0;
+                ref[2][symbol][sc] = 0;
+                ref[3][symbol][sc] = 0;
+            }
+
+            if (symbol == 1) {
+                ref[0][symbol][sc] = 0;
+                ref[1][symbol][sc] = 0;
+                if (sc % 4 != pci % 4) {
+                    ref[2][symbol][sc] = 1;
+                    ref[3][symbol][sc] = 0;
+                } else {
+                    /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
+                    ref[2][symbol][sc] = 0;
+                    ref[3][symbol][sc] = 1;
+                }
+            }
+
+            if (symbol == 2) {
+                ref[0][symbol][sc] = 0;
+                if (sc >= free5GRAN::INTERVAL_SSB_SSS[0] && sc <= free5GRAN::INTERVAL_SSB_SSS[1]) {
+                    ref[1][symbol][sc] = 1;
+                    ref[2][symbol][sc] = 0;
+                    ref[3][symbol][sc] = 0;
+                } else {
+                    ref[1][symbol][sc] = 0;
+                }
+                if (sc < free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[0] || sc > free5GRAN::INTERVAL_SSB_NO_PBCH_DMRS[1]) {
+                    if (sc % 4 != pci % 4) {
+                        ref[2][symbol][sc] = 1;
+                        ref[3][symbol][sc] = 0;
+                    } else {
+                        /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
+                        ref[2][symbol][sc] = 0;
+                        ref[3][symbol][sc] = 1;
+                    }
+                } else {
+                    ref[2][symbol][sc] = 0;
+                    ref[3][symbol][sc] = 0;
+                }
+            }
+
+            if (symbol == 3) {
+                ref[0][symbol][sc] = 0;
+                ref[1][symbol][sc] = 0;
+                if (sc % 4 != pci % 4) {
+                    ref[2][symbol][sc] = 1;
+                    ref[3][symbol][sc] = 0;
+                } else {
+                    /** A DMRS symbol is placed every 4 symbols, beginning at pci%4 */
+                    ref[2][symbol][sc] = 0;
+                    ref[3][symbol][sc] = 1;
+                }
+            }
+        }
+    }
+    //BOOST_LOG_TRIVIAL(info) << "function build_reference_grid done";
+
+}
+
+
+
+void free5GRAN::phy::signal_processing::channel_mapper(std::complex<float> **input_channels, int ***ref,
+                                                       std::complex<float> **output_channels, int num_channels,
+                                                       int num_symbols, int num_sc) {
+    /**
+   * \fn channel_mapper (std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc)
+   * \brief This function aims to fill the SSB signal with the 4 channels (PSS, SSS, PBCH and DMRS) using the ref table constructed before.
+   * \standard TS38.211 V15.2.0 Section 7.4.3
+   *
+   * \param[in] std::complex<float> **input_channels. 2 dimensions table of complexes containing our input channels (in our case: PSS, SSS, PBCH and DMRS).
+   * \param[in] int ***ref. 3 dimensions table of int (1 or 0) that indicates the indexes of our channels.
+   * \param[in] int num_channels. Number of input channels. In our case, it is 4.
+   * \param[in] int num_symbols. Number of symbols on the output_channel (SSB). In our case, it is 4.
+   * \param[in] int num_sc. Number of subcarrier (sc) on the output_channel (SSB). In our case, it is 240.
+   * \param[out] std::complex<float> ** output_channels. 2 dimensions table of complexes. In our case, it is the SSB signal, composed of 4 symbols of each 240 subcarriers.
+   */
+
+
+    /** Initialize channel_counter for each channel */
+    int *channel_counter = new int[num_channels];
+    for (int channel =0; channel < num_channels; channel++){
+        channel_counter[channel] = 0;
+    }
+
+    /** Loop over all channels (4 in our case) */
+    for (int channel =0; channel < num_channels; channel ++){
+        /** Loop over all symbols (4 in our case) */
+        for (int symbol = 0; symbol < num_symbols; symbol ++){
+            /** Loop over all subcarrier (240 in our case) */
+            for (int sc = 0; sc < num_sc; sc++){
+
+                if (ref[channel][symbol][sc] == 1){
+                    output_channels[symbol][sc] = input_channels[channel][channel_counter[channel]];
+                    channel_counter[channel] ++;
+                }
+            }
+        }
+    }
+    //BOOST_LOG_TRIVIAL(info) << "function channel_mapper done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
+}
+
+
+
+void free5GRAN::phy::signal_processing::increase_size_ssb(std::complex<float> **input_channel,
+                                                          std::complex<float> **output_channel, int num_symbols,
+                                                          int num_sc_input, int num_sc_output) {
+/**
+* \fn increase_size_ssb (std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output)
+* \brief This function aims to increase the size of a signal, to prepare it for an IFFT (Inverse Fast Fourier Transform).
+* \details
+ * - In our case, 8 zero values are added at the beginning and at the end of the complex signal, making it 256 symbols long.
+ * - As 256 is a power of 2, it will allow to make an ifft, taking this value as the fft size.
+* \standard !! TS TO BE ADDED !!
+* \param[in] std::complex<float> **input_channels. 2 dimensions table of complexes. In our case, it is the SSB signal (4*240 symbols)
+* \param[in] int num_symbols. Number of symbols on the input and output channel. In our case, it is 4.
+* \param[in] int num_sc_input. Number of subcarrier (sc) on the input_channel. In our case, it is 240.
+* \param[in] int num_sc_output. Number of subcarrier (sc) on the output_channel. In our case, it is 256.
+* \param[out] std::complex<float> ** output_channel. 2 dimensions table of complexes. In our case, it is the SSB signal extended (4*256 symbols)
+*/
+
+    /** Loop over all symbols */
+    for (int symbol = 0; symbol < num_symbols; symbol++){
+        int sc_in_counter = 0;
+        /** Loop over all subcarriers of output signal */
+        for (int sc_out = 0; sc_out < num_sc_output; sc_out++){
+            if (sc_out < ((num_sc_output - num_sc_input)/2) || sc_out > num_sc_output - ((num_sc_output - num_sc_input)/2)){
+                output_channel[symbol][sc_out] = {0,0};
+            }else{
+                output_channel[symbol][sc_out] = input_channel[symbol][sc_in_counter];
+                sc_in_counter++;
+            }
+        }
+    }
+    //BOOST_LOG_TRIVIAL(info) << "function increase_size_ssb done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc_output)+ " complex symbols";
+}
+
+
+
+void free5GRAN::phy::signal_processing::reverse_ssb(std::complex<float> **input_ssb,
+                                                    std::complex<float> **output_reversed_ssb, int num_symbols,
+                                                    int num_sc) {
+/**
+* \fn reverse_ssb (std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc)
+* \brief This function aims to inverse the 2 half of the SSB signal. This is done to put the frequency values at the right place, before making ifft.
+* \param[in] std::complex<float> **input_ssb. 2 dimensions table of complexes. In our case, it is the SSB signal extended (4*256 symbols)
+* \param[in] int num_symbols. Number of symbols on the input and output channel. In our case, it is 4.
+* \param[in] int num_sc. Number of subcarriers (sc) on the input (and output) channel. In our case, it is 256.
+* \param[out] std::complex<float> ** output_reversed_ssb. 2 dimensions table of complexes. In our case, it is the SSB signal extended and reversed(4*256 symbols)
+*/
+
+    /** Loop over all symbols */
+    for (int symbol = 0; symbol < num_symbols; symbol++){
+        int sc_counter1 = num_sc/2;
+        int sc_counter2 = 0;
+        /** Loop over all subcarriers of output signal */
+        for (int sc = 0; sc < num_sc ; sc++){
+            if (sc < num_sc/2){
+
+                output_reversed_ssb[symbol][sc] = input_ssb[symbol][sc_counter1];
+                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere */
+                sc_counter1++;
+            }else{
+
+                output_reversed_ssb[symbol][sc] = input_ssb[symbol][sc_counter2];
+                //output_reversed_ssb[symbol][sc] = {1,1}; /** This line is here to make a test signal with 1 everywhere */
+                sc_counter2++;
+            }
+        }
+    }
+
+
+    /** Divide each element by a facotr (here, it's 1000) to let the enhance the radio transmission */
+
+
+    float dividing_factor = 200;
+    for (int symbol = 0; symbol < num_symbols; symbol ++){
+        for (int sc = 0; sc < num_sc; sc++){
+            output_reversed_ssb[symbol][sc] = {(output_reversed_ssb[symbol][sc].real())/dividing_factor, (output_reversed_ssb[symbol][sc].imag())/dividing_factor};
+        }
+    }
+
+
+    //BOOST_LOG_TRIVIAL(info) << "function reverse_ssb done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
+}
+
+
+
+void free5GRAN::phy::signal_processing::ifft(std::complex<float> **in_freq_domain_channel,
+                                             std::complex<float> **out_time_domain_channel, int fft_size,
+                                             int sc_number) {
+/**
+* \fn ifft (std::complex<double> ** in_freq_domain_channel, std::complex<double> ** out_time_domain_channel, int fft_size, int sc_number)
+* \brief This function aims to perform ifft (Inverse Fast Fourier Transform) to transform a frequency_domain signal into a time_domain signal. .
+* \standard !! TS TO BE ADDED !!
+* \param[in] std::complex<double> ** in_freq_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB frequency signal extended (4*256 symbols)
+* \param[in] int fft_size. Size of the fft. In our case, it is 256.
+* \param[in] int sc_number. Number of sub_carrier per symbol in the input signal. In our case, it is 256.
+* \param[out] std::complex<double> ** out_time_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB time signal (4*256 symbols)
+*/
+
+
+    /** Loop over all symbols */
+    for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
+
+
+        /** Generate complex arrays to store IFFT signals */
+
+        fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * fft_size);
+        fftw_complex *signal_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * fft_size);
+
+        /** Generate plans */
+        fftw_plan ifft_plan = fftw_plan_dft_1d(fft_size, signal_in, signal_out, FFTW_BACKWARD, FFTW_MEASURE);
+
+
+
+        /** Initialize arrays */
+        for (int i = 0; i < fft_size; i++) {
+            signal_in[i][0] = 0;
+            signal_out[i][1] = 0;
+        }
+
+
+        /** Filling signal_in with the input signal */
+
+        for (int sc = 0; sc < sc_number; sc++) {
+            signal_in[sc][0] = in_freq_domain_channel[symbol][sc].real();
+            signal_in[sc][1] = in_freq_domain_channel[symbol][sc].imag();
+        }
+
+        /** Execute the IFFT */
+        fftw_execute(ifft_plan);
+
+
+        /** Filling output signal with signal_out*/
+        for (int sc = 0; sc < sc_number; sc++) {
+            out_time_domain_channel[symbol][sc] = {signal_out[sc][0], signal_out[sc][1]};
+        }
+    }
+
+    //BOOST_LOG_TRIVIAL(info) << "function ifft done. It will give "+std::to_string(free5GRAN::NUM_SYMBOLS_SSB)+ " * "+std::to_string(free5GRAN::SIZE_IFFT_SSB)+ " complex symbols";
+}
+
+
+
+void free5GRAN::phy::signal_processing::adding_cp(std::complex<float> **input_channel, int num_symbols, int num_sc_in,
+                                                  int cp_lengths, std::complex<float> **output_channel_with_cp) {
+    /**
+          * \fn phy * adding_cp (std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp)
+          * \brief This function aims to add the CP (Cyclic Prefix) to the SSB signal (time_domain).
+          * \standard !! TS TO BE ADDED !!
+          * \param[in] std::complex<float> ** input_channel. In our Case, it is the SSB (time domain) (4*256 symbols)
+          * \param[in] int num_symbols. Number of symbol in the input_channel. In our case it's 4.
+          * \param[in] int num_sc_in. Number of elements in each symbols. In our case, it is 256/
+          * \param[in] int cp_lengths. Number of symbols the Cyclic Prefix should contain
+          * \param[out] std::complex<float> ** output_channel_with_cp. In our case, it is the SSB with CP.
+         */
+
+    /** Loop over all symbols */
+    for (int symbol = 0; symbol < num_symbols; symbol++ ) {
+        /** Loop over all subcarriers */
+        for (int sc_out = 0; sc_out < num_sc_in + cp_lengths; sc_out++) {
+            if (sc_out < cp_lengths) {
+                output_channel_with_cp[symbol][sc_out] = input_channel[symbol][num_sc_in - cp_lengths + sc_out];
+            }else{
+                output_channel_with_cp[symbol][sc_out] = input_channel[symbol][sc_out - cp_lengths];
+            }
+        }
+    }
+
+    //BOOST_LOG_TRIVIAL(info) << "function adding_cp done. It will give "+std::to_string(free5GRAN::NUM_SYMBOLS_SSB)+ " * "+std::to_string(free5GRAN::SIZE_IFFT_SSB + cp_lengths)+ " complex symbols";
+}
+
+
+
+void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols2, int pci,
+                                                                 int i_b_ssb, free5GRAN::mib mib_object,
+                                                                 std::complex<float> **SSB_signal_time_domain) {
+/**
+     * \fn ph_ben * generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
+     * \brief This function aims to generate from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
+     * \standard TS38.211 V15.2.0 Section 7.4
+     * \param[in] pbch_symbols2. In our case, it is a 432 symbols sequence.
+     * \param[in] pci. Physical Cell ID.
+     * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
+     * \param[in] mib_object. The Master Information Blovk.
+     * \param[out] SSB_signal_time_domain. In our case, it is a signal composed of 4*256 elements.
+     */
+
+bool display_variable = true;
+
+    /** DMRS -> Generating dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
+    std::complex<float> *dmrs_symbols;
+    dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
+    //generate_dmrs_of_pbch(pci, i_b_ssb, dmrs_symbols); TO BE DELETED
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
+                              "dmrs_symbols from phy");}
+
+
+    /** TO BE DELETED */
+    /** N_ID_1 & N_ID_2 -> Computing n_id_1 and n_id_2 from the pci. TS38.211 V15.2.0 Section 7.4.2.1 */
+    /** int * n_id = new int[2];
+    n_id = convert_pci_into_nid2_and_nid1(pci);
+    int n_id_1 = n_id[0];
+    int n_id_2 = n_id[1]; */
+
+    int n_id_1, n_id_2;
+    n_id_2 = pci % 3;
+    n_id_1 = (pci - n_id_2)/3;
+    if (display_variable) {std::cout<<"n_id_1 = "<< n_id_1 <<"; n_id_2 = "<< n_id_2 <<std::endl;}
+
+    /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
+    int * pss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(pss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "pss_sequence_symbols");}
+
+    /** CONVERTING PSS -> Converting PSS sequence element from int to complex<float> (Imaginary part = 0) */
+    std::complex<float> *pss_complex_symbols;
+    pss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    for (int i=0; i<free5GRAN::SIZE_PSS_SSS_SIGNAL; i++){
+        pss_complex_symbols[i] = {static_cast<float>(pss_sequence_symbols[i]), 0};
+    }
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_complex_float(pss_complex_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "pss_complex_symbols");}
+
+
+    /** SSS -> Computing sss_sequence_symbols (127 symbols long in our case) from n_id_1. TS38.211 V15.2.0 Section 7.4.2.3.1 */
+    int * sss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_table(sss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "sss_sequence_symbols");}
+
+    /** CONVERTING SSS -> Converting SSS sequence element from int to complex<float> (Imaginary part = 0) */
+    std::complex<float> *sss_complex_symbols;
+    sss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    for (int i=0; i<free5GRAN::SIZE_PSS_SSS_SIGNAL; i++){
+        sss_complex_symbols[i] = {static_cast<float>(sss_sequence_symbols[i]), 0};
+    }
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_complex_float(sss_complex_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "sss_complex_symbols");}
+
+
+
+    /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
+    int *** ref;
+    ref = new int **[4]; /** There are 4 channels */
+    ref[0] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
+    ref[1] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
+    ref[2] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
+    ref[3] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
+
+    free5GRAN::phy::signal_processing::build_reference_grid(4,free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
+
+    /** DISPLAY ref */
+
+    if (display_variable) {
+        for (int channel = 0; channel < 4; channel++) {
+            std::cout << "" << std::endl;
+            for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
+                std::cout << "" << std::endl;
+                std::cout << "ref channel " << channel << " symbol " << symbol << " = " << std::ends;
+                for (int sc = 0; sc < free5GRAN::NUM_SC_SSB; sc++) {
+                    if (sc % 50 == 0) {
+                        std::cout << " ____ " << std::ends;
+                    }
+                    std::cout << ref[channel][symbol][sc] << " " << std::ends;
+                }
+            }
+        }
+    }
+
+    /** CHANNEL MAPPING --> Fill the SSB with PSS, SSS, PBCH and DMRS, using ref and according to TS38.211 V15.2.0 Section 7.4.3 */
+    std::complex<float> ** SSB_signal_freq_domain;
+    SSB_signal_freq_domain = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
+    SSB_signal_freq_domain[0] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
+    SSB_signal_freq_domain[1] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
+    SSB_signal_freq_domain[2] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
+    SSB_signal_freq_domain[3] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
+
+    //channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    free5GRAN::phy::signal_processing::channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_signal_float(SSB_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "SSB_signal_freq_domain from phy");}
+
+
+    /** SSB FROM 240 TO 256 SYMBOLS */
+    std::complex<float> ** SSB_signal_extended;
+    SSB_signal_extended = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
+    SSB_signal_extended[0] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended[1] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended[2] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended[3] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+
+    //increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, free5GRAN::SIZE_IFFT_SSB);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_signal_float(SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended from phy");}
+
+    /** REVERSE SSB */
+    std::complex<float> ** SSB_signal_extended_reversed;
+    SSB_signal_extended_reversed = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
+    SSB_signal_extended_reversed[0] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended_reversed[1] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended_reversed[2] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+    SSB_signal_extended_reversed[3] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
+
+    //reverse_ssb(SSB_signal_extended, SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::reverse_ssb(SSB_signal_extended, SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_signal_float(SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended_reversed from phy");}
+
+
+    /**IFFT --> SSB from frequency domain to time domain */
+    //ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
+    if (display_variable){
+        free5GRAN::utils::common_utils::display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from phy");}
 }
