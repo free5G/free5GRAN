@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
 
     bool display_variables = true; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;

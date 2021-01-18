@@ -420,10 +420,10 @@ void phy::encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int
     BOOST_LOG_TRIVIAL(info) << "function encode_pbch done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
 }
 
-
+/** TO BE DELETED. Now, this function is in the lib
 void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols){
 
-    /**
+
 * \fn ph_ben * modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols)
 * \brief This function aims to convert a bits sequence into IQ symbols, using BPSK (Binary Phase Shit Keying) or QPSK (Quadrature Phase Shift Keying)
 * \details
@@ -438,7 +438,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 
 
     /**  BPSK modulation (modulation_scheme == 0)
-* For the BPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.2 */
+* For the BPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.2
     if (modulation_scheme == 0) {
         BOOST_LOG_TRIVIAL(info) << "Modulation scheme = BPSK";
         for (int i = 0; i < bit_sequence_length ; i++) {
@@ -449,7 +449,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
     }
 
     /**  QPSK modulation (modulation_scheme == 1)
-    * For the QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3 */
+    * For the QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3
 
     if(modulation_scheme == 1){
         BOOST_LOG_TRIVIAL(info) << "Modulation scheme = QPSK";
@@ -460,7 +460,7 @@ void phy::modulation(int *bits, int bit_sequence_length, int modulation_scheme, 
 
     BOOST_LOG_TRIVIAL(info) << "function modulation done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)+ " complex symbols";
 }
-
+*/
 
 void phy::generate_dmrs_of_pbch(int pci, int i_b_ssb, std::complex<float> *dmrs_symbols){
 
@@ -1088,7 +1088,8 @@ void phy::encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, 
 
     /** MODULATION -> Generating pbch_symbols2 (432 symbols long in our case) from encoded_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
 
-    modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols2);
+    //modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols2);
+    free5GRAN::phy::signal_processing::modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols2);
     if (display_variable){
         display_complex_float(pbch_symbols2, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols2 from phy");}
 

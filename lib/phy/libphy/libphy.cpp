@@ -615,3 +615,50 @@ void free5GRAN::phy::signal_processing::get_candidates_frames_indexes(vector<vec
         frame_numbers[1] = sfn + 2;
     }
 }
+
+
+
+
+
+/** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
+
+void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_length, int modulation_scheme,
+                                                   std::complex<float> *pbch_symbols) {
+/**
+* \fn modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols)
+* \brief This function aims to convert a bits sequence into IQ symbols, using BPSK (Binary Phase Shit Keying) or QPSK (Quadrature Phase Shift Keying)
+* \details
+    * For the BPSK (if modulation_scheme == 0): for each bit, the corresponding symbol will be 1 or -1
+    * For the QPSK (if modulation_scheme == 1): for each pair of bits, the corresponding symbols will be +/- 1/sqrt(2) +/- i 1/sqrt(2)
+* \standard TS38.211 V15.2.0 Section 5.1
+* \param[in] *bits The input sequence of bits.
+* \param[in] bit_sequence_length number of bits.
+* \param[in] modulation_scheme. 0 if BPSK, 1 if QPSK.
+* \param[out] pbch_symbols the output sequence of IQ symbols.
+*/
+
+
+    /**  BPSK modulation (modulation_scheme == 0)
+* For the BPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.2 */
+    if (modulation_scheme == 0) {
+        //BOOST_LOG_TRIVIAL(info) << "Modulation scheme = BPSK";
+        for (int i = 0; i < bit_sequence_length ; i++) {
+
+            pbch_symbols[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2) * (1 - 2*bits[2*i]))};
+
+        }
+    }
+
+    /**  QPSK modulation (modulation_scheme == 1)
+    * For the QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3 */
+
+    if(modulation_scheme == 1){
+        //BOOST_LOG_TRIVIAL(info) << "Modulation scheme = QPSK";
+        for (int i=0; i < (bit_sequence_length/2); i++) {
+            pbch_symbols[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2)) * (1 - 2*bits[2*i + 1]) };
+        }
+    }
+
+    //BOOST_LOG_TRIVIAL(info) << "function modulation done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)+ " complex symbols";
+
+}
