@@ -1311,7 +1311,7 @@ void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_
 
 void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int *output_encoded_bits) {
     /**
-* \fn ph_ben * polar_encoding (int N, int* input_bits, int* output_encoded_bits)
+* \fn polar_encoding (int N, int* input_bits, int* output_encoded_bits)
 * \brief This function aims to transform the 56 bits sequence input_bits into a 512 bits sequence output_encoded_bits.
 * \details
  * First, a pi_sequence is generated (56 bits long in our case).

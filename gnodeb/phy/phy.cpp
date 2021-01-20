@@ -16,14 +16,9 @@
  */
 
 #include "phy.h"
-
 #include <iostream>
-
-
 #include "../../lib/utils/sequence_generator/sequence_generator.h"
-#include "../../lib/variables/common_matrices/common_matrices.h"
 #include "../../lib/phy/libphy/libphy.h"
-
 #include <fftw3.h>
 #include <complex>
 #include <vector>
@@ -32,9 +27,7 @@
 #include "../../lib/utils/common_utils/common_utils.h"
 #include "../../lib/phy/libphy/libphy.h"
 #include "../../lib/phy/transport_channel/transport_channel.h"
-
 #include_next <math.h>
-#include <fstream>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
