@@ -73,7 +73,7 @@ namespace free5GRAN {
 
             void adding_cp(std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp);
 
-            void generate_time_domain_ssb(std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain);
+            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain);
         }
     }
 }

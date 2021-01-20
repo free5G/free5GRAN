@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 
     bool display_variables = true; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
     libconfig::Config cfg_gNodeB;
 
     try {
-        /**
-         * We note that the log file is correctly created only when we don't send anything on USRP */
+
+         /** We note that the log file is correctly created only when we don't send anything on USRP */
 
         if(run_with_usrp){
             cfg_gNodeB.readFile (argv[1]);   /** Use this line for CLI launch, command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-        /** Return an error if the config file is not found */
+    /** Return an error if the config file is not found */
     catch (libconfig::FileIOException &e){
         std::cout<<"FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
         return (EXIT_FAILURE);
     }
 
-        /** Return an error if the config file contains parse error */
+    /** Return an error if the config file contains parse error */
     catch (libconfig::ParseException &pe){
         std::cout << "Parse error at " <<pe.getFile() << " : " <<pe.getLine() << " - "<<pe.getError()<<std::endl;
         return(EXIT_FAILURE);
@@ -149,7 +149,6 @@ int main(int argc, char *argv[]) {
         const libconfig::Setting &usrp_info = root["usrp_info"];
 
 
-
         /** If needed, calculate frequency from gscn */
         if (cell_info.lookupValue("frequency", frequency) || cell_info.lookupValue("gscn", gscn)) {
             /** To be verified, I'm not sure */
@@ -163,7 +162,6 @@ int main(int argc, char *argv[]) {
         }
 
         /** Fill the mib_object with the values contained in the config file */
-
         mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
         mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
         mib_object.k_ssb = mib_info.lookup("k_ssb"); /** stored on MIB on 5 bits. It indicates the number of Ressource Block between point A and SSB */
@@ -172,12 +170,10 @@ int main(int argc, char *argv[]) {
         mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
         mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
 
-
         /** Fill the cell_info with the values contained in the config file */
         pci = cell_info.lookup("pci"); /** (Physical Cell Id). Should be between 0 and 1007 */
         i_b_ssb = cell_info.lookup("i_b_ssb"); /** i_b_ssb is the SSB index. Should be between 0 and 7. */
         ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
-
 
         /** Fill the usrp_info with the values contained in the config file  */
         sampling_rate = usrp_info.lookup("sampling_rate");
@@ -193,7 +189,6 @@ int main(int argc, char *argv[]) {
         std::string ref2 = usrp_info.lookup("ref2");
         usrp_info_object.ref2 = ref2;
 
-
         usrp_info_object.sample_rate = usrp_info.lookup("sample_rate");
 
         usrp_info_object.sampling_rate = usrp_info.lookup("sampling_rate");
@@ -203,8 +198,6 @@ int main(int argc, char *argv[]) {
         usrp_info_object.gain = usrp_info.lookup("gain");
 
         usrp_info_object.bandwidth = usrp_info.lookup("bandwidth");
-
-
     }   else {
         std::cout << "Please enter a function name in config file"<< std::endl;
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
@@ -214,21 +207,22 @@ int main(int argc, char *argv[]) {
     if (display_variables) {
         /** Display MIB infos and put them in log file*/
         std::cout << "sfn = " << mib_object.sfn << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "sfn = " + std::to_string(mib_object.sfn);
         std::cout << "pddchc_config = " << mib_object.pdcch_config << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "pddchc_config = " + std::to_string(mib_object.pdcch_config);
         std::cout << "k_ssb = " << mib_object.k_ssb << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "k_ssb = " + std::to_string(mib_object.k_ssb);
         std::cout << "scs = " << mib_object.scs << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "scs = " + std::to_string(mib_object.scs);
         std::cout << "dmrs_type_a_position = " << mib_object.dmrs_type_a_position << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "dmrs_type_a_position = " + std::to_string(mib_object.dmrs_type_a_position);
         std::cout << "intra_freq_reselection = " << mib_object.intra_freq_reselection << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "intra_freq_reselection = " + std::to_string(mib_object.intra_freq_reselection);
         std::cout << "cell_barred = " << mib_object.cell_barred << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "cell_barred = " + std::to_string(mib_object.cell_barred);
         std::cout << "" << std::endl;
     }
+
+    BOOST_LOG_TRIVIAL(info) << "sfn = " + std::to_string(mib_object.sfn);
+    BOOST_LOG_TRIVIAL(info) << "pddchc_config = " + std::to_string(mib_object.pdcch_config);
+    BOOST_LOG_TRIVIAL(info) << "k_ssb = " + std::to_string(mib_object.k_ssb);
+    BOOST_LOG_TRIVIAL(info) << "scs = " + std::to_string(mib_object.scs);
+    BOOST_LOG_TRIVIAL(info) << "dmrs_type_a_position = " + std::to_string(mib_object.dmrs_type_a_position);
+    BOOST_LOG_TRIVIAL(info) << "intra_freq_reselection = " + std::to_string(mib_object.intra_freq_reselection);
+    BOOST_LOG_TRIVIAL(info) << "cell_barred = " + std::to_string(mib_object.cell_barred);
 
     /** Display the cell_info and put them in log file */
 
@@ -247,8 +241,9 @@ int main(int argc, char *argv[]) {
 
     /** Generate N which is the length of BCH payload after polar encode */
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, free5GRAN::SIZE_PBCH_POLAR_DECODED, 9);
-    BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
     int N = pow(2, n);
+
+    BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
     BOOST_LOG_TRIVIAL(info) << "N (length of BCH payload after polar encode) = " + std::to_string(N);
 
 
@@ -256,35 +251,35 @@ int main(int argc, char *argv[]) {
 
     /** MIB GENERATION -> Generating mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
-    //phy_variable.encode_mib(mib_object, mib_bits);
     free5GRAN::utils::common_utils::encode_mib(mib_object, mib_bits);
     BOOST_LOG_TRIVIAL(info) << "MIB GENERATION";
 
     if(display_variables){
-        free5GRAN::utils::common_utils::display_table(mib_bits, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits from main");}
+        free5GRAN::utils::common_utils::display_table(mib_bits, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits from main");
+    }
 
 
     /** ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
     int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
-    //phy_variable.encode_bch(mib_bits, pci, N, rate_matched_bch); //TO BE DELETED
     free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch);
 
-            if (display_variables) {
-                free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,
+    if (display_variables) {
+        free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,
                                                               "rate_matched_bch from main");
             }
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH";
 
-    /** ENCODE PBCH -> Generate pbch_symbols2 (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
-    std::complex<float> *pbch_symbols2;
-    pbch_symbols2 = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
-    //phy_variable.encode_pbch_and_modulation(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols2); //TO BE DELETED
-    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols2);
+    /** ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
+    std::complex<float> *pbch_symbols;
+    pbch_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
+    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH";
 
-    if (display_variables){free5GRAN::utils::common_utils::display_complex_float(pbch_symbols2, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols2 from main");}
+    if (display_variables){
+        free5GRAN::utils::common_utils::display_complex_float(pbch_symbols, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols from main");
+    }
 
-    /** GENERATE SSB -> Generate SSB_signal_time_domain (4 * 256 symbols in our case) from pbch_symbols2. TS38.211 V15.2.0 Section 7.4 */
+    /** GENERATE SSB -> Generate SSB_signal_time_domain (4 * 256 symbols in our case) from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */
     std::complex<float> **SSB_signal_time_domain;
     SSB_signal_time_domain = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     SSB_signal_time_domain[0] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
@@ -292,18 +287,23 @@ int main(int argc, char *argv[]) {
     SSB_signal_time_domain[2] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
     SSB_signal_time_domain[3] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
 
-    //phy_variable.generate_SSB_time(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
-    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB";
 
 
     /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
     int cp_lengths[28];
     int cum_sum_cp_lengths[28];
-    phy_variable.compute_cp_lengths(mib_object.scs, free5GRAN::SIZE_IFFT_SSB, 0, 28, &cp_lengths[0],
-                                        &cum_sum_cp_lengths[0]);
+
+    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs, free5GRAN::SIZE_IFFT_SSB, 0, 28, &cp_lengths[0],
+                                                          &cum_sum_cp_lengths[0]);
+
+    if (display_variables){
+        std::cout<<"cp_length[1] = "<<cp_lengths[1]<<std::endl;
+        std::cout << "" << std::endl;
+    }
+
     BOOST_LOG_TRIVIAL(info) << "COMPUTE CP LENGTH";
-    std::cout << "" << std::endl;
     BOOST_LOG_TRIVIAL(info) << "cp_lengths[1] (which will be used) = "+std::to_string(cp_lengths[1]);
 
     /** ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED */
@@ -314,7 +314,6 @@ int main(int argc, char *argv[]) {
     SSB_signal_time_domain_CP[2] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
     SSB_signal_time_domain_CP[3] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
 
-    //phy_variable.adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, cp_lengths[1], (std::complex<float> **) SSB_signal_time_domain_CP);
 
     free5GRAN::phy::signal_processing::adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, cp_lengths[1], (std::complex<float> **) SSB_signal_time_domain_CP);
 
@@ -327,10 +326,7 @@ int main(int argc, char *argv[]) {
 
 
 
-
     /** TEST WITH FULL POWER. Generate a test signal with max power everywhere to test, via Matlab spectrogram, the emission with USRP */
-
-
     std::complex<float> **Test_signal_full_power;
     Test_signal_full_power = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     Test_signal_full_power[0] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
@@ -340,7 +336,6 @@ int main(int argc, char *argv[]) {
 
     for (int symbol = 0; symbol<4; symbol++){
         for (int sample = 0; sample < free5GRAN::SIZE_IFFT_SSB; sample++){
-            //Test_signal_full_power[symbol][sample] = (30);
             Test_signal_full_power[symbol][sample] = {100,30};
         }
     }
@@ -348,20 +343,19 @@ int main(int argc, char *argv[]) {
     if (display_variables){
         for (int symbol = 0; symbol<4; symbol++){
             free5GRAN::utils::common_utils::display_complex_float(Test_signal_full_power[symbol], free5GRAN::SIZE_IFFT_SSB + cp_lengths[1],"Test_signal_full_power");
-        }}
+        }
+    }
 
 
     //-----------------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------
 
     if (display_variables) {
-        std::cout
-                << " //-----------------------------------------------------------------------------------------------------------"
-                << std::endl;
-        std::cout
-                << " //-----------------------------------------------------------------------------------------------------------"
-                << std::endl;
+        std::cout<< " //-----------------------------------------------------------------------------------------------------------"<< std::endl;
+        std::cout<< " //-----------------------------------------------------------------------------------------------------------"<< std::endl;
     }
+
+
 
     /** FROM HERE, THE CODE AIMS TO DECODE INFORMATION AND NOT TO ENCODE IT ANYMORE (AYMERIC's CODE) */
     /** IT IS ONLY HERE TO VERIFY THAT WHAT WE ENCODE IS POSSIBLE TO BE DECODED CORRECTLY */
@@ -385,7 +379,7 @@ int main(int argc, char *argv[]) {
 
 
     int *bch_bits3 = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
-    //bch_bits3 = phy_variable.AY_decode_pbch(pci, vector_pbch_symbols2);
+    //bch_bits3 = phy_variable.AY_decode_pbch(pci, vector_pbch_symbols);
     bch_bits3 = phy_variable.AY_decode_pbch(pci, AY_vector_pbch_symbol);
 
     if (display_variables){
@@ -415,33 +409,33 @@ int main(int argc, char *argv[]) {
     //----------------------------------------------------------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    /** FROM HERE, THE CODE AIMS TO SEND THE SIGNAL GENERATED VIA USRP B210 */
+
+
+    /** SENDING SIGNAL TO USRP  */
 
     /** Filling a signal SSB_signal_time_domain_CP_5ms with some 0 values
-     *      to obtain a transmission of exactly ssb_period for a sampling rate at 7.68 Mhz
-     */
+     *      to obtain a transmission of exactly ssb_period for a sampling rate at 7.68 Mhz */
+
+
+    int Num_samples_per_symbol_SSB = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
+    int num_symbols_SSB = 4;
+    float sample_duration = 1 / sampling_rate;
+    int num_of_0_to_add = 1+ (ssb_period - (num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration)) / sample_duration;
+
+    BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = "+std::to_string(sampling_rate);
+    BOOST_LOG_TRIVIAL(info) << "Num_samples_per_symbol_SSB = "+std::to_string(Num_samples_per_symbol_SSB);
+    BOOST_LOG_TRIVIAL(info) << "num_symbols_SSB of SSB: "+std::to_string(num_symbols_SSB);
+    BOOST_LOG_TRIVIAL(info) << "sample duration: "+std::to_string(sample_duration);
+    BOOST_LOG_TRIVIAL(info) << "number of 0 added at the end of USRP (to obtain a precise time interval) = "+std::to_string(num_of_0_to_add);
 
     std::cout<< "###### SSB"<<std::endl;
     std::cout << "# ssb_period: " << ssb_period<<" second" << std::endl;
     std::cout<<"# i_b_ssb: "<<i_b_ssb<<std::endl;
-
-    BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = "+std::to_string(sampling_rate);
-
-    int Num_samples_per_symbol_SSB = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
     std::cout << "# Num_samples_per_symbol_SSB: " << Num_samples_per_symbol_SSB << std::endl;
-    BOOST_LOG_TRIVIAL(info) << "Num_samples_per_symbol_SSB = "+std::to_string(Num_samples_per_symbol_SSB);
-    int num_symbols_SSB = 4;
     std::cout << "# num_symbols_SSB: " << num_symbols_SSB << std::endl;
-    BOOST_LOG_TRIVIAL(info) << "num_symbols_SSB of SSB: "+std::to_string(num_symbols_SSB);
-    float sample_duration = 1 / sampling_rate;
     std::cout << "# sample_duration (1/sampling_rate): " << sample_duration <<" second"<< std::endl;
-    BOOST_LOG_TRIVIAL(info) << "sample duration: "+std::to_string(sample_duration);
-
-    int num_of_0_to_add = 1+ (ssb_period - (num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration)) / sample_duration;
     std::cout << "# num_of_0_to_add to obtain 5 ms: " << num_of_0_to_add << std::endl;
     std::cout<<""<<std::endl;
-    BOOST_LOG_TRIVIAL(info) << "number of 0 added at the end of USRP (to obtain a precise time interval) = "+std::to_string(num_of_0_to_add);
-
 
 
     std::complex<float> **SSB_signal_time_domain_CP_5ms;
@@ -459,7 +453,7 @@ int main(int argc, char *argv[]) {
                 /* Use this line for the generated SSB signal: */
                 SSB_signal_time_domain_CP_5ms[symbol][sample] = SSB_signal_time_domain_CP[symbol][sample];
 
-                /** Use this line for the test signal (real = 30): */
+                /** Use this line for the test signal (see bellow, real = 30): */
                 //SSB_signal_time_domain_CP_5ms[symbol][sample] = Test_signal_full_power[symbol][sample];
             }
         }
@@ -473,7 +467,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    //phy_variable.display_signal_float(SSB_signal_time_domain_CP_5ms, 5, Num_samples_per_symbol_SSB, "SSB_signal_time_domain_CP_5ms from main ");
 
     if (display_variables) {
         free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[0], Num_samples_per_symbol_SSB,
@@ -491,18 +484,12 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "USRP subdev = "+usrp_info_object.subdev;
     BOOST_LOG_TRIVIAL(info) << "USRP ant = "+usrp_info_object.ant;
     BOOST_LOG_TRIVIAL(info) << "USRP ref2 = "+usrp_info_object.ref2;
-
-
     BOOST_LOG_TRIVIAL(info) << "usrp_info_object.sample_rate = "+std::to_string(usrp_info_object.sample_rate);
-
-    //rf rf_variable(usrp_info_object.sample_rate, 3699.84e6, 55, 7.68e6, "A:A", usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
-
 
     /** Emission for SCS = 15 KHz */
     //rf rf_variable(3.846, 3699.84e6, 75, 3.84e6, subdev, ant, ref2, device_args);
 
-
-    // Create buffer
+    /** Create buffer */
     int num_samples = 240;
     double time_first_sample = 0;
 
@@ -537,7 +524,6 @@ int main(int argc, char *argv[]) {
     /** Filling a txt file file_SSB_5ms with buff_main_5ms to verify spectogram on Python */
     std::ofstream file_main_SSB_5ms;
     file_main_SSB_5ms.open("file_SSB_5ms.txt");
-
     for (int i = 0; i < Num_samples_per_symbol_SSB * 4 + num_of_0_to_add; i++) {
         file_main_SSB_5ms << buff_main_5ms[i];
         file_main_SSB_5ms << "\n";
@@ -569,21 +555,21 @@ int main(int argc, char *argv[]) {
 
 
 /** Sending buff_main_5ms */
-        if (run_with_usrp) {
-                //Emission for SCS = 30 KHz
-            BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
-            rf rf_variable(usrp_info_object.sample_rate, usrp_info_object.center_frequency,
-                                   usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
-                                   usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
+    if (run_with_usrp) {
+        /** Emission for SCS = 30 KHz */
+        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
+        rf rf_variable(usrp_info_object.sample_rate, usrp_info_object.center_frequency,
+        usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
+        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
-            std::cout<<" ################ free5GRAN SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
-            rf_variable.send_from_file(buff_main_5ms);
+        std::cout<<" ################ free5GRAN SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
+        rf_variable.send_from_file(buff_main_5ms);
         }
 
 
 
 
-
+/** BELOW IS UNDER CONSTRUCTION !! */
 
 
 

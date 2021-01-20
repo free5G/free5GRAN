@@ -987,14 +987,14 @@ void free5GRAN::phy::signal_processing::adding_cp(std::complex<float> **input_ch
 
 
 
-void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols2, int pci,
+void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols, int pci,
                                                                  int i_b_ssb, free5GRAN::mib mib_object,
                                                                  std::complex<float> **SSB_signal_time_domain) {
 /**
-     * \fn generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
+     * \fn generate_SSB_time (std::complex<float> * pbch_symbols, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
      * \brief This function aims to generate from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
      * \standard TS38.211 V15.2.0 Section 7.4
-     * \param[in] pbch_symbols2. In our case, it is a 432 symbols sequence.
+     * \param[in] pbch_symbols. In our case, it is a 432 symbols sequence.
      * \param[in] pci. Physical Cell ID.
      * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
      * \param[in] mib_object. The Master Information Blovk.
@@ -1006,7 +1006,7 @@ bool display_variable = true;
     /** Multiply PBCH value by 3
 
     for (int sample = 0; sample < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; sample ++){
-        pbch_symbols2[sample] = pbch_symbols2[sample]*std::complex<float> (3,3);
+        pbch_symbols[sample] = pbch_symbols[sample]*std::complex<float> (3,3);
     }*/
 
 
@@ -1118,8 +1118,8 @@ bool display_variable = true;
     SSB_signal_freq_domain[2] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
     SSB_signal_freq_domain[3] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
 
-    //channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
-    free5GRAN::phy::signal_processing::channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols2, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    //channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+    free5GRAN::phy::signal_processing::channel_mapper(new std::complex<float>*[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref, SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
     if (display_variable){
         free5GRAN::utils::common_utils::display_signal_float(SSB_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "SSB_signal_freq_domain from phy");}
 

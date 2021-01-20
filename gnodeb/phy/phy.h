@@ -37,9 +37,7 @@ private:
     int i_ssb;
     int i_b_ssb;
     int l_max;
-    //std::vector<std::complex<float>> pbch_symbols;
-    //std::vector<std::complex<float>> pbch_symbols;
-    //std::vector<std::complex<float>> pbch_symbols2;
+
 
 public:
 
@@ -76,8 +74,8 @@ public:
     static void display_signal_float(std::complex<float> ** signal_to_display, int num_symbols, int num_sc, char* signal_name);
 
     void encode_bch(int * mib_bits, int pci, int N, int *rate_matched_bch);
-    void encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols2);
-    void generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain_CP);
+    void encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols);
+    void generate_SSB_time(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain_CP);
 
     std::vector<std::complex<float>> AY_extract_pbch(std::complex<float> ** input_SSB, int pci);
     int * AY_decode_pbch(int pci, std::vector<std::complex<float>> pbch_symbols);
