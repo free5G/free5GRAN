@@ -72,7 +72,7 @@ public:
 
 
 
-    void send_from_file(
+    void buffer_transmition(
             //uhd::usrp::multi_usrp::sptr usrp,
             //pas besoin de l'appeler pck déjà défini au dessus.
             //std::vector<std::complex<double>> buff /**à changer par des float */ //SSB à mettre dans le buf"

@@ -147,7 +147,6 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
         mib_bits[free5GRAN::INDEX_OF_UNUSED_BITS_IN_MIB[i]] = 0;
     }
 
-    /** Convert sfn (Sequence Frame Number) from decimal to binary. */
     int sfn_binary_size = 10;
     int sfn_binary[sfn_binary_size];
     convert_decimal_to_binary(sfn_binary_size, mib_object.sfn, sfn_binary);
@@ -157,7 +156,6 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
         mib_bits[free5GRAN::INDEX_OF_SFN_BITS_IN_MIB[i]] = sfn_binary[i];
     }
 
-    /** Convert pddchc_config from decimal to binary */
     int pddchc_config_binary_size = 8;
     int pddchc_config_binary[pddchc_config_binary_size];
     convert_decimal_to_binary(pddchc_config_binary_size, mib_object.pdcch_config, pddchc_config_binary);
@@ -167,7 +165,6 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
         mib_bits[free5GRAN::INDEX_OF_PDDCHC_CONFIG_BITS_IN_MIB[i]] = pddchc_config_binary[i];
     }
 
-    /** Convert k_ssb from decimal to binary */
     int k_ssb_binary_size = 5;
     int k_ssb_binary[k_ssb_binary_size];
     convert_decimal_to_binary(k_ssb_binary_size, mib_object.k_ssb, k_ssb_binary);

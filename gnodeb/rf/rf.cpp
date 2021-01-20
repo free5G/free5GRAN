@@ -158,7 +158,7 @@ double rf::getGain() {
 
 //emplate<typename samp_type>
 
-void rf::send_from_file(
+void rf::buffer_transmition(
         //uhd::usrp::multi_usrp::sptr usrp,
         //pas besoin de l'appeler pck déjà défini au dessus.
         //uhd::usrp::multi_usr::set_master_clock_rate();
@@ -191,7 +191,7 @@ void rf::send_from_file(
         BOOST_LOG_TRIVIAL(trace) << "Sending a SSB";
     }
 
-    std::cout<< "Hello from rf, after send_from_file"<<std::endl;
+    std::cout<< "Hello from rf, after buffer_transmition"<<std::endl;
 
     //infile.close();
 }
