@@ -887,7 +887,7 @@ void free5GRAN::phy::signal_processing::reverse_ssb(std::complex<float> **input_
     /** Divide each element by a facotr (here, it's 1000) to let the enhance the radio transmission */
 
 
-    float dividing_factor = 1;
+    float dividing_factor = 200;
     for (int symbol = 0; symbol < num_symbols; symbol ++){
         for (int sc = 0; sc < num_sc; sc++){
             output_reversed_ssb[symbol][sc] = {(output_reversed_ssb[symbol][sc].real())/dividing_factor, (output_reversed_ssb[symbol][sc].imag())/dividing_factor};
@@ -1003,12 +1003,11 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
 
 bool display_variable = true;
 
-    /** Multiply PBCH value by 3 */
+    /** Multiply PBCH value by 3
 
     for (int sample = 0; sample < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; sample ++){
         pbch_symbols2[sample] = pbch_symbols2[sample]*std::complex<float> (3,3);
-
-    }
+    }*/
 
 
     /** DMRS -> Generating dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
@@ -1016,9 +1015,11 @@ bool display_variable = true;
     dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
     //generate_dmrs_of_pbch(pci, i_b_ssb, dmrs_symbols); TO BE DELETED
+    /**
     for (int sample = 0; sample < free5GRAN::SIZE_SSB_DMRS_SYMBOLS; sample ++){
         dmrs_symbols[sample] = dmrs_symbols[sample]*std::complex<float> (4,4);
-    }
+    }*/
+
     if (display_variable){
         free5GRAN::utils::common_utils::display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
                               "dmrs_symbols from phy");}
@@ -1040,9 +1041,10 @@ bool display_variable = true;
     int * pss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
 
+    /**
     for (int sample = 0; sample < free5GRAN::SIZE_PSS_SSS_SIGNAL; sample ++){
         pss_sequence_symbols[sample] = pss_sequence_symbols[sample]*1;
-    }
+    }*/
 
     if (display_variable){
         free5GRAN::utils::common_utils::display_table(pss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "pss_sequence_symbols");}
@@ -1061,9 +1063,10 @@ bool display_variable = true;
     int * sss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
 
+    /**
     for (int sample = 0; sample < free5GRAN::SIZE_PSS_SSS_SIGNAL; sample ++){
         sss_sequence_symbols[sample] = sss_sequence_symbols[sample]*2;
-    }
+    }*/
 
     if (display_variable){
         free5GRAN::utils::common_utils::display_table(sss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "sss_sequence_symbols");}

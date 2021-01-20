@@ -890,16 +890,16 @@ void phy::adding_cp(std::complex<float> ** input_channel, int num_symbols, int n
 /** Bellow are some little functions that are used in the functions above */
 
 
-
+/** TO BE DELETED. THIS FUNCTION IS NOW INCLUDED
 int * phy::convert_pci_into_nid2_and_nid1 (int pci) {
 
-    /**
+
 * \fn ph_ben * convert_pci_into_nid2_and_nid1 (int pci)
 * \brief This function takes the Physical Cell Id (pci) as enter and return the array n_id which contains n_id_1 and n_id_2.
 * \standard TS38.211 V15.2.0 Section 7.4.2.1
 *
 * \param[in] pci Physical Cell Id
-*/
+
     int n_id_1;
     int n_id_2;
     n_id_2 = pci % 3;
@@ -910,7 +910,7 @@ int * phy::convert_pci_into_nid2_and_nid1 (int pci) {
     n_id[1] = n_id_2;
     return n_id;
 }
-
+*/
 
 // TO BE DELETED
 void phy::display_signal_float(std::complex<float> ** signal_to_display, int num_symbols, int num_sc, char* signal_name){
@@ -922,30 +922,30 @@ void phy::display_signal_float(std::complex<float> ** signal_to_display, int num
     }
 }
 
-// TO BE DELETED
+/** TO BE DELETED
 void phy::display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size, char* vector_name){
-    /**
+
     * \fn ph_ben * display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
 * \brief This function aims to display a vector in the console, using the command std::cout.
 *
 * \param[in] vector_to_display
 * \param[in] vector_size number of element in the vector
 * \param[in] vector_name name to display
-*/
+
     for (int i=0; i<vector_size; i++){
         if (i==0){
             std::cout <<""<< std::endl;
             std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
         }
-        if (i% 10 == 0){         /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i% 10 == 0){         /** 10 here means that every 10 elements displayed, a line break is done
             std::cout <<""<< std::endl;
         }
         std::cout<<vector_to_display[i]<<"  "<< std::ends;
     }
 
 }
-
-// TO BE DELETED
+*/
+/** TO BE DELETED
 void phy::display_complex_double(std::complex<double> *vector_to_display, int vector_size, char* vector_name){
 
     /**
@@ -955,9 +955,9 @@ void phy::display_complex_double(std::complex<double> *vector_to_display, int ve
 * \param[in] vector_to_display
 * \param[in] vector_size number of element in the vector
 * \param[in] vector_name name to display
-*/
+
     for (int i=0; i<vector_size; i++){
-        if (i % 10 == 0){        /** 10 here means that every 10 elements displayed, a line break is done*/
+        if (i % 10 == 0){        /** 10 here means that every 10 elements displayed, a line break is done
             std::cout <<""<< std::endl;
         }
         if (i == 0){
@@ -966,20 +966,22 @@ void phy::display_complex_double(std::complex<double> *vector_to_display, int ve
         std::cout<<vector_to_display[i] <<"   "<< std::ends;
     }
 }
+*/
 
-// TO BE DELETED
+
+/** // TO BE DELETED
 void phy::display_complex_float(std::complex<float> *vector_to_display, int vector_size, char* vector_name){
 
-    /**
+
 * \fn ph_ben * display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
 * \brief This function aims to display a vector in the console, using the command std::cout.
 *
 * \param[in] vector_to_display
 * \param[in] vector_size number of element in the vector
 * \param[in] vector_name name to display
-*/
+
     for (int i=0; i<vector_size; i++){
-        if (i % 1000 == 0){        /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i % 1000 == 0){        /** 10 here means that every 10 elements displayed, a line break is done
             std::cout <<""<< std::endl;
         }
         if (i == 0){
@@ -988,6 +990,7 @@ void phy::display_complex_float(std::complex<float> *vector_to_display, int vect
         std::cout<<vector_to_display[i] <<"   "<< std::ends;
     }
 }
+ */
 
 // TO BE DELETED
 void phy::display_table(int* table_to_display, int size, char* table_name) {

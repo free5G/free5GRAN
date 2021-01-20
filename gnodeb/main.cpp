@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 
     bool display_variables = true; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "MIB GENERATION";
 
     if(display_variables){
-        phy_variable.display_table(mib_bits, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits from main");}
+        free5GRAN::utils::common_utils::display_table(mib_bits, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits from main");}
 
 
     /** ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "ADD CP (Cyclic Prefix) to the SSB (time domain)";
 
     if(display_variables) {
-        phy_variable.display_signal_float(SSB_signal_time_domain_CP, free5GRAN::NUM_SYMBOLS_SSB,
+        free5GRAN::utils::common_utils::display_signal_float(SSB_signal_time_domain_CP, free5GRAN::NUM_SYMBOLS_SSB,
                                               free5GRAN::SIZE_IFFT_SSB + cp_lengths[1], "SSB_signal_time_domain_CP from main ");
     }
 
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
 
     if (display_variables){
         for (int symbol = 0; symbol<4; symbol++){
-            phy_variable.display_complex_float(Test_signal_full_power[symbol], free5GRAN::SIZE_IFFT_SSB + cp_lengths[1],"Test_signal_full_power");
+            free5GRAN::utils::common_utils::display_complex_float(Test_signal_full_power[symbol], free5GRAN::SIZE_IFFT_SSB + cp_lengths[1],"Test_signal_full_power");
         }}
 
 
@@ -476,15 +476,15 @@ int main(int argc, char *argv[]) {
     //phy_variable.display_signal_float(SSB_signal_time_domain_CP_5ms, 5, Num_samples_per_symbol_SSB, "SSB_signal_time_domain_CP_5ms from main ");
 
     if (display_variables) {
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[0], Num_samples_per_symbol_SSB,
+        free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[0], Num_samples_per_symbol_SSB,
                                            "SSB_5ms symbol 0 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[1], Num_samples_per_symbol_SSB,
+        free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[1], Num_samples_per_symbol_SSB,
                                            "SSB_5ms symbol 1 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[2], Num_samples_per_symbol_SSB,
+        free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[2], Num_samples_per_symbol_SSB,
                                            "SSB_5ms symbol 2 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[3], Num_samples_per_symbol_SSB,
+        free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[3], Num_samples_per_symbol_SSB,
                                            "SSB_5ms symbol 3 = ");
-        phy_variable.display_complex_float(SSB_signal_time_domain_CP_5ms[4], num_of_0_to_add,
+        free5GRAN::utils::common_utils::display_complex_float(SSB_signal_time_domain_CP_5ms[4], num_of_0_to_add,
                                                "SSB_5ms symbol 4 = ");
     }
     BOOST_LOG_TRIVIAL(info) << "USRP serial = "+usrp_info_object.device_args;
@@ -619,7 +619,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"index_first_ssb_in_frame = "<<index_first_ssb_in_frame<<std::endl;
 
 
-    phy_variable.display_table(cp_lengths, 28, "cp_lengths from main");
+    free5GRAN::utils::common_utils::display_table(cp_lengths, 28, "cp_lengths from main");
 
     /** Initialize the cp_length for each symbols of a frame */
     int cp_lengths_one_frame[Num_symbols_per_frame];
@@ -629,7 +629,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    phy_variable.display_table(cp_lengths_one_frame, Num_symbols_per_frame, "cp_lengths_one_frame");
+    free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, Num_symbols_per_frame, "cp_lengths_one_frame");
 
     /** Initialize the symbol_size for each symbols of a frame */
 
@@ -637,7 +637,7 @@ int main(int argc, char *argv[]) {
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol ++){
         symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
     }
-    phy_variable.display_table(symbols_size_one_frame, Num_symbols_per_frame, "symbols_size_one_frame");
+    free5GRAN::utils::common_utils::display_table(symbols_size_one_frame, Num_symbols_per_frame, "symbols_size_one_frame");
 
     int ssb_period_in_samples = ssb_period * sampling_rate;
     std::cout<<"ssb_period_in_samples = "<<ssb_period_in_samples;
