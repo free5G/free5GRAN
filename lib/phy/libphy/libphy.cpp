@@ -991,7 +991,7 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
                                                                  int i_b_ssb, free5GRAN::mib mib_object,
                                                                  std::complex<float> **SSB_signal_time_domain) {
 /**
-     * \fn ph_ben * generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
+     * \fn generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
      * \brief This function aims to generate from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
      * \standard TS38.211 V15.2.0 Section 7.4
      * \param[in] pbch_symbols2. In our case, it is a 432 symbols sequence.

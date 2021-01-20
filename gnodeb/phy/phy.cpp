@@ -833,7 +833,7 @@ void phy::compute_cp_lengths(int scs, int nfft, int is_extended_cp, int num_symb
         }
     }
     BOOST_LOG_TRIVIAL(info) << "function compute_cp_length done.";
-    display_table(cp_lengths, num_symb_per_subframes, "cp_lengths");
+    free5GRAN::utils::common_utils::display_table(cp_lengths, num_symb_per_subframes, "cp_lengths");
 }
 
 
@@ -918,7 +918,7 @@ void phy::display_signal_float(std::complex<float> ** signal_to_display, int num
         std::cout<<""<<std::endl;
         std::cout<<""<<std::endl;
         std::cout<<signal_name<< "of symbol "<<symbols<<" = "<<std::ends;
-        display_complex_float(signal_to_display[symbols], num_sc, "");
+        free5GRAN::utils::common_utils::display_complex_float(signal_to_display[symbols], num_sc, "");
     }
 }
 
@@ -992,20 +992,20 @@ void phy::display_complex_float(std::complex<float> *vector_to_display, int vect
 }
  */
 
-// TO BE DELETED
+/** // TO BE DELETED
 void phy::display_table(int* table_to_display, int size, char* table_name) {
 
-    /**
+
    * \fn ph_ben * display_table (int* table_to_display, int size, char* table_name)
    * \brief This function aims to display a table in the console, using the command std::cout.
    *
    * \param[in] table_to_display
    * \param[in] size number of element in the table
    * \param[in] table_name name to display
-   */
+
 
     for (int i = 0; i<size; i++) {
-        if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
+        if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done
             std::cout <<""<< std::endl;
         }
         if (i == 0){
@@ -1016,17 +1016,18 @@ void phy::display_table(int* table_to_display, int size, char* table_name) {
     }
     std::cout <<""<< std::endl;
 }
+*/
 
-// TO BE DELETED ???
+/** // TO BE DELETED ???
 void phy::convert_decimal_to_binary(int size, int decimal, int* table_output) {
-    /**
+
       * \fn ph_ben * convert_decimal_to_binary (int size, int decimal, int* table_output)
       * \brief This function aims to convert an integer number into a binary bit sequence.
       *
       * \param[in] size Indicates the number of bits in the output sequence. Please verify that decimal <= 2^size.
       * \param[in] decimal the number to convert into a bit sequence.
       * \param[out] table_output the output bits sequence. Will contain only 1 and 0.
-      */
+
 
     for (int i = size; i >= 0; i--) {
         if (decimal >= std::pow(2, i-1)) {
@@ -1037,7 +1038,7 @@ void phy::convert_decimal_to_binary(int size, int decimal, int* table_output) {
         }
     }
 }
-
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------
@@ -1500,7 +1501,7 @@ int * phy::AY_decode_pbch(int pci, std::vector<std::complex<float>> pbch_symbols
     free5GRAN::phy::signal_processing::hard_demodulation(pbch_symbols, pbch_bits, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, 1);
 
     if (display_variable){
-        display_table(pbch_bits, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, "AY_pbch_bits");}
+        free5GRAN::utils::common_utils::display_table(pbch_bits, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, "AY_pbch_bits");}
 
     // Generate de-scrambling sequence
     //c_sequence seq_object = c_sequence(pci, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb) );
@@ -1516,7 +1517,7 @@ int * phy::AY_decode_pbch(int pci, std::vector<std::complex<float>> pbch_symbols
      */
     free5GRAN::utils::common_utils::scramble(pbch_bits, c_seq, bch_bits5, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
     if (display_variable){
-        display_table(bch_bits5, 864, "AY_bch_bits5 from phy");}
+        free5GRAN::utils::common_utils::display_table(bch_bits5, 864, "AY_bch_bits5 from phy");}
     return bch_bits5;
     /*
     for (int i = 0; i < free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2; i ++){
@@ -1538,7 +1539,7 @@ void phy::AY_decode_bch(int* bch_bits, int pci, int* mib_bits) {
 
     char* table_name8 = "AY_bch_bits";
     if (display_variable){
-        display_table(bch_bits, 864, table_name8);}
+        free5GRAN::utils::common_utils::display_table(bch_bits, 864, table_name8);}
 
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,free5GRAN::SIZE_PBCH_POLAR_DECODED,9);
     int N = pow(2,n);
@@ -1555,7 +1556,7 @@ void phy::AY_decode_bch(int* bch_bits, int pci, int* mib_bits) {
     free5GRAN::phy::transport_channel::rate_recover(bch_bits,rate_recovered_bits,0,free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,N, 0); /** 0 corresponds to 'K' but was choosen randomly */
     char* table_name9 = "AY_rate_recovered_bits";
     if (display_variable){
-        display_table(rate_recovered_bits, 512, table_name9);}
+        free5GRAN::utils::common_utils::display_table(rate_recovered_bits, 512, table_name9);}
 
     // Polar decode rate_recovered_bits to polar_decoded_bits
     free5GRAN::phy::transport_channel::polar_decode(rate_recovered_bits,polar_decoded_bits,N,free5GRAN::SIZE_PBCH_POLAR_DECODED,9,1,0,0, 0); /** The last 0 corresponds to 'E' but is choosen randomly */
@@ -1580,7 +1581,7 @@ void phy::AY_decode_bch(int* bch_bits, int pci, int* mib_bits) {
 
     if (display_variable) {
         char *table_name11 = "AY_bch_payload";
-        display_table(bch_payload, 32, table_name11);
+        free5GRAN::utils::common_utils::display_table(bch_payload, 32, table_name11);
     }
 
     // Re-compute the bch_payload CRC

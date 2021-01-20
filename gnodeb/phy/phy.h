@@ -31,7 +31,6 @@
 class phy {
 
 private:
-    rf *rf_device_ben;
     int bch_crc[24]; // erreur ?
     bool crc_validated;
     //int *pi_seq; TO BE DELETED
