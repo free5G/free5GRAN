@@ -332,16 +332,18 @@ int phy::extract_pbch() {
 
     complex<float> pbch_symbols[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
     complex<float> dmrs_symbols[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    complex<float> sss_symbols[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     /*
      * ref[0] -> indexes of PBCH resource elements
      * ref[1] -> indexes of DMRS resource elements
      */
-    vector<vector<vector<int>>> ref(2, vector<vector<int>>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS, vector<int>(free5GRAN::NUM_SC_SSB)));
+    vector<vector<vector<int>>> ref(3, vector<vector<int>>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS, vector<int>(free5GRAN::NUM_SC_SSB)));
     /*
      * channel_indexes[0] contains PBCH samples indexes
      * channel_indexes[1] contains DMRS samples indexes
+     * channel_indexes[2] contains SSS samples indexes
      */
-    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)), vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS))};
+    vector<vector<vector<int>>> channel_indexes = {vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_PBCH_SYMBOLS)), vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_SSB_DMRS_SYMBOLS)), vector<vector<int>>(2, vector<int>(free5GRAN::SIZE_PSS_SSS_SIGNAL))};
 
     vector<vector<complex<float>>> ssb_symbols(free5GRAN::NUM_SYMBOLS_SSB - 1, vector<complex<float>>(free5GRAN::NUM_SC_SSB));
 
@@ -359,8 +361,8 @@ int phy::extract_pbch() {
     /*
      * Channel demapping using computed ref grid
      */
-    complex<float>* output_channels[] = {pbch_symbols,dmrs_symbols};
-    free5GRAN::phy::signal_processing::channel_demapper(ssb_symbols, ref, output_channels, channel_indexes, 2, free5GRAN::NUM_SYMBOL_PBCH_SSB, free5GRAN::NUM_SC_SSB);
+    complex<float>* output_channels[] = {pbch_symbols, dmrs_symbols, sss_symbols};
+    free5GRAN::phy::signal_processing::channel_demapper(ssb_symbols, ref, output_channels, channel_indexes, 3, free5GRAN::NUM_SYMBOL_PBCH_SSB, free5GRAN::NUM_SC_SSB);
 
     /*
      * Channel estimation and equalization

@@ -141,6 +141,7 @@ void free5GRAN::phy::physical_channel::compute_pbch_indexes(vector<vector<vector
     for (int symbol = 1; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol ++){
         // Creating Resource element de-mapper reference grid
         for (int i = 0; i < free5GRAN::NUM_SC_SSB; i++){
+            ref[2][symbol - 1][i] = 0;
             if (symbol == 1 || symbol == 3){
                 if (pci % 4 != i % 4){
                     ref[0][symbol - 1][i] = 1;
@@ -159,6 +160,9 @@ void free5GRAN::phy::physical_channel::compute_pbch_indexes(vector<vector<vector
                 }else{
                     ref[0][symbol - 1][i] = 0;
                     ref[1][symbol - 1][i] = 0;
+                }
+                if (i >= 56 && i <=182){
+                    ref[2][symbol - 1][i] = 1;
                 }
             }
         }

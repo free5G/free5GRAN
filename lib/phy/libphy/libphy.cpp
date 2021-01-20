@@ -155,10 +155,9 @@ void free5GRAN::phy::signal_processing::channelEstimation(complex<float> * pilot
         }
         noise_coef /= num_sc;
         for (int sc = 0; sc < num_sc; sc ++){
-            mean_noise += pow(abs(coefficients[symbol][sc] - noise_coef),2) /num_sc ;
+            mean_noise += pow(abs(coefficients[symbol][sc] - noise_coef),2) / num_sc * num_symbols ;
         }
     }
-    mean_noise /= num_symbols;
     mean_noise = 10 * log10(mean_noise);
 
     snr = mean_power - mean_noise;
