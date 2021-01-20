@@ -205,9 +205,11 @@ void phy::scrambling_bch(int v, int pci, int *mib_bits_interleaved, int *bch_pay
 }
 */
 
+
+/** TO BE DELETED. THIS FUNCTION IS NOW INCLUDED IN 'bch_encoding'
 void phy::adding_crc(int *bch_payload, int *bch_payload_with_crc) {
 
-    /**
+
 * \fn ph_ben * adding_crc (int* bch_payload, int*bch_payload_with_crc)
 * \brief This function aims to generate and add the CRC (Cyclic Redundancy Check) bits sequence of bch_payload bits sequence.
 * \details
@@ -218,20 +220,21 @@ void phy::adding_crc(int *bch_payload, int *bch_payload_with_crc) {
 * \param[out] bch_payload_with_crc Contains 56 bits: 32 bits of bch payload and 24 bits of CRC.
 */
 
-    /** Generate the 24 bits sequence CRC (bch_crc) of bch_payload, using the table G_CRC_24_C */
+    /** Generate the 24 bits sequence CRC (bch_crc) of bch_payload, using the table G_CRC_24_C
     free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_crc, 32, 25);
 
-    /** Complete the 32 first bits of bch_payload_with_crc with the bch_payload bits sequence */
+    /** Complete the 32 first bits of bch_payload_with_crc with the bch_payload bits sequence
     for (int i = 0; i < free5GRAN::BCH_PAYLOAD_SIZE; i++) {
         bch_payload_with_crc[i] = bch_payload[i];
     }
 
-    /** Completing the 24 last bits of bch_payload_wit_crc with the bch_crc bits sequence */
+    /** Completing the 24 last bits of bch_payload_wit_crc with the bch_crc bits sequence
     for (int i = 0; i < 24; i++) {
         bch_payload_with_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_crc[i];
     }
     BOOST_LOG_TRIVIAL(info) << "function adding_crc done. At this point, we have "+std::to_string(free5GRAN::MIB_BITS_SIZE + 24)+ " bits";
 }
+*/
 
 /** TO BE DELETED. This function is now in the lib
 void phy::polar_encode_bch(int N, int *input_bits, int *output_encoded_bits) {
@@ -375,7 +378,7 @@ void phy::rate_matching(int *polar_encode_bch, int *rate_matched_bch) {
 
 
 
-/**
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch) {
 
 
@@ -1040,8 +1043,9 @@ void phy::convert_decimal_to_binary(int size, int decimal, int* table_output) {
 /** This aims to reduce the length of main_ben.cpp */
 
 
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB, transport_channel
 void phy::encode_bch(int * mib_bits, int pci, int N, int * rate_matched_bch){
-    /**
+
       * \fn ph_ben * encode_bch(int * mib_bits, int pci, int N, int * rate_matched_bch)
       * \brief This function aims to transform the mib_bits into a rate_matched_bch bits sequence.
       * \details Here are the steps of this function: INTERLEAVING, SCRAMBLING, ADDING CRC, POLAR ENCODING and RATE MATCHING.
@@ -1052,43 +1056,44 @@ void phy::encode_bch(int * mib_bits, int pci, int N, int * rate_matched_bch){
       * \param[in] pci. Physical Cell ID.
       * \param[in] N. It is the length of the BCH payload after polar encode. It's a power of 2. In our case, it's 512.
       * \param[out] rate_matched_bch. The output bits sequence. 864 bits long in our case.
-      */
 
-    /** INTERLEAVING -> Generating mib_bits_interleaved (32 bits long in our case) from mib_bits. TS38.212 V15.2.0 Section 7.1.1 */
+
+    /** INTERLEAVING -> Generating mib_bits_interleaved (32 bits long in our case) from mib_bits. TS38.212 V15.2.0 Section 7.1.1
     int mib_bits_interleaved[free5GRAN::BCH_PAYLOAD_SIZE];
     free5GRAN::phy::transport_channel::bch_payload_integration(mib_bits, mib_bits_interleaved);
 
     if(display_variable){
         display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from phy");}
 
-    /** SCRAMBLING -> Generating bch_payload (32 bits long in our case) from mib_bits_interleaved. TS38.212 V15.2.0 Section 7.1.2 */
+    /** SCRAMBLING -> Generating bch_payload (32 bits long in our case) from mib_bits_interleaved. TS38.212 V15.2.0 Section 7.1.2
     int bch_payload[free5GRAN::BCH_PAYLOAD_SIZE];
-    int v = mib_bits[25] * 2 + mib_bits[26]; /** v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN). */
+    int v = mib_bits[25] * 2 + mib_bits[26]; /** v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN).
     if (display_variable){std::cout <<"v (depends on SFN, 3rd and 2nd LSB "<<v<< std::endl;}
     free5GRAN::phy::transport_channel::scrambling_bch(v, pci, mib_bits_interleaved, bch_payload);
 
     if (display_variable){
         display_table(bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, "bch_payload from phy");}
 
-    /** CRC -> Generating bch_payload_with_crc (56 bits long in our case) from bch_payload. TS38.212 V15.2.0 Section 5.1 */
+    /** CRC -> Generating bch_payload_with_crc (56 bits long in our case) from bch_payload. TS38.212 V15.2.0 Section 5.1
     int bch_payload_with_crc[free5GRAN::SIZE_PBCH_POLAR_DECODED];
     adding_crc(bch_payload, bch_payload_with_crc);
     if (display_variable){
         display_table(bch_payload_with_crc, free5GRAN::SIZE_PBCH_POLAR_DECODED, "bch_payload_with_crc from phy");}
 
-    /** POLAR ENCODING -> Generating polar encoded_bch (512 bits long in our case) from bch_payload_with_crc. TS38.212 V15.2.0 Section 5.3.1 */
+    /** POLAR ENCODING -> Generating polar encoded_bch (512 bits long in our case) from bch_payload_with_crc. TS38.212 V15.2.0 Section 5.3.1
     int *polar_encoded_bch = new int[N];
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_with_crc, polar_encoded_bch);
 
     if (display_variable){
         display_table(polar_encoded_bch, N, "polar_encoded_bch from phy");}
 
-    /** RATE MATCHING -> Generating rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
+    /** RATE MATCHING -> Generating rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1
     free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch);
     if (display_variable){
         display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "rate_matched_bch from phy");}
 
 }
+ */
 
 /** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB/PHYSICAL_CHANNEL. NEW NAME : PBCH_ENCODING
 
@@ -1124,20 +1129,21 @@ void phy::encode_pbch_and_modulation(int * rate_matched_bch, int pci, int gscn, 
 */
 
 
+/** TO BE DELETED. THIS FUNCTION IS NOW IN THE LIB
 void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain){
-    /**
-     * \fn ph_ben * generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
-     * \brief This function aims to generate from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
-     * \standard TS38.211 V15.2.0 Section 7.4
-     * \param[in] pbch_symbols2. In our case, it is a 432 symbols sequence.
-     * \param[in] pci. Physical Cell ID.
-     * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
-     * \param[in] mib_object. The Master Information Blovk.
-     * \param[out] SSB_signal_time_domain. In our case, it is a signal composed of 4*256 elements.
-     */
+
+ * \fn ph_ben * generate_SSB_time (std::complex<float> * pbch_symbols2, int pci, int i_b_ssb, free5GRAN::mib mib_object, std::complex<float> ** SSB_signal_time_domain)
+ * \brief This function aims to generate from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
+ * \standard TS38.211 V15.2.0 Section 7.4
+ * \param[in] pbch_symbols2. In our case, it is a 432 symbols sequence.
+ * \param[in] pci. Physical Cell ID.
+ * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
+ * \param[in] mib_object. The Master Information Block.
+ * \param[out] SSB_signal_time_domain. In our case, it is a signal composed of 4*256 elements.
 
 
-    /** DMRS -> Generating dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
+
+    /** DMRS -> Generating dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1
     std::complex<float> *dmrs_symbols;
     dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
@@ -1146,20 +1152,20 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
         display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
                               "dmrs_symbols from phy");}
 
-    /** N_ID_1 & N_ID_2 -> Computing n_id_1 and n_id_2 from the pci. TS38.211 V15.2.0 Section 7.4.2.1 */
+    /** N_ID_1 & N_ID_2 -> Computing n_id_1 and n_id_2 from the pci. TS38.211 V15.2.0 Section 7.4.2.1
     int * n_id = new int[2];
     n_id = convert_pci_into_nid2_and_nid1(pci);
     int n_id_1 = n_id[0];
     int n_id_2 = n_id[1];
     if (display_variable) {std::cout<<"n_id_1 = "<< n_id_1 <<"; n_id_2 = "<< n_id_2 <<std::endl;}
 
-    /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
+    /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1
     int * pss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
     if (display_variable){
         display_table(pss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "pss_sequence_symbols");}
 
-    /** CONVERTING PSS -> Converting PSS sequence element from int to complex<float> (Imaginary part = 0) */
+    /** CONVERTING PSS -> Converting PSS sequence element from int to complex<float> (Imaginary part = 0)
     std::complex<float> *pss_complex_symbols;
     pss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     for (int i=0; i<free5GRAN::SIZE_PSS_SSS_SIGNAL; i++){
@@ -1169,13 +1175,13 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
         display_complex_float(pss_complex_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "pss_complex_symbols");}
 
 
-    /** SSS -> Computing sss_sequence_symbols (127 symbols long in our case) from n_id_1. TS38.211 V15.2.0 Section 7.4.2.3.1 */
+    /** SSS -> Computing sss_sequence_symbols (127 symbols long in our case) from n_id_1. TS38.211 V15.2.0 Section 7.4.2.3.1
     int * sss_sequence_symbols= new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
     if (display_variable){
         display_table(sss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL, "sss_sequence_symbols");}
 
-    /** CONVERTING SSS -> Converting SSS sequence element from int to complex<float> (Imaginary part = 0) */
+    /** CONVERTING SSS -> Converting SSS sequence element from int to complex<float> (Imaginary part = 0)
     std::complex<float> *sss_complex_symbols;
     sss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     for (int i=0; i<free5GRAN::SIZE_PSS_SSS_SIGNAL; i++){
@@ -1186,9 +1192,9 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
 
 
 
-    /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
+    /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3
     int *** ref;
-    ref = new int **[4]; /** There are 4 channels */
+    ref = new int **[4]; /** There are 4 channels
     ref[0] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
     ref[1] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
     ref[2] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
@@ -1196,7 +1202,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
 
     free5GRAN::phy::signal_processing::build_reference_grid(4,free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
 
-    /** DISPLAY ref */
+    /** DISPLAY ref
 
     if (display_variable) {
         for (int channel = 0; channel < 4; channel++) {
@@ -1214,7 +1220,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
         }
     }
 
-    /** CHANNEL MAPPING --> Fill the SSB with PSS, SSS, PBCH and DMRS, using ref and according to TS38.211 V15.2.0 Section 7.4.3 */
+    /** CHANNEL MAPPING --> Fill the SSB with PSS, SSS, PBCH and DMRS, using ref and according to TS38.211 V15.2.0 Section 7.4.3
     std::complex<float> ** SSB_signal_freq_domain;
     SSB_signal_freq_domain = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     SSB_signal_freq_domain[0] = new std::complex<float> [free5GRAN::NUM_SC_SSB];
@@ -1228,7 +1234,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
         display_signal_float(SSB_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "SSB_signal_freq_domain from phy");}
 
 
-    /** SSB FROM 240 TO 256 SYMBOLS */
+    /** SSB FROM 240 TO 256 SYMBOLS
     std::complex<float> ** SSB_signal_extended;
     SSB_signal_extended = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     SSB_signal_extended[0] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
@@ -1241,7 +1247,7 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
     if (display_variable){
         display_signal_float(SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended from phy");}
 
-    /** REVERSE SSB */
+    /** REVERSE SSB
     std::complex<float> ** SSB_signal_extended_reversed;
     SSB_signal_extended_reversed = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     SSB_signal_extended_reversed[0] = new std::complex<float> [free5GRAN::SIZE_IFFT_SSB];
@@ -1255,14 +1261,14 @@ void phy::generate_SSB_time(std::complex<float> * pbch_symbols2, int pci, int i_
         display_signal_float(SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended_reversed from phy");}
 
 
-    /**IFFT --> SSB from frequency domain to time domain */
+    /**IFFT --> SSB from frequency domain to time domain
     //ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
     free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, free5GRAN::SIZE_IFFT_SSB);
     if (display_variable){
         display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from phy");}
 
 }
-
+*/
 
 //---------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------

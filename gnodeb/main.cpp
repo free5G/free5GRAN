@@ -43,7 +43,7 @@ void init_logging(std::string level)
     boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
     boost::log::add_file_log
             (
-                    boost::log::keywords::file_name = "free5GRAN_ben.log",
+                    boost::log::keywords::file_name = "free5GRAN_gNodeB.log",
                     boost::log::keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%] %Message%"
             );
 
@@ -91,22 +91,22 @@ int main(int argc, char *argv[]) {
 
 
     bool display_variables = true; /** indicates if you want to display variables in the console */
-    bool run_with_usrp = false; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
+    bool run_with_usrp = true; /** indicates if you launch the program on a computer attached to USRP. If not, put 'false' */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
 
     /** READING CONFIG FILE */
-    libconfig::Config cfg_ben;
+    libconfig::Config cfg_gNodeB;
 
     try {
         /**
          * We note that the log file is correctly created only when we don't send anything on USRP */
 
         if(run_with_usrp){
-            cfg_ben.readFile (argv[1]);   /** Use this line for CLI launch, command in /build : sudo ./NRPhy_2 ../config_ben/ssb_emission.cfg */
+            cfg_gNodeB.readFile (argv[1]);   /** Use this line for CLI launch, command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
         }else {
-            cfg_ben.readFile ("../config/ssb_emission.cfg"); /** Use this line for launch in CLion */
+            cfg_gNodeB.readFile ("../config/ssb_emission.cfg"); /** Use this line for launch in CLion */
         }
     }
 
@@ -125,13 +125,13 @@ int main(int argc, char *argv[]) {
 
 
     /** Read the level in config_file and create the log file */
-    std::string level = cfg_ben.lookup("logging");
+    std::string level = cfg_gNodeB.lookup("logging");
     std::cout<<"log level = "<<level<<std::endl;
     init_logging(level);
 
     /** Looking at the function name in config file */
-    std::string func_ben = cfg_ben.lookup("function");
-    const libconfig::Setting &root = cfg_ben.getRoot();
+    std::string func_gNodeB = cfg_gNodeB.lookup("function");
+    const libconfig::Setting &root = cfg_gNodeB.getRoot();
 
 
     /** Initialize variables defined in the config file */
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    if (func_ben == "SSB_EMISSION") {
+    if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
         std::cout << "################ SSB EMISSION #################" << std::endl;
         const libconfig::Setting &mib_info = root["mib_info"];
@@ -292,10 +292,9 @@ int main(int argc, char *argv[]) {
     SSB_signal_time_domain[2] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
     SSB_signal_time_domain[3] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
 
-    phy_variable.generate_SSB_time(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
-    //free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
+    //phy_variable.generate_SSB_time(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols2, pci, i_b_ssb, mib_object, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB";
-
 
 
     /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
@@ -323,7 +322,7 @@ int main(int argc, char *argv[]) {
 
     if(display_variables) {
         phy_variable.display_signal_float(SSB_signal_time_domain_CP, free5GRAN::NUM_SYMBOLS_SSB,
-                                              free5GRAN::SIZE_IFFT_SSB + cp_lengths[1], "SSB_signal_time_domain_CP");
+                                              free5GRAN::SIZE_IFFT_SSB + cp_lengths[1], "SSB_signal_time_domain_CP from main ");
     }
 
 
@@ -535,15 +534,15 @@ int main(int argc, char *argv[]) {
     }
     BOOST_LOG_TRIVIAL(info) << "Fill buff_main_5ms (used to send SSB every 5ms only)";
 
-    /** Filling a txt file file_ben_SSB_5ms with buff_main_5ms to verify spectogram on Python */
-    std::ofstream file_ben_main_SSB_5ms;
-    file_ben_main_SSB_5ms.open("file_ben_SSB_5ms.txt");
+    /** Filling a txt file file_SSB_5ms with buff_main_5ms to verify spectogram on Python */
+    std::ofstream file_main_SSB_5ms;
+    file_main_SSB_5ms.open("file_SSB_5ms.txt");
 
     for (int i = 0; i < Num_samples_per_symbol_SSB * 4 + num_of_0_to_add; i++) {
-        file_ben_main_SSB_5ms << buff_main_5ms[i];
-        file_ben_main_SSB_5ms << "\n";
+        file_main_SSB_5ms << buff_main_5ms[i];
+        file_main_SSB_5ms << "\n";
     }
-    file_ben_main_SSB_5ms.close();
+    file_main_SSB_5ms.close();
 
 
     /** Display some useful information */
@@ -620,7 +619,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"index_first_ssb_in_frame = "<<index_first_ssb_in_frame<<std::endl;
 
 
-    phy_variable.display_table(cp_lengths, 28, "cp_lengths from main_ben");
+    phy_variable.display_table(cp_lengths, 28, "cp_lengths from main");
 
     /** Initialize the cp_length for each symbols of a frame */
     int cp_lengths_one_frame[Num_symbols_per_frame];
