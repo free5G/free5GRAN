@@ -131,16 +131,15 @@ void free5GRAN::utils::common_utils::scramble(double *input_bits, int *c_seq, do
 
 
 void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
-
     /**
-* \fn encode_mib (free5GRAN::mib mib_object, int* mib_bits)
-* \brief This function aims to transforms the MIB informations (decimal) into the mib bits sequence.
-* In our case, the mib bits sequence is 32 bits long.
-* \standard TS38.331 V15.11.0 Section 6.2.2
-*
-* \param[in] mib_object object MIB created in common_structures.h, including sfn, scs, cell_barred...
-* \param[out] mib_bits bit sequence returned by the function.
-*/
+    * \fn encode_mib (free5GRAN::mib mib_object, int* mib_bits)
+    * \brief This function aims to transforms the MIB informations (decimal) into the mib bits sequence.
+    * In our case, the mib bits sequence is 32 bits long.
+    * \standard TS38.331 V15.11.0 Section 6.2.2
+    *
+    * \param[in] mib_object object MIB created in common_structures.h, including sfn, scs, cell_barred...
+    * \param[out] mib_bits bit sequence returned by the function.
+    */
 
     /** These following mib_bits are unused and set to 0 according to TS38.331 V15.11.0 Section 6.2.2 */
     int unused_bits_size = 5;
@@ -187,7 +186,6 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
         }
     }
 
-
     /** The following mib information are not needed to be converted into bits as they are stored on only 1 bit */
 
     /** Put the cell_barred bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
@@ -206,13 +204,13 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
 void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int decimal, int *table_output) {
     /**
-      * \fn convert_decimal_to_binary (int size, int decimal, int* table_output)
-      * \brief This function aims to convert an integer number into a binary bit sequence.
-      *
-      * \param[in] size Indicates the number of bits in the output sequence. Please verify that decimal <= 2^size.
-      * \param[in] decimal the number to convert into a bit sequence.
-      * \param[out] table_output the output bits sequence. Will contain only 1 and 0.
-      */
+    * \fn convert_decimal_to_binary (int size, int decimal, int* table_output)
+    * \brief This function aims to convert an integer number into a binary bit sequence.
+    *
+    * \param[in] size Indicates the number of bits in the output sequence. Please verify that decimal <= 2^size.
+    * \param[in] decimal the number to convert into a bit sequence.
+    * \param[out] table_output the output bits sequence. Will contain only 1 and 0.
+    */
 
     for (int i = size; i >= 0; i--) {
         if (decimal >= std::pow(2, i-1)) {
@@ -238,14 +236,14 @@ void free5GRAN::utils::common_utils::display_signal_float(std::complex<float> **
 
 void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size,
                                                     char *vector_name){
-/**
+    /**
     * \fn display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
-* \brief This function aims to display a vector in the console, using the command std::cout.
-*
-* \param[in] vector_to_display
-* \param[in] vector_size number of element in the vector
-* \param[in] vector_name name to display
-*/
+    * \brief This function aims to display a vector in the console, using the command std::cout.
+    *
+    * \param[in] vector_to_display
+    * \param[in] vector_size number of element in the vector
+    * \param[in] vector_name name to display
+    */
     for (int i=0; i<vector_size; i++){
         if (i==0){
             std::cout <<""<< std::endl;
@@ -262,14 +260,14 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
 
 void free5GRAN::utils::common_utils::display_complex_double(std::complex<double> *vector_to_display, int vector_size,
                                                             char *vector_name){
-/**
-* \fn display_complex_double (std::complex<double> *vector_to_display, int vector_size, char* vector_name)
-* \brief This function aims to display a vector in the console, using the command std::cout.
-*
-* \param[in] vector_to_display
-* \param[in] vector_size number of element in the vector
-* \param[in] vector_name name to display
-*/
+    /**
+    * \fn display_complex_double (std::complex<double> *vector_to_display, int vector_size, char* vector_name)
+    * \brief This function aims to display a vector in the console, using the command std::cout.
+    *
+    * \param[in] vector_to_display
+    * \param[in] vector_size number of element in the vector
+    * \param[in] vector_name name to display
+    */
     for (int i=0; i<vector_size; i++){
         if (i % 10 == 0){        /** 10 here means that every 10 elements displayed, a line break is done*/
             std::cout <<""<< std::endl;
@@ -284,14 +282,14 @@ void free5GRAN::utils::common_utils::display_complex_double(std::complex<double>
 
 void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *vector_to_display, int vector_size,
                                                            char *vector_name){
-/**
-* \fn display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
-* \brief This function aims to display a vector in the console, using the command std::cout.
-*
-* \param[in] vector_to_display
-* \param[in] vector_size number of element in the vector
-* \param[in] vector_name name to display
-*/
+    /**
+    * \fn display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
+    * \brief This function aims to display a vector in the console, using the command std::cout.
+    *
+    * \param[in] vector_to_display
+    * \param[in] vector_size number of element in the vector
+    * \param[in] vector_name name to display
+    */
     for (int i=0; i<vector_size; i++){
         if (i % 1000 == 0){        /** 10 here means that every 10 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
@@ -305,7 +303,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
 
 
 void free5GRAN::utils::common_utils::display_table(int *table_to_display, int size, char *table_name) {
-/**
+    /**
    * \fn display_table (int* table_to_display, int size, char* table_name)
    * \brief This function aims to display a table in the console, using the command std::cout.
    *
@@ -322,7 +320,6 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
             std::cout << +table_name << ": "<<std::ends;
         }
         std::cout<<table_to_display[i] <<" "<< std::ends;
-
     }
     std::cout <<""<< std::endl;
 }

@@ -225,33 +225,33 @@ void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vecto
 
 
 
+
+
 /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
 
 void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ssb, int *rate_matched_bch,
                                                    int *encoded_pbch) {
     /**
-   * \fn encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch)
-   * \brief This function aims to scramble the 864 rate_matched_bch bits to get 864 encoded_pbch bits.
-   * \details
-       * First l_max is calculated in function of the carrier frequency (designated by gscn)
-       * Then, i_ssb (sometimes called v) is calculated in function of lmax and i_b_ssb
-       * Then, a c_seq2 sequence is generated in function of pci and i_ssb
-       * Finally, the 864 rate_matched_bch bits are scrambled to get the 864 encoded_pbch bits, using c_seq2
-   * \standard TS38.211 V15.2.0 Section 7.3.3.1
-   * \param[in] gscn Global Synchronization Channel Number
-   * \param[in] pci Physical Cell Id
-   * \param[in] i_b_ssb. It is the SSB index
-   * \param[in] rate_matched_bch, Rate matched BCH, 864 bits sequence.
-   * \param[out] encoded_pbch encoded pbch 864 bits sequence.
-   */
+    * \fn encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch)
+    * \brief This function aims to scramble the 864 rate_matched_bch bits to get 864 encoded_pbch bits.
+    * \details
+           * First l_max is calculated in function of the carrier frequency (designated by gscn)
+           * Then, i_ssb (sometimes called v) is calculated in function of lmax and i_b_ssb
+           * Then, a c_seq2 sequence is generated in function of pci and i_ssb
+           * Finally, the 864 rate_matched_bch bits are scrambled to get the 864 encoded_pbch bits, using c_seq2
+    * \standard TS38.211 V15.2.0 Section 7.3.3.1
+    * \param[in] gscn Global Synchronization Channel Number
+    * \param[in] pci Physical Cell Id
+    * \param[in] i_b_ssb. It is the SSB index
+    * \param[in] rate_matched_bch, Rate matched BCH, 864 bits sequence.
+    * \param[out] encoded_pbch encoded pbch 864 bits sequence.
+     */
 
     /** Initialize variables */
     double frequency;
-    double ssb_period;
     frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
-    int l_max;
-    int i_ssb;
+    int l_max, i_ssb;
 
     /** Calculate l_max in function of the carrier frequency (designated by gscn) */
     if (frequency > 3000000000){
@@ -262,9 +262,9 @@ void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ss
 
     /** Calculate i_ssb (sometimes called v) in function of l_max and i_b_ssb */
     if (l_max == 4){
-        i_ssb = i_b_ssb % 4; //also called v in Aymeric's documentation.
+        i_ssb = i_b_ssb % 4; //also called v.
     }else {
-        i_ssb = i_b_ssb; //also called v in Aymeric's documentation.
+        i_ssb = i_b_ssb; //also called v.
     }
 
     /** Generate a c_seq2 sequence in function of pci and i_ssb */
@@ -277,7 +277,6 @@ void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ss
     //BOOST_LOG_TRIVIAL(info) << "function encode_pbch done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
 
 }
-
 
 
 void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int gscn, int i_b_ssb,
@@ -303,12 +302,12 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
     int *encoded_pbch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2];
     encode_pbch(gscn, pci, i_b_ssb, rate_matched_bch, encoded_pbch);
     if (display_variable){
-        free5GRAN::utils::common_utils::display_table(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "encoded_pbch from physical_channel");}
+        free5GRAN::utils::common_utils::display_table(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "encoded_pbch from physical_channel");
+    }
 
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from encoded_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
-
-    //modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols);
     free5GRAN::phy::signal_processing::modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols);
     if (display_variable){
-        free5GRAN::utils::common_utils::display_complex_float(pbch_symbols, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols from physical_channel");}
+        free5GRAN::utils::common_utils::display_complex_float(pbch_symbols, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols from physical_channel");
+    }
 }
