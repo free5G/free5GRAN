@@ -1126,4 +1126,4 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
     if (display_variable){
         free5GRAN::utils::common_utils::display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from phy");
     }
-}d
+}
