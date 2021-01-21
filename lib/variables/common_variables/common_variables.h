@@ -202,5 +202,7 @@ namespace free5GRAN{
     extern int SIZE_IFFT_SSB; /** This indicates the number of element in each symbols of SSB, before and after ifft */
 
     extern int MIB_BITS_SIZE;
+
+    extern bool display_variables;
 }
 #endif

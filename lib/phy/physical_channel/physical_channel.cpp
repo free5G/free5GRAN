@@ -282,7 +282,6 @@ void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ss
 void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int gscn, int i_b_ssb,
                                                      std::complex<float> *pbch_symbols) {
 
-    bool display_variable = true;
 
     /**
    * \fn pbch_encoding (int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols)
@@ -301,13 +300,13 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
     /** ENCODING -> Generating encoded_pbch (864 bits long in our case) from rate_matching_bch. TS38.211 V15.2.0 Section 7.3.3.1 */
     int *encoded_pbch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2];
     encode_pbch(gscn, pci, i_b_ssb, rate_matched_bch, encoded_pbch);
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "encoded_pbch from physical_channel");
     }
 
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from encoded_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
     free5GRAN::phy::signal_processing::modulation(encoded_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols);
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_complex_float(pbch_symbols, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols from physical_channel");
     }
 }

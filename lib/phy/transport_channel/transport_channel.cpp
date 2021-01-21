@@ -1446,19 +1446,19 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     int mib_bits_interleaved[free5GRAN::BCH_PAYLOAD_SIZE];
     free5GRAN::phy::transport_channel::bch_payload_integration(mib_bits, mib_bits_interleaved);
 
-    bool display_variable = true;
-    if(display_variable){
+    //bool display_variable = true;
+    if(free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from transport_channel");}
 
     /** SCRAMBLING -> Generate bch_payload (32 bits long in our case) from mib_bits_interleaved. TS38.212 V15.2.0 Section 7.1.2 */
     int bch_payload[free5GRAN::BCH_PAYLOAD_SIZE];
     int v = mib_bits[25] * 2 + mib_bits[26]; /** v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN). */
-    if (display_variable){
+    if (free5GRAN::display_variables){
         std::cout <<"v (depends on SFN, 3rd and 2nd LSB "<<v<< std::endl;
     }
     free5GRAN::phy::transport_channel::scrambling_bch(v, pci, mib_bits_interleaved, bch_payload);
 
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(bch_payload, free5GRAN::BCH_PAYLOAD_SIZE, "bch_payload from transport_channel");
     }
 
@@ -1467,7 +1467,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     int bch_crc[24];
     /** Generate 24 bits sequence CRC (bch_crc) of bch_payload, using table G_CRC_24_C */
     free5GRAN::phy::transport_channel::compute_crc(bch_payload, free5GRAN::G_CRC_24_C, bch_crc, 32, 25);
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(bch_crc, 24, "bch_crc from transport_channel");
     }
 
@@ -1481,7 +1481,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
         bch_payload_with_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_crc[i];
     }
 
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(bch_payload_with_crc, free5GRAN::SIZE_PBCH_POLAR_DECODED, "bch_payload_with_crc from transport_channel");
     }
 
@@ -1489,12 +1489,12 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     int *polar_encoded_bch = new int[N];
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_with_crc, polar_encoded_bch);
 
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(polar_encoded_bch, N, "polar_encoded_bch from transport_channel");
     }
 
     /** RATE MATCHING -> Generate rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
     free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch);
-    if (display_variable){
+    if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(rate_matched_bch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, "rate_matched_bch from transport_channel");}
 }
