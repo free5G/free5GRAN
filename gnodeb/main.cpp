@@ -37,7 +37,6 @@
 namespace logging = boost::log;
 void init_logging(string info);
 
-
 int main(int argc, char *argv[]) {
 
 
@@ -83,38 +82,12 @@ int main(int argc, char *argv[]) {
     /** Initialize variables defined in the config file */
     int gscn, pci, i_b_ssb, dividing_factor;
     float sampling_rate;
-    double frequency, ssb_period;
+    double ssb_period;
 
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
         std::cout << "################ SSB EMISSION #################" << std::endl;
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
-
-        /** If needed, calculate frequency from gscn */
-        if (cell_info.lookupValue("frequency", frequency) || cell_info.lookupValue("gscn", gscn)) {
-            /** To be verified */
-            if (!cell_info.lookupValue("frequency", frequency)) {
-                frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
-            }
-
-        } else {
-            std::cerr << "Missing frequency or gscn parameter in config file" << std::endl;
-            return(EXIT_FAILURE);
-        }
-
-        /** Fill mib_object with values in config file */
-        mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
-        mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
-        mib_object.k_ssb = mib_info.lookup("k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
-        mib_object.scs = mib_info.lookup("scs"); /** must be 15 or 30. stored on MIB on 1 bit */
-        mib_object.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
-        mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
-        mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
-
-        /** Fill cell_info with values contained in config file */
-        pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
-        i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
-        ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
 
         /** Fill usrp_info with values contained in config file  */
         sampling_rate = usrp_info.lookup("sampling_rate");
@@ -130,17 +103,39 @@ int main(int argc, char *argv[]) {
         std::string ref2 = usrp_info.lookup("ref2");
         usrp_info_object.ref2 = ref2;
 
-        usrp_info_object.sample_rate = usrp_info.lookup("sample_rate");
-
         usrp_info_object.sampling_rate = usrp_info.lookup("sampling_rate");
 
         usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
 
         usrp_info_object.gain = usrp_info.lookup("gain");
 
-        usrp_info_object.bandwidth = usrp_info.lookup("bandwidth");
+        //usrp_info_object.bandwidth = usrp_info.lookup("bandwidth");
+        usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
 
         dividing_factor = usrp_info.lookup("dividing_factor"); /** Dividing factor (before ifft) to enhance the radio transmission */
+
+
+        /** Fill mib_object with values in config file */
+        mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
+        mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
+        mib_object.k_ssb = mib_info.lookup("k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
+        mib_object.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
+        mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
+        mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
+
+        /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
+        /** Calculation according to !! TS TO BE ADDED !! */
+        if (usrp_info_object.center_frequency < 3000e6){
+            mib_object.scs = 15e3; /** in Hz */
+        }else{
+            mib_object.scs = 30e3; /** in Hz */
+        }
+
+        /** Fill cell_info with values contained in config file */
+        pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
+        i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
+        ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
+
 
     }   else {
         std::cout << "Please enter a function name in config file"<< std::endl;
@@ -175,7 +170,6 @@ int main(int argc, char *argv[]) {
 
     BOOST_LOG_TRIVIAL(info) << "pci = " + std::to_string(pci);
     BOOST_LOG_TRIVIAL(info) << "i_b_ssb = " + std::to_string(i_b_ssb);
-    BOOST_LOG_TRIVIAL(info) << "frequency = " + std::to_string(frequency);
     BOOST_LOG_TRIVIAL(info) << "ssb_perdiod (seconds) = " + std::to_string(ssb_period);
     BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
     BOOST_LOG_TRIVIAL(info) << "N (length of BCH payload after polar encode) = " + std::to_string(N);
@@ -414,7 +408,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "USRP subdev = "+usrp_info_object.subdev;
     BOOST_LOG_TRIVIAL(info) << "USRP ant = "+usrp_info_object.ant;
     BOOST_LOG_TRIVIAL(info) << "USRP ref2 = "+usrp_info_object.ref2;
-    BOOST_LOG_TRIVIAL(info) << "usrp_info_object.sample_rate = "+std::to_string(usrp_info_object.sample_rate);
+    BOOST_LOG_TRIVIAL(info) << "usrp_info_object.sampling_rate = "+std::to_string(usrp_info_object.sampling_rate);
 
     /** Emission for SCS = 15 KHz */
     //rf rf_variable(3.846, 3699.84e6, 75, 3.84e6, subdev, ant, ref2, device_args);
@@ -484,7 +478,7 @@ int main(int argc, char *argv[]) {
     if (run_with_usrp) {
         /** Emission for SCS = 30 KHz */
         BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
-        rf rf_variable(usrp_info_object.sample_rate, usrp_info_object.center_frequency,
+        rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
         usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
         usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
@@ -603,7 +597,7 @@ int main(int argc, char *argv[]) {
     if (run_with_usrp) {
         //Emission for SCS = 30 KHz
         BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
-        rf rf_variable(usrp_info_object.sample_rate, usrp_info_object.center_frequency,
+        rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                                usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
                                usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 

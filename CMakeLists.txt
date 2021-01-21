@@ -54,9 +54,6 @@ add_executable(free5GRAN-gNodeB
         gnodeb/phy/phy.h
         gnodeb/rf/rf.cpp
         gnodeb/rf/rf.h
-        lib/phy
-        lib/utils
-        lib/variables
         )
 
 
