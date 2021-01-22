@@ -892,6 +892,7 @@ void free5GRAN::phy::signal_processing::ifft(std::complex<float> **in_freq_domai
     * \param[in] int sc_number. Number of sub_carrier per symbol in the input signal. In our case, it is 256.
     * \param[in] float scaling_factor before ifft, to enhance the radio transmission.
     * \param[out] std::complex<double> ** out_time_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB time signal (4*256 symbols)
+     *
     */
 
     for (int symbol =0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
