@@ -69,11 +69,11 @@ namespace free5GRAN {
 
             void reverse_ssb(std::complex<float> ** input_ssb, std::complex<float> ** output_reversed_ssb, int num_symbols, int num_sc);
 
-            void ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float> ** out_time_domain_channel, int fft_size, int dividing_factor, int sc_number);
+            void ifft(std::complex<float> ** in_freq_domain_channel, std::complex<float> ** out_time_domain_channel, int fft_size, float scaling_factor, int sc_number);
 
             void adding_cp(std::complex<float> ** input_channel, int num_symbols, int num_sc_in, int cp_lengths, std::complex<float> ** output_channel_with_cp);
 
-            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, int dividing_factor, int ifft_size, std::complex<float> ** SSB_signal_time_domain);
+            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, float scaling_factor, int ifft_size, std::complex<float> ** SSB_signal_time_domain);
         }
     }
 }

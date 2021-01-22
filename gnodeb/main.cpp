@@ -42,7 +42,7 @@ void init_logging(string info);
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = false; /** put 'true' if runing_platform is attached to an USRP */
+    bool run_with_usrp = true; /** put 'true' if runing_platform is attached to an USRP */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
     const libconfig::Setting &root = cfg_gNodeB.getRoot();
 
     /** Initialize variables defined in the config file */
-    int gscn, pci, i_b_ssb, dividing_factor;
-    float sampling_rate;
+    int gscn, pci, i_b_ssb;
+    float sampling_rate, scaling_factor;
     double ssb_period;
 
     if (func_gNodeB == "SSB_EMISSION") {
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
         //usrp_info_object.bandwidth = usrp_info.lookup("bandwidth");
         usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
 
-        dividing_factor = usrp_info.lookup("dividing_factor"); /** Dividing factor (before ifft) to enhance the radio transmission */
-
+        scaling_factor = usrp_info.lookup("scaling_factor"); /** Dividing factor (before ifft) to enhance the radio transmission */
+        //scaling_factor = 1;
 
         /** Fill mib_object with values in config file */
         mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
         SSB_signal_time_domain[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
     }
 
-    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, dividing_factor, ifft_size, SSB_signal_time_domain);
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, scaling_factor, ifft_size, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB";
 
 

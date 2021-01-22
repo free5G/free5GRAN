@@ -882,7 +882,7 @@ void free5GRAN::phy::signal_processing::reverse_ssb(std::complex<float> **input_
 
 void free5GRAN::phy::signal_processing::ifft(std::complex<float> **in_freq_domain_channel,
                                              std::complex<float> **out_time_domain_channel, int fft_size,
-                                             int dividing_factor, int sc_number){
+                                             float scaling_factor, int sc_number){
     /**
     * \fn ifft (std::complex<double> ** in_freq_domain_channel, std::complex<double> ** out_time_domain_channel, int fft_size, int sc_number)
     * \brief Perform ifft (Inverse Fast Fourier Transform) to transform a frequency_domain signal into a time_domain signal.
@@ -890,13 +890,13 @@ void free5GRAN::phy::signal_processing::ifft(std::complex<float> **in_freq_domai
     * \param[in] std::complex<double> ** in_freq_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB frequency signal extended (4*256 symbols)
     * \param[in] int fft_size. Size of the fft. In our case, it is 256.
     * \param[in] int sc_number. Number of sub_carrier per symbol in the input signal. In our case, it is 256.
-    * \param[in] int dividing_factor before ifft, to enhance the radio transmission.
+    * \param[in] float scaling_factor before ifft, to enhance the radio transmission.
     * \param[out] std::complex<double> ** out_time_domain_channel. 2 dimensions table of complexes. In our case, it is the SSB time signal (4*256 symbols)
     */
 
     for (int symbol =0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
         for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc ++){
-            in_freq_domain_channel[symbol][sc] = {(in_freq_domain_channel[symbol][sc].real())/dividing_factor, (in_freq_domain_channel[symbol][sc].imag())/dividing_factor};
+            in_freq_domain_channel[symbol][sc] = {(in_freq_domain_channel[symbol][sc].real()) * scaling_factor, (in_freq_domain_channel[symbol][sc].imag()) * scaling_factor};
         }
     }
 
@@ -965,16 +965,16 @@ void free5GRAN::phy::signal_processing::adding_cp(std::complex<float> **input_ch
 
 
 void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols, int pci,
-                                                                 int i_b_ssb, int dividing_factor, int ifft_size,
+                                                                 int i_b_ssb, float scaling_factor, int ifft_size,
                                                                  std::complex<float> **SSB_signal_time_domain) {
     /**
-    * \fn generate_SSB_time (std::complex<float> * pbch_symbols, int pci, int i_b_ssb, int dividing_factor, std::complex<float> ** SSB_signal_time_domain)
+    * \fn generate_SSB_time (std::complex<float> * pbch_symbols, int pci, int i_b_ssb, int scaling_factor, std::complex<float> ** SSB_signal_time_domain)
     * \brief Generates from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
     * \standard TS38.211 V15.2.0 Section 7.4
     * \param[in] pbch_symbols. In our case, it is a 432 symbols sequence.
     * \param[in] pci. Physical Cell ID.
     * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
-    * \param[in] dividing_factor Before ifft, to enhance the radio transmission
+    * \param[in] scaling_factor Before ifft, to enhance the radio transmission
     * \param[in] ifft_size. should be a power of 2. Is calculated in function of SCS and Bandwidth.
     * \param[out] SSB_signal_time_domain. In our case, it is a signal composed of 4*256 elements.
     */
@@ -995,7 +995,7 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
     }*/
 
     if (free5GRAN::display_variables){
-        std::cout<<"dividing_factor = "<<dividing_factor<<std::endl;
+        std::cout << "scaling_factor = " << scaling_factor << std::endl;
         free5GRAN::utils::common_utils::display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
                               "dmrs_symbols from libphy");
     }
@@ -1117,7 +1117,7 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
     }
 
     /**IFFT --> SSB from frequency domain to time domain */
-    free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, dividing_factor, free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, scaling_factor, free5GRAN::SIZE_IFFT_SSB);
     if (free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from libphy");
     }

@@ -63,7 +63,7 @@ namespace free5GRAN {
 
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
-            void bch_payload_integration(int *mib_bits, int *mib_bits_interleaved);
+            void bch_payload_generation(int *mib_bits, int *mib_bits_interleaved);
 
             void scrambling_bch(int v, int pci, int *mib_bits_interleaved, int *bch_payload);
 
