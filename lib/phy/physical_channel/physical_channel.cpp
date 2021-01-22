@@ -227,6 +227,13 @@ void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vecto
 
 
 
+
+
+
+
+
+
+
 /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
 
@@ -234,7 +241,7 @@ void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ss
                                                    int *encoded_pbch) {
     /**
     * \fn encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch)
-    * \brief This function aims to scramble the 864 rate_matched_bch bits to get 864 encoded_pbch bits.
+    * \brief Scrambles the 864 rate_matched_bch bits to get 864 encoded_pbch bits.
     * \details
            * First l_max is calculated in function of the carrier frequency (designated by gscn)
            * Then, i_ssb (sometimes called v) is calculated in function of lmax and i_b_ssb
@@ -243,10 +250,10 @@ void free5GRAN::phy::physical_channel::encode_pbch(int gscn, int pci, int i_b_ss
     * \standard TS38.211 V15.2.0 Section 7.3.3.1
     * \param[in] gscn Global Synchronization Channel Number
     * \param[in] pci Physical Cell Id
-    * \param[in] i_b_ssb. It is the SSB index
+    * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
     * \param[in] rate_matched_bch, Rate matched BCH, 864 bits sequence.
     * \param[out] encoded_pbch encoded pbch 864 bits sequence.
-     */
+    */
 
     /** Initialize variables */
     double frequency;
@@ -283,9 +290,9 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
                                                      std::complex<float> *pbch_symbols) {
 
 
-    /**
+   /**
    * \fn pbch_encoding (int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols)
-   * \brief This function aims to transform a rate_matched_bch bits sequence into a pbch symbols sequence.
+   * \brief Transforms a rate_matched_bch bits sequence into a pbch symbols sequence.
    * \details The 2 main steps are ENCODING and MODULATION.
    * \standard TS38.211 V15.2.0 Section 7.3.3.1
    * \standard TS38.211 V15.2.0 Section 5.1.3
@@ -293,7 +300,7 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
    * \param[in] rate_matched_bch. In our case, it is a 864 long bits sequence.
    * \param[in] pci. Physical Cell ID.
    * \param[in] gscn. Global Synchronization Channel Number.
-   * \param[in] i_b_ssb. It is the SSB index. Should be between 0 and 7.
+   * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
    * \param[out] pbch_symbols. The output symbols sequence. 432 symbols long in our case.
    */
 

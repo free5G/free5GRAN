@@ -133,18 +133,18 @@ void free5GRAN::utils::common_utils::scramble(double *input_bits, int *c_seq, do
 void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
     /**
     * \fn encode_mib (free5GRAN::mib mib_object, int* mib_bits)
-    * \brief This function aims to transforms the MIB informations (decimal) into the mib bits sequence.
-    * In our case, the mib bits sequence is 32 bits long.
+    * \brief Transforms the MIB informations (decimal) into the mib bits sequence.
+    * In our case, mib bits sequence is 32 bits long.
     * \standard TS38.331 V15.11.0 Section 6.2.2
     *
     * \param[in] mib_object object MIB created in common_structures.h, including sfn, scs, cell_barred...
     * \param[out] mib_bits bit sequence returned by the function.
     */
 
-    /** These following mib_bits are unused and set to 0 according to TS38.331 V15.11.0 Section 6.2.2 */
+    /** Following mib_bits are unused and set to 0 according to TS38.331 V15.11.0 Section 6.2.2 */
     int unused_bits_size = 5;
     for (int i = 0; i < unused_bits_size; i++) {
-        mib_bits[free5GRAN::INDEX_OF_UNUSED_BITS_IN_MIB[i]] = 0;
+        mib_bits[free5GRAN::INDEX_UNUSED_BITS_IN_MIB[i]] = 0;
     }
 
     int sfn_binary_size = 10;
@@ -153,7 +153,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
     /** Put sfn bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
     for (int i = 0; i < sfn_binary_size; i++) {
-        mib_bits[free5GRAN::INDEX_OF_SFN_BITS_IN_MIB[i]] = sfn_binary[i];
+        mib_bits[free5GRAN::INDEX_SFN_BITS_IN_MIB[i]] = sfn_binary[i];
     }
 
     int pddchc_config_binary_size = 8;
@@ -162,7 +162,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
     /** Put the pddchc_config bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
     for (int i = 0; i < pddchc_config_binary_size; i++) {
-        mib_bits[free5GRAN::INDEX_OF_PDDCHC_CONFIG_BITS_IN_MIB[i]] = pddchc_config_binary[i];
+        mib_bits[free5GRAN::INDEX_PDDCHC_CONFIG_BITS_IN_MIB[i]] = pddchc_config_binary[i];
     }
 
     int k_ssb_binary_size = 5;
@@ -171,28 +171,29 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
     /** Put the k_ssb bits into mib_bits sequence according to TS38.331 V15.11.0 Section 6.2.2 */
     for (int i = 0; i < k_ssb_binary_size; i++) {
-        mib_bits[free5GRAN::INDEX_OF_K_SSB_BITS_IN_MIB[i]] = k_ssb_binary[i];
+        mib_bits[free5GRAN::INDEX_K_SSB_BITS_IN_MIB[i]] = k_ssb_binary[i];
     }
 
+
+    /** Following mib information are not needed to be converted into bits as they are stored on only 1 bit */
 
     int available_scs[2] = {15, 30}; /** In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz */
     for (int i = 0; i < 2; i++) {
         /** Put SCS (Sub Carrier Spacing) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
         if (mib_object.scs == available_scs[i]) {
-            mib_bits[free5GRAN::INDEX_OF_AVAILABLE_SCS_IN_MIB[0]] = i;
+            mib_bits[free5GRAN::INDEX_AVAILABLE_SCS_IN_MIB[0]] = i;
         }
     }
 
-    /** The following mib information are not needed to be converted into bits as they are stored on only 1 bit */
 
     /** Put the cell_barred bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
-    mib_bits[free5GRAN::INDEX_OF_CELL_BARRED_BITS_IN_MIB[0]] = mib_object.cell_barred;
+    mib_bits[free5GRAN::INDEX_CELL_BARRED_BITS_IN_MIB[0]] = mib_object.cell_barred;
 
     /** Put the DMRS type A position (position of first DM-RS for downlink) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
-    mib_bits[free5GRAN::INDEX_OF_DMRS_TYPE_A_POSITION_BITS_IN_MIB[0]] = mib_object.dmrs_type_a_position - 2;
+    mib_bits[free5GRAN::INDEX_DMRS_TYPE_A_POSITION_BITS_IN_MIB[0]] = mib_object.dmrs_type_a_position - 2;
 
     /** Put the intra frequency reselection bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
-    mib_bits[free5GRAN::INDEX_OF_INTRA_FREQ_RESELECTION_BITS_IN_MIB[0]] = mib_object.intra_freq_reselection;
+    mib_bits[free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[0]] = mib_object.intra_freq_reselection;
     BOOST_LOG_TRIVIAL(info) << "function encode_mib done";
 
 }
@@ -202,11 +203,11 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int decimal, int *table_output) {
     /**
     * \fn convert_decimal_to_binary (int size, int decimal, int* table_output)
-    * \brief This function aims to convert an integer number into a binary bit sequence.
+    * \brief Converts an integer number into a binary bit sequence.
     *
-    * \param[in] size Indicates the number of bits in the output sequence. Please verify that decimal <= 2^size.
-    * \param[in] decimal the number to convert into a bit sequence.
-    * \param[out] table_output the output bits sequence. Will contain only 1 and 0.
+    * \param[in] size Indicates number of bits in the output sequence. Please verify that decimal <= 2^size.
+    * \param[in] decimal Number to convert into a bit sequence.
+    * \param[out] table_output Output bits sequence. Will contain only 1 and 0.
     */
 
     for (int i = size; i >= 0; i--) {
@@ -222,6 +223,14 @@ void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int dec
 
 void free5GRAN::utils::common_utils::display_signal_float(std::complex<float> **signal_to_display, int num_symbols,
                                                           int num_sc, char *signal_name){
+    /**
+    * \fn display_signal_float (std::complex<float> **signal_to_display, int num_symbols, int num_sc, char *signal_name)
+    * \brief Displayw a table of complex<float> in the console
+    * \param[in] signal_to_display
+    * \param[in] num_symbols number of symbol in the table
+    * \param[in] num_sc number of subcarrier in each symbol
+    * \param[in] signal_name name to display
+    */
     for (int symbols = 0; symbols < num_symbols; symbols++){
         std::cout<<""<<std::endl;
         std::cout<<""<<std::endl;
@@ -235,7 +244,7 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
                                                     char *vector_name){
     /**
     * \fn display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
-    * \brief This function aims to display a vector in the console, using the command std::cout.
+    * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
     * \param[in] vector_size number of element in the vector
@@ -251,7 +260,6 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
         }
         std::cout<<vector_to_display[i]<<"  "<< std::ends;
     }
-
 }
 
 
@@ -259,7 +267,7 @@ void free5GRAN::utils::common_utils::display_complex_double(std::complex<double>
                                                             char *vector_name){
     /**
     * \fn display_complex_double (std::complex<double> *vector_to_display, int vector_size, char* vector_name)
-    * \brief This function aims to display a vector in the console, using the command std::cout.
+    * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
     * \param[in] vector_size number of element in the vector
@@ -281,7 +289,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
                                                            char *vector_name){
     /**
     * \fn display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
-    * \brief This function aims to display a vector in the console, using the command std::cout.
+    * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
     * \param[in] vector_size number of element in the vector
@@ -300,9 +308,9 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
 
 
 void free5GRAN::utils::common_utils::display_table(int *table_to_display, int size, char *table_name) {
-    /**
+   /**
    * \fn display_table (int* table_to_display, int size, char* table_name)
-   * \brief This function aims to display a table in the console, using the command std::cout.
+   * \brief Displays a table in the console.
    *
    * \param[in] table_to_display
    * \param[in] size number of element in the table

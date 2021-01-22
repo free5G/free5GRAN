@@ -42,7 +42,7 @@ void init_logging(string info);
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = true; /** put 'true' if runing_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if runing_platform is attached to an USRP */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
