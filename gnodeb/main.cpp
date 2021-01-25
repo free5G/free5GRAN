@@ -42,7 +42,7 @@ void init_logging(string info);
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = true; /** put 'true' if runing_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if runing_platform is attached to an USRP */
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -219,15 +219,19 @@ int main(int argc, char *argv[]) {
 
 
     /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
-    int cp_lengths[28], cum_sum_cp_lengths[28];
+    int cp_lengths[28], cum_sum_cp_lengths[28]; // 28 must ne replaced by a variable
 
-    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs, free5GRAN::SIZE_IFFT_SSB, 0, 28, &cp_lengths[0],
-                                                          &cum_sum_cp_lengths[0]);
+    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs/1000, free5GRAN::SIZE_IFFT_SSB, 0, 28, &cp_lengths[0],
+                                                         &cum_sum_cp_lengths[0]);
+
+    //free5GRAN::phy::signal_processing::compute_cp_lengths(30, 256, 0, 28, &cp_lengths[0],
+    //                                                     &cum_sum_cp_lengths[0]);
 
     if (free5GRAN::display_variables){
-        std::cout<<"cp_length[1] = "<<cp_lengths[1]<<std::endl;
-        std::cout << "" << std::endl;
     }
+    std::cout<<"cp_length[1] = "<<cp_lengths[1]<<std::endl;
+    std::cout << "" << std::endl;
+    free5GRAN::utils::common_utils::display_table(cp_lengths, 28, "cp_lengths from main");
 
     BOOST_LOG_TRIVIAL(info) << "COMPUTE CP LENGTH";
     BOOST_LOG_TRIVIAL(info) << "cp_lengths[1] (which will be used) = "+std::to_string(cp_lengths[1]);
@@ -484,6 +488,7 @@ int main(int argc, char *argv[]) {
         usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
         usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
+        /** */
         std::cout<<" ################ free5GRAN SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
         rf_variable.buffer_transmition(buff_main_5ms);
         }
@@ -492,19 +497,33 @@ int main(int argc, char *argv[]) {
 
 
 
-    //################ BELOW IS UNDER CONSTRUCTION !! #####################
+    /**################ BELOW IS UNDER CONSTRUCTION !! ##################### */
 
     //Create a radio-frame of 10 ms. SSB will be placed in it in function of i_b_ssb, SCS and ssb_period
 
+    std::cout<<" ######### BUILD A RADIO-FRAME OF 10 MS ###########"<<std::endl;
+    std::cout<<""<<std::endl;
+    std::cout<<"num_symbols_SSB = "<<num_symbols_SSB<<std::endl;
+    std::cout<<"Num_samples_per_symbol_SSB = "<<Num_samples_per_symbol_SSB<<std::endl;
+    std::cout<<"sample_duration = "<<sample_duration<<std::endl;
+
     float SSB_duration = num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration;
     std::cout<<"SSB_duration = "<<SSB_duration<<std::endl;
+    std::cout<<"sampling_rate = "<<sampling_rate<<std::endl;
 
     int Num_sample_per_frame = (1e-2)*sampling_rate; //This corresponds to divide the frame duration (10 ms) by the sample_duration.
-    std::cout<<"sample_duration= "<<(sample_duration)<<std::endl;
     std::cout<<"Num_sample_per_frame = "<<(Num_sample_per_frame)<<std::endl;
 
     int Num_symbols_per_frame = 280;  //To be replaced by a variable
     std::cout<<"Num_symbols_per_frame = "<<Num_symbols_per_frame<<std::endl;
+
+    int ssb_period_in_samples = ssb_period * sampling_rate;
+    std::cout<<"ssb_period_in_samples = "<<ssb_period_in_samples<<std::endl;
+
+
+    int index_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
+    std::cout<<"index_first_ssb_in_frame = "<<index_first_ssb_in_frame<<std::endl;
+
 
     std::complex<float> *one_frame;
     one_frame = new std::complex<float>[Num_sample_per_frame];
@@ -514,17 +533,16 @@ int main(int argc, char *argv[]) {
         one_frame[sample] = {0,0};
     }
 
+    free5GRAN::utils::common_utils::display_complex_float(one_frame, Num_sample_per_frame, "one_frame from main");
+
 
     //Create a buffer for 10 ms
-
     std::vector<std::complex<float>> buff_main_10ms;
     for (int sample = 0; sample < Num_sample_per_frame; sample++){
         buff_main_10ms.push_back(one_frame[sample]);
     }
 
 
-    int index_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
-    std::cout<<"index_first_ssb_in_frame = "<<index_first_ssb_in_frame<<std::endl;
 
 
     free5GRAN::utils::common_utils::display_table(cp_lengths, 28, "cp_lengths from main");
@@ -532,7 +550,7 @@ int main(int argc, char *argv[]) {
     //Initialize the cp_length for each symbols of a frame
     int cp_lengths_one_frame[Num_symbols_per_frame];
     for (int sub_frame = 0; sub_frame < 10; sub_frame++){
-        for (int symbol = 0; symbol < 28; symbol++){
+        for (int symbol = 0; symbol < 28; symbol++){ // 28 must be replaced by a variable !
             cp_lengths_one_frame[28*sub_frame+symbol] = cp_lengths[symbol];
         }
     }
@@ -546,9 +564,9 @@ int main(int argc, char *argv[]) {
         symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
     }
     free5GRAN::utils::common_utils::display_table(symbols_size_one_frame, Num_symbols_per_frame, "symbols_size_one_frame");
+    std::cout<<""<<std::endl;
 
-    int ssb_period_in_samples = ssb_period * sampling_rate;
-    std::cout<<"ssb_period_in_samples = "<<ssb_period_in_samples;
+
 
     //Initialize the cumulative_symbol_size for each symbols of a frame
     //cumulative_symbol_size[i] corresponds to the total number of samples in the frame at the ith symbol.
@@ -556,7 +574,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    //Initialyse one_frame_2 with the right number of sample for each sumbol
+    //Initialyse one_frame_2 with the right number of sample for each sumbols
 
     std::complex<float> **one_frame_2;
     one_frame_2 = new std::complex<float> *[Num_symbols_per_frame];
@@ -581,23 +599,36 @@ int main(int argc, char *argv[]) {
         one_frame_2[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
         index_ssb_in_frame ++;
     }
-    /**
-    */
+
+    // Fill one_frame_2 with SSB a second time if ssb_period = 0.005 sec
+    if (ssb_period == 0.005){
+        int index_second_ssb_in_frame = index_first_ssb_in_frame + Num_symbols_per_frame/2;
+        int index_ssb_in_frame = index_second_ssb_in_frame;
+        std::cout<<"index_second_ssb_in_frame = "<<index_second_ssb_in_frame<<std::endl;
+        for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++){
+            one_frame_2[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
+            index_ssb_in_frame++;
+        }
+    }
 
 
-
-
-
-
-    /** Display one_frame_2
+    /** Display one_frame_2 */
 
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
-        phy_variable.display_complex_float(one_frame_2[symbol], symbols_size_one_frame[symbol], "one_frame_2, one symbol = ");
+        std::cout<<"symbol "<<symbol<<" of ";
+        free5GRAN::utils::common_utils::display_complex_float(one_frame_2[symbol], symbols_size_one_frame[symbol], "one_frame_2 = ");
+        std::cout<<""<<std::endl;
     }
-     */
 
 
 
+    //Fill a buffer buff_main_10ms_2 with one_frame_2
+    std::vector<std::complex<float>> buff_main_10ms_2;
+    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
+        for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++){
+            buff_main_10ms.push_back(one_frame_2[symbol][sample]);
+        }
+    }
 
 
     /** Sending the buffer_10ms via USRP
@@ -616,6 +647,13 @@ int main(int argc, char *argv[]) {
 
 
 }
+
+
+
+
+
+
+
 
 
 

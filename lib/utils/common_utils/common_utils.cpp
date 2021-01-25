@@ -296,7 +296,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
     * \param[in] vector_name name to display
     */
     for (int i=0; i<vector_size; i++){
-        if (i % 1000 == 0){        /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i % 1000 == 0 && i !=0){        /** 10 here means that every 10 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         if (i == 0){
