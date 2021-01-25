@@ -255,7 +255,7 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
             std::cout <<""<< std::endl;
             std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
         }
-        if (i% 10 == 0){         /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i% 280 == 0){         /** 10 here means that every 280 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         std::cout<<vector_to_display[i]<<"  "<< std::ends;

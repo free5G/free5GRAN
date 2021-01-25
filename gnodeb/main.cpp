@@ -42,7 +42,8 @@ void init_logging(string info);
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = false; /** put 'true' if runing_platform is attached to an USRP */
+    bool run_with_usrp_10ms = false; /** put 'true' if runing_platform is attached to an USRP */
+    bool run_with_usrp_5ms = true;
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
     libconfig::Config cfg_gNodeB;
 
     try {
-        if(run_with_usrp){
+        if(run_with_usrp_10ms || run_with_usrp_5ms){
             cfg_gNodeB.readFile (argv[1]);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
         }else {
             cfg_gNodeB.readFile ("../config/ssb_emission.cfg"); /** Use this for launch in CLion */
@@ -85,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     /** Initialize variables defined in the config file */
     int gscn, pci, i_b_ssb;
-    float sampling_rate, scaling_factor;
+    float scaling_factor;
     double ssb_period;
 
     if (func_gNodeB == "SSB_EMISSION") {
@@ -93,8 +94,11 @@ int main(int argc, char *argv[]) {
         std::cout << "################ SSB EMISSION #################" << std::endl;
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
+
         /** Fill usrp_info with values contained in config file  */
-        sampling_rate = usrp_info.lookup("sampling_rate");
+        //sampling_rate = usrp_info.lookup("sampling_rate");
+        //sampling_rate = free5GRAN::SIZE_IFFT_SSB * mib_object.scs;
+
         std::string device_args = usrp_info.lookup("device_args");
         usrp_info_object.device_args = device_args;
 
@@ -107,17 +111,27 @@ int main(int argc, char *argv[]) {
         std::string ref2 = usrp_info.lookup("ref2");
         usrp_info_object.ref2 = ref2;
 
-        usrp_info_object.sampling_rate = usrp_info.lookup("sampling_rate");
-
         usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
 
         usrp_info_object.gain = usrp_info.lookup("gain");
 
+        scaling_factor = usrp_info.lookup("scaling_factor"); /** Dividing factor (before ifft) to enhance the radio transmission */
+        //scaling_factor = 1;
+
+        /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
+        /** Calculation according to !! TS TO BE ADDED !! */
+        if (usrp_info_object.center_frequency < 3000e6){
+            mib_object.scs = 15e3; /** in Hz */
+        }else{
+            mib_object.scs = 30e3; /** in Hz */
+        }
+
+        //usrp_info_object.sampling_rate = usrp_info.lookup("sampling_rate");
+        usrp_info_object.sampling_rate = free5GRAN::SIZE_IFFT_SSB * mib_object.scs;
+
         //usrp_info_object.bandwidth = usrp_info.lookup("bandwidth");
         usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
 
-        scaling_factor = usrp_info.lookup("scaling_factor"); /** Dividing factor (before ifft) to enhance the radio transmission */
-        //scaling_factor = 1;
 
         /** Fill mib_object with values in config file */
         mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
@@ -127,13 +141,7 @@ int main(int argc, char *argv[]) {
         mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
         mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
 
-        /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
-        /** Calculation according to !! TS TO BE ADDED !! */
-        if (usrp_info_object.center_frequency < 3000e6){
-            mib_object.scs = 15e3; /** in Hz */
-        }else{
-            mib_object.scs = 30e3; /** in Hz */
-        }
+
 
         /** Fill cell_info with values contained in config file */
         pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
@@ -167,13 +175,6 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
     BOOST_LOG_TRIVIAL(info) << "N (length of BCH payload after polar encode) = " + std::to_string(N);
 
-    /** Calculate ifft_size in function of SCS and Bandwidth */
-    int ifft_size;
-    ifft_size = usrp_info_object.bandwidth / mib_object.scs;
-
-    if (free5GRAN::display_variables){
-        std::cout<<"ifft_size (from main) = "<<ifft_size<<std::endl;
-    }
 
     phy phy_variable;
 
@@ -214,24 +215,31 @@ int main(int argc, char *argv[]) {
         SSB_signal_time_domain[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
     }
 
-    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, scaling_factor, ifft_size, SSB_signal_time_domain);
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, scaling_factor, free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB";
 
 
     /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
-    int cp_lengths[28], cum_sum_cp_lengths[28]; // 28 must ne replaced by a variable
+    int Num_symbols_per_subframe;
+    if (mib_object.scs == 15000){
+        Num_symbols_per_subframe = 14;
+    }else if (mib_object.scs == 30000){
+        Num_symbols_per_subframe = 28;
+    }
 
-    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs/1000, free5GRAN::SIZE_IFFT_SSB, 0, 28, &cp_lengths[0],
+    std::cout<<"Num_symbols_per_subframe = "<<Num_symbols_per_subframe<<std::endl;
+
+    int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+
+    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs/1000, free5GRAN::SIZE_IFFT_SSB, 0, Num_symbols_per_subframe, &cp_lengths[0],
                                                          &cum_sum_cp_lengths[0]);
 
-    //free5GRAN::phy::signal_processing::compute_cp_lengths(30, 256, 0, 28, &cp_lengths[0],
-    //                                                     &cum_sum_cp_lengths[0]);
 
     if (free5GRAN::display_variables){
     }
     std::cout<<"cp_length[1] = "<<cp_lengths[1]<<std::endl;
     std::cout << "" << std::endl;
-    free5GRAN::utils::common_utils::display_table(cp_lengths, 28, "cp_lengths from main");
+    free5GRAN::utils::common_utils::display_table(cp_lengths, Num_symbols_per_subframe, "cp_lengths from main");
 
     BOOST_LOG_TRIVIAL(info) << "COMPUTE CP LENGTH";
     BOOST_LOG_TRIVIAL(info) << "cp_lengths[1] (which will be used) = "+std::to_string(cp_lengths[1]);
@@ -347,10 +355,10 @@ int main(int argc, char *argv[]) {
 
     int Num_samples_per_symbol_SSB = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
     int num_symbols_SSB = 4;
-    float sample_duration = 1 / sampling_rate;
+    float sample_duration = 1 / usrp_info_object.sampling_rate;
     int num_0_to_add = 1 + (ssb_period - (num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration)) / sample_duration;
 
-    BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = "+std::to_string(sampling_rate);
+    BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = "+std::to_string(usrp_info_object.sampling_rate);
     BOOST_LOG_TRIVIAL(info) << "Num_samples_per_symbol_SSB = "+std::to_string(Num_samples_per_symbol_SSB);
     BOOST_LOG_TRIVIAL(info) << "num_symbols_SSB of SSB: "+std::to_string(num_symbols_SSB);
     BOOST_LOG_TRIVIAL(info) << "sample duration: "+std::to_string(sample_duration);
@@ -363,6 +371,7 @@ int main(int argc, char *argv[]) {
     std::cout << "# num_symbols_SSB: " << num_symbols_SSB << std::endl;
     std::cout << "# sample_duration (1/sampling_rate): " << sample_duration <<" second"<< std::endl;
     std::cout << "# num_0_to_add to obtain 5 ms: " << num_0_to_add << std::endl;
+    std::cout << "# ifft_size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
     std::cout<<""<<std::endl;
 
 
@@ -481,172 +490,154 @@ int main(int argc, char *argv[]) {
 
 
     //Send buff_main_5ms
-    if (run_with_usrp) {
+    if (run_with_usrp_5ms) {
         //Emission for SCS = 30 KHz
         BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
         rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
         usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
         usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
-        /** */
+
         std::cout<<" ################ free5GRAN SENDING SSB EVERY "<<ssb_period <<" SECONDS ################"<<std::endl;
         rf_variable.buffer_transmition(buff_main_5ms);
+         }
+
+
+
+
+
+
+
+
+
+        /**################ BELOW IS UNDER CONSTRUCTION !! ##################### */
+
+        //Create a radio-frame of 10 ms. SSB will be placed in it in function of i_b_ssb, SCS and ssb_period
+
+        std::cout << " ######### BUILD A RADIO-FRAME OF 10 MS ###########" << std::endl;
+        std::cout << "" << std::endl;
+        std::cout << "num_symbols_SSB = " << num_symbols_SSB << std::endl;
+        std::cout << "Num_samples_per_symbol_SSB = " << Num_samples_per_symbol_SSB << std::endl;
+        std::cout << "sample_duration = " << sample_duration << std::endl;
+
+        float SSB_duration = num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration;
+        std::cout << "SSB_duration = " << SSB_duration << std::endl;
+        std::cout << "sampling_rate = " << usrp_info_object.sampling_rate << std::endl;
+
+        int Num_sample_per_frame =
+                (1e-2) * usrp_info_object.sampling_rate; //This corresponds to divide the frame duration (10 ms) by the sample_duration.
+        std::cout << "Num_sample_per_frame = " << (Num_sample_per_frame) << std::endl;
+
+        int Num_symbols_per_frame = Num_symbols_per_subframe * 10;  //To be replaced by a variable
+        std::cout << "Num_symbols_per_frame = " << Num_symbols_per_frame << std::endl;
+
+        int ssb_period_in_samples = ssb_period * usrp_info_object.sampling_rate;
+        std::cout << "ssb_period_in_samples = " << ssb_period_in_samples << std::endl;
+
+        int index_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
+        std::cout << "index_first_ssb_in_frame = " << index_first_ssb_in_frame << std::endl;
+
+        if (free5GRAN::display_variables) {
+            free5GRAN::utils::common_utils::display_table(cp_lengths, Num_symbols_per_subframe, "cp_lengths from main");
+        }
+        //Initialize the cp_length for each symbols of a frame
+        int cp_lengths_one_frame[Num_symbols_per_frame];
+        for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+            for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+                cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths[symbol];
+            }
         }
 
-
-
-
-
-    /**################ BELOW IS UNDER CONSTRUCTION !! ##################### */
-
-    //Create a radio-frame of 10 ms. SSB will be placed in it in function of i_b_ssb, SCS and ssb_period
-
-    std::cout<<" ######### BUILD A RADIO-FRAME OF 10 MS ###########"<<std::endl;
-    std::cout<<""<<std::endl;
-    std::cout<<"num_symbols_SSB = "<<num_symbols_SSB<<std::endl;
-    std::cout<<"Num_samples_per_symbol_SSB = "<<Num_samples_per_symbol_SSB<<std::endl;
-    std::cout<<"sample_duration = "<<sample_duration<<std::endl;
-
-    float SSB_duration = num_symbols_SSB * Num_samples_per_symbol_SSB * sample_duration;
-    std::cout<<"SSB_duration = "<<SSB_duration<<std::endl;
-    std::cout<<"sampling_rate = "<<sampling_rate<<std::endl;
-
-    int Num_sample_per_frame = (1e-2)*sampling_rate; //This corresponds to divide the frame duration (10 ms) by the sample_duration.
-    std::cout<<"Num_sample_per_frame = "<<(Num_sample_per_frame)<<std::endl;
-
-    int Num_symbols_per_frame = 280;  //To be replaced by a variable
-    std::cout<<"Num_symbols_per_frame = "<<Num_symbols_per_frame<<std::endl;
-
-    int ssb_period_in_samples = ssb_period * sampling_rate;
-    std::cout<<"ssb_period_in_samples = "<<ssb_period_in_samples<<std::endl;
-
-
-    int index_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
-    std::cout<<"index_first_ssb_in_frame = "<<index_first_ssb_in_frame<<std::endl;
-
-
-    std::complex<float> *one_frame;
-    one_frame = new std::complex<float>[Num_sample_per_frame];
-
-    //Initialize all the frame at 0
-    for (int sample = 0; sample < Num_sample_per_frame; sample++){
-        one_frame[sample] = {0,0};
-    }
-
-    free5GRAN::utils::common_utils::display_complex_float(one_frame, Num_sample_per_frame, "one_frame from main");
-
-
-    //Create a buffer for 10 ms
-    std::vector<std::complex<float>> buff_main_10ms;
-    for (int sample = 0; sample < Num_sample_per_frame; sample++){
-        buff_main_10ms.push_back(one_frame[sample]);
-    }
-
-
-
-
-    free5GRAN::utils::common_utils::display_table(cp_lengths, 28, "cp_lengths from main");
-
-    //Initialize the cp_length for each symbols of a frame
-    int cp_lengths_one_frame[Num_symbols_per_frame];
-    for (int sub_frame = 0; sub_frame < 10; sub_frame++){
-        for (int symbol = 0; symbol < 28; symbol++){ // 28 must be replaced by a variable !
-            cp_lengths_one_frame[28*sub_frame+symbol] = cp_lengths[symbol];
+        if (free5GRAN::display_variables) {
+            free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, Num_symbols_per_frame,
+                                                          "cp_lengths_one_frame");
         }
-    }
+        //Initialize the symbol_size for each symbols of a frame
 
-    free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, Num_symbols_per_frame, "cp_lengths_one_frame");
-
-    //Initialize the symbol_size for each symbols of a frame
-
-    int symbols_size_one_frame[Num_symbols_per_frame];
-    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol ++){
-        symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
-    }
-    free5GRAN::utils::common_utils::display_table(symbols_size_one_frame, Num_symbols_per_frame, "symbols_size_one_frame");
-    std::cout<<""<<std::endl;
-
-
-
-    //Initialize the cumulative_symbol_size for each symbols of a frame
-    //cumulative_symbol_size[i] corresponds to the total number of samples in the frame at the ith symbol.
-
-
-
-
-    //Initialyse one_frame_2 with the right number of sample for each sumbols
-
-    std::complex<float> **one_frame_2;
-    one_frame_2 = new std::complex<float> *[Num_symbols_per_frame];
-
-    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol ++){
-        one_frame_2[symbol] = new std::complex<float>[symbols_size_one_frame[symbol]];
-    }
-
-
-    //Fill one_frame_2 with 0 values everywhere
-
-    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
-        for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample ++){
-            one_frame_2[symbol][sample] = {0,0};
+        int symbols_size_one_frame[Num_symbols_per_frame];
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
         }
-    }
 
-    //Fill one_frame_2 with SSB at the right place
+        if (free5GRAN::display_variables) {
+            free5GRAN::utils::common_utils::display_table(symbols_size_one_frame, Num_symbols_per_frame,
+                                                          "symbols_size_one_frame");
+            std::cout <<""<< std::endl;
+        }
 
-    int index_ssb_in_frame = index_first_ssb_in_frame;
-    for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++) {
-        one_frame_2[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
-        index_ssb_in_frame ++;
-    }
+        //Initialyse one_frame with the right number of sample for each symbols
+        std::complex<float> **one_frame;
+        one_frame = new std::complex<float> *[Num_symbols_per_frame];
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            one_frame[symbol] = new std::complex<float>[symbols_size_one_frame[symbol]];
+        }
 
-    // Fill one_frame_2 with SSB a second time if ssb_period = 0.005 sec
-    if (ssb_period == 0.005){
-        int index_second_ssb_in_frame = index_first_ssb_in_frame + Num_symbols_per_frame/2;
-        int index_ssb_in_frame = index_second_ssb_in_frame;
-        std::cout<<"index_second_ssb_in_frame = "<<index_second_ssb_in_frame<<std::endl;
-        for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++){
-            one_frame_2[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
+        //Fill one_frame with 0 values everywhere
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
+                one_frame[symbol][sample] = {0, 0};
+            }
+        }
+
+        //Fill one_frame with SSB at the right place
+        int index_ssb_in_frame = index_first_ssb_in_frame;
+        for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++) {
+            one_frame[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
             index_ssb_in_frame++;
         }
-    }
 
-
-    /** Display one_frame_2 */
-
-    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
-        std::cout<<"symbol "<<symbol<<" of ";
-        free5GRAN::utils::common_utils::display_complex_float(one_frame_2[symbol], symbols_size_one_frame[symbol], "one_frame_2 = ");
-        std::cout<<""<<std::endl;
-    }
-
-
-
-    //Fill a buffer buff_main_10ms_2 with one_frame_2
-    std::vector<std::complex<float>> buff_main_10ms_2;
-    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++){
-        for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++){
-            buff_main_10ms.push_back(one_frame_2[symbol][sample]);
+        //If ssb_period = 0.005 sec, fill one_frame with SSB a second time
+        if (ssb_period == 0.005) {
+            int index_second_ssb_in_frame = index_first_ssb_in_frame + Num_symbols_per_frame / 2;
+            int index_ssb_in_frame = index_second_ssb_in_frame;
+            std::cout << "index_second_ssb_in_frame = " << index_second_ssb_in_frame << std::endl;
+            for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++) {
+                one_frame[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
+                index_ssb_in_frame++;
+            }
         }
-    }
 
 
-    /** Sending the buffer_10ms via USRP
-
-    if (run_with_usrp) {
-        //Emission for SCS = 30 KHz
-        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
-        rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
-                               usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
-                               usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
-
-        std::cout<<" ################ SENDING a frame of 10ms continuously"<<std::endl;
-        rf_variable.buffer_transmition(buff_main_10ms);
-    }
-*/
+        if (free5GRAN::display_variables) {
+            /** Display one_frame */
+            for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+                std::cout << "symbol " << symbol << " of ";
+                free5GRAN::utils::common_utils::display_complex_float(one_frame[symbol], symbols_size_one_frame[symbol],
+                                                                      "one_frame = ");
+                std::cout << "" << std::endl;
+            }
+        }
 
 
+
+        //Fill a buffer buff_main_10ms with one_frame
+        std::vector<std::complex<float>> buff_main_10ms;
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
+                buff_main_10ms.push_back(one_frame[symbol][sample]);
+            }
+        }
+
+        if (free5GRAN::display_variables) {
+            //Display buff_main_10ms
+            free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_sample_per_frame, "buff_main_10ms");
+        }
+
+        /** Sending the buff_main_10ms via USRP */
+
+        if (run_with_usrp_10ms) {
+            //Emission for SCS = 30 KHz
+            BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
+            rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
+                           usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
+                           usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
+
+            std::cout << " ################ SENDING a frame of 10ms continuously, with SSB every " << ssb_period
+                      << " seconds" << std::endl;
+            rf_variable.buffer_transmition(buff_main_10ms);
+        }
 }
+
 
 
 
@@ -709,3 +700,4 @@ void init_logging(std::string level)
 
     boost::log::add_common_attributes();
 }
+
