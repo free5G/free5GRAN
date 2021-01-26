@@ -247,6 +247,9 @@ int phy::extract_pbch() {
 
     vector<complex<float>> pss_signal(48 * symbol_duration);
 
+    /*
+     * Isolate PSS signal around calculated new PSS occurence (based on timestamp of first synchronization step)
+     */
     int begin_offset, end_offset;
     if (pss_signal.size()/2 <= index_second_pss && pss_signal.size()/2  <= num_samples - index_second_pss){
         begin_offset = pss_signal.size()/2;
@@ -268,18 +271,40 @@ int phy::extract_pbch() {
 
     int synchronisation_index;
     float peak_value;
-    double time_first_sample;
 
-    // Find the PSS and its index
-    free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length, pss_signal,fft_size);
+    /*
+     * Downsample signal for better performance
+     */
+    int downsampling_factor = fft_size / free5GRAN::PSS_SSS_FFT_SIZE;
+    BOOST_LOG_TRIVIAL(trace) << "PSS synchronization downsampling factor: " << downsampling_factor;
+    int symbol_duration_downsampled = symbol_duration / downsampling_factor;
 
-    vector<complex<float>> sss_signal(fft_size);
+    vector<complex<float>> pss_signal_downsampled(48 * symbol_duration_downsampled);
+    for (int i = 0; i < 48 * symbol_duration_downsampled; i ++){
+        pss_signal_downsampled[i] = pss_signal[downsampling_factor * i];
+    }
 
-    int pss_start_index = synchronisation_index - symbol_duration + 1;
+    free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length / downsampling_factor, pss_signal_downsampled,fft_size / downsampling_factor);
+
+    int pss_start_index = downsampling_factor * (synchronisation_index - symbol_duration_downsampled + 1);
+
+    /*
+     * Once synchronization is made on downsampled signal, it can be performed on full signal for finer results
+     */
+    vector<complex<float>> fine_pss_signal(symbol_duration + (2 * downsampling_factor + 1));
+    count = 0;
+    for (int i = pss_start_index - downsampling_factor; i < pss_start_index + symbol_duration + (downsampling_factor + 1); i ++){
+        fine_pss_signal[count] = pss_signal[i];
+        count ++;
+    }
+    free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length, fine_pss_signal,fft_size);
+
+    pss_start_index = pss_start_index + (synchronisation_index - symbol_duration + 1  - downsampling_factor);
     int buffer_pss_index = pss_start_index + index_second_pss - begin_offset;
     index_first_pss = buffer_pss_index;
     int sss_init_index = buffer_pss_index + 2 * symbol_duration + common_cp_length;
 
+    vector<complex<float>> sss_signal(fft_size);
     /*
      * Extracting the SSS signal based on sss_init_index and common_cp_length
      */
@@ -789,7 +814,6 @@ void phy::print_dci_info() {
      * \fn print_dci_info
      * \brief Print DCI decoded informations
     */
-
     cout << "###### DCI" << endl;
     cout << "# RIV: " + to_string(dci_1_0_si_rnti.RIV)<< endl;
     cout << "# Time Domain RA: " + to_string(dci_1_0_si_rnti.TD_ra) << endl;

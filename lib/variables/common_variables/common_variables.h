@@ -181,5 +181,7 @@ namespace free5GRAN{
 
     extern int SI_RNTI[16];
 
+    extern int PSS_SSS_FFT_SIZE;
+
 }
 #endif

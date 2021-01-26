@@ -330,3 +330,5 @@ int free5GRAN::NUMBER_REG_PER_CCE = 6;
 
 int free5GRAN::SI_RNTI[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
+int free5GRAN::PSS_SSS_FFT_SIZE = 128;
+
