@@ -37,6 +37,30 @@ phy::phy() {
 }
 
 
+void phy::calculate_SSB() {
+
+    std::cout<<"Hello from calculate_SSB"<<std::endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /** FROM HERE, THE CODE AIMS TO DECODE INFORMATIONS AND NOT TO ENCODE IT ANYMORE (AYMERIC's CODE) */
 /** IT IS ONLY HERE TO VERIFY THAT WHAT WE ENCODE IS POSSIBLE TO BE DECODED CORRECTLY */
 

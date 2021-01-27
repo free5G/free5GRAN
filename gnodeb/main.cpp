@@ -40,6 +40,27 @@
 namespace logging = boost::log;
 void init_logging(string info);
 
+void send_buffer_multithread_test(int u){
+    std::cout<<"From send_buffer_multithread_test, u = "<<u<<std::endl;
+}
+
+
+void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, std::vector<std::complex<float>> buff_main_5ms){
+    //Emission for SCS = 30 KHz
+    BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
+    rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
+                   usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
+                   usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
+
+
+    std::cout << " ################ free5GRAN SENDING SSB EVERY " << ssb_period << " SECONDS ################"
+              << std::endl;
+    rf_variable.buffer_transmition(buff_main_5ms);
+    BOOST_LOG_TRIVIAL(info) << "Hello from send_buffer_multithread";
+}
+
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -528,6 +549,8 @@ int main(int argc, char *argv[]) {
         rf_variable.buffer_transmition(buff_main_5ms);
     }
 
+    //thread t5(send_buffer_multithread, usrp_info_object, ssb_period, buff_main_5ms);
+
 
 
 
@@ -591,7 +614,7 @@ int main(int argc, char *argv[]) {
         std::cout << "" << std::endl;
     }
 
-    //Initialyse one_frame with the right number of sample for each symbols
+    //Initialise one_frame with the right number of sample for each symbols
     std::complex<float> **one_frame;
     one_frame = new std::complex<float> *[Num_symbols_per_frame];
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
@@ -663,6 +686,15 @@ int main(int argc, char *argv[]) {
         rf_variable.buffer_transmition(buff_main_10ms);
     }
 
+    /** Sending buff_main_10ms MULTITHREAD */
+
+    if(run_multi_thread) {
+        thread t6(send_buffer_multithread, usrp_info_object, ssb_period, buff_main_10ms);
+        t6.join();
+    }
+
+
+
 
 
     /** MULTI-THREADING */
@@ -679,22 +711,21 @@ int main(int argc, char *argv[]) {
         bool run_multi_thread = true;
         if (run_multi_thread == true) {
 
-            BOOST_LOG_TRIVIAL(info) << "Multi-thread, initialize the rf parameters ";
-            rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
-                           usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
-                           usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
-
-            std::cout << " ################ SENDING a frame of 10ms continuously, with SSB every " << ssb_period
-                      << " seconds" << std::endl;
-            rf_variable.buffer_transmition(buff_main_10ms);
         }
     });
 
+
+    std::thread t3([]() {
+        send_buffer_multithread_test(5);
+        BOOST_LOG_TRIVIAL(info) << " Thread t3 ";
+    });
+    t2.join();
+    t3.join();
+    //t5.join();
 }
 
-void send_buffer_multithread(int prout){
 
-}
+
 
 
 

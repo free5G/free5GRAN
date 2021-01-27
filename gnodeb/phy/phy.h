@@ -42,6 +42,7 @@ public:
 
     phy();
 
+    void calculate_SSB();
     std::vector<std::complex<float>> AY_extract_pbch(std::complex<float> ** input_SSB, int pci);
     int * AY_decode_pbch(int pci, std::vector<std::complex<float>> pbch_symbols);
     void AY_decode_bch(int* bch_bits, int pci, int* mib_bits);
