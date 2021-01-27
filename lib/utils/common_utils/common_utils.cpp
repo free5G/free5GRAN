@@ -177,7 +177,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
     /** Following mib information are not needed to be converted into bits as they are stored on only 1 bit */
 
-    int available_scs[2] = {15, 30}; /** In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz */
+    int available_scs[2] = {15000, 30000}; /** In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz */
     for (int i = 0; i < 2; i++) {
         /** Put SCS (Sub Carrier Spacing) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
         if (mib_object.scs == available_scs[i]) {
@@ -296,7 +296,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
     * \param[in] vector_name name to display
     */
     for (int i=0; i<vector_size; i++){
-        if (i % 1000 == 0 && i !=0){        /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i % 100 == 0 && i !=0){        /** 10 here means that every 10 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         if (i == 0){

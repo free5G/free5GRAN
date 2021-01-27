@@ -186,12 +186,10 @@ void rf::buffer_transmition(
     //loop until the entire file has been read
 
     int i=0;
-    while (true) {
+    //while (true) {
         tx_stream->send(&buff.front(), buff.size(), md);
         BOOST_LOG_TRIVIAL(trace) << "Sending a SSB";
-    }
-
-    std::cout<< "Hello from rf, after buffer_transmition"<<std::endl;
+    //}
 
     //infile.close();
 }
