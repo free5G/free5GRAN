@@ -352,3 +352,5 @@ int free5GRAN::SIZE_IFFT_SSB = 1024;
 int free5GRAN::MIB_BITS_SIZE = 32;
 
 bool free5GRAN::display_variables = false;
+
+bool free5GRAN::finish_to_copy = false;

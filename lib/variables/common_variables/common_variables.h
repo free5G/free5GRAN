@@ -204,5 +204,7 @@ namespace free5GRAN{
     extern int MIB_BITS_SIZE;
 
     extern bool display_variables;
+
+    extern bool finish_to_copy;
 }
 #endif
