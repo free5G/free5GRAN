@@ -206,5 +206,8 @@ namespace free5GRAN{
     extern bool display_variables;
 
     extern bool finish_to_copy;
+
+    extern int index_frame_sent;
+    extern int index_frame_to_send;
 }
 #endif

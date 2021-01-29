@@ -347,10 +347,13 @@ int free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[] = {22};
 int free5GRAN::INTERVAL_SSB_PSS[] = {56, 182};
 int free5GRAN::INTERVAL_SSB_SSS[] = {56, 182};
 
-int free5GRAN::SIZE_IFFT_SSB = 1024;
+int free5GRAN::SIZE_IFFT_SSB = 256;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 
 bool free5GRAN::display_variables = false;
 
 bool free5GRAN::finish_to_copy = false;
+
+int free5GRAN::index_frame_sent = 0;
+int free5GRAN::index_frame_to_send = 0;

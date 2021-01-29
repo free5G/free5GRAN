@@ -16,6 +16,7 @@
  */
 
 #include "rf.h"
+#include "../phy/phy.h"
 //#include "wave_table_class.h"
 #include <uhd.h>
 //#include <../../src/rf/uhd/utils/thread.hpp>
@@ -169,6 +170,7 @@ void rf::buffer_transmition(
         //const std::string &file,
         //size_t samps_per_buff
 ){
+    BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
     //create a transmit streamer
 
@@ -186,9 +188,12 @@ void rf::buffer_transmition(
     //loop until the entire file has been read
 
     int i=0;
+    std::vector<std::complex<float>> buff_main_10ms_4;
     while (true) {
-        tx_stream->send(&buff.front(), buff.size(), md);
-        BOOST_LOG_TRIVIAL(trace) << "Sending a SSB";
+        buff_main_10ms_4 = buff;
+        free5GRAN::index_frame_sent ++;
+        tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
+        BOOST_LOG_TRIVIAL(warning) << "Sending a SSB";
     }
 
     //infile.close();

@@ -39,28 +39,28 @@
 #include <chrono>
 
 namespace logging = boost::log;
-void init_logging(string info);
-
-void send_buffer_multithread_test(int u){
-    std::cout<<"From send_buffer_multithread_test, u = "<<u<<std::endl;
-}
+void init_logging(string warning);
 
 
 void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, vector<complex<float>> * buff_to_send){
-    //Emission for SCS = 30 KHz
-    //BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
-    //rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
-    //               usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
-    //               usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
 
-    //std::cout << " ################ free5GRAN SENDING SSB EVERY " << ssb_period << " SECONDS ################"
-    //          << std::endl;
-    while (true) {
-        if (free5GRAN::finish_to_copy == true) {
+
+    BOOST_LOG_TRIVIAL(warning) << "Function send_buffer_multithread begins ";
+    //while (true) {
+        //if (free5GRAN::finish_to_copy == true) {
+
+            //auto start3 = chrono::high_resolution_clock::now();
+
             rf_variable_2.buffer_transmition(*buff_to_send);
-        }
-    }
+
+            //auto stop3 = chrono::high_resolution_clock::now();
+            //auto duration3 = chrono::duration_cast<chrono::microseconds>(stop3 - start3);
+
+            //cout <<"duration of buffer_transmition = "<<duration3.count() << endl;
+            //BOOST_LOG_TRIVIAL(warning) << "duration of buffer_transmittion = "+ std::to_string(duration3.count());
+        //}
+    //}
 }
 
 
@@ -69,7 +69,7 @@ void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf 
 std::vector<std::complex<float>> generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
 
     mib_object.sfn = sfn;
-    BOOST_LOG_TRIVIAL(info) << "SFN = " + std::to_string(sfn);
+    BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
 
     /** MIB GENERATION -> Generate mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
@@ -820,26 +820,34 @@ int main(int argc, char *argv[]) {
 
         int sfn = 1;
         while (true) {
-            auto start = chrono::high_resolution_clock::now();
 
-            free5GRAN::finish_to_copy = false;
-            buff_main_10ms = generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn, i_b_ssb,
-                                                   scaling_factor);
-            sfn++;
-            if (sfn == 1000){
-                sfn =0;
+
+            if (free5GRAN::index_frame_to_send < free5GRAN::index_frame_sent +3) {
+                auto start = chrono::high_resolution_clock::now();
+
+                buff_main_10ms = generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+                                                     i_b_ssb,
+                                                     scaling_factor);
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
+                free5GRAN::index_frame_to_send++;
+
+                sfn++;
+                if (sfn == 1024) {
+                    sfn = 0;
+                }
+
+                BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send = " + std::to_string(free5GRAN::index_frame_to_send);
+                BOOST_LOG_TRIVIAL(warning) << "index_frame_sent = " + std::to_string(free5GRAN::index_frame_sent);
+
+                auto stop = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+                cout << duration.count() << endl;
+
+                buff_main_10ms_3 = buff_main_10ms;
+                //std::vector<std::complex<float>> *buff_main_10ms_4;
+                //buff_main_10ms_4 = &buff_main_10ms_3;
+
             }
-
-            auto stop = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-            cout <<duration.count() << endl;
-
-            buff_main_10ms_3 = buff_main_10ms;
-            free5GRAN::finish_to_copy = true;
-            //std::vector<std::complex<float>> *buff_main_10ms_4;
-            //buff_main_10ms_4 = &buff_main_10ms_3;
-
-
             //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms_3 from main");
             //thread t6(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, buff_main_10ms_3);
             //t6.join();
