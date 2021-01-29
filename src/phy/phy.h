@@ -42,6 +42,7 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> time_first_pss;
     std::vector<std::complex<float>> buff;
     BCCH_DL_SCH_Message_t* sib1=0;
+    free5GRAN::ss_power_indicator ss_pwr={};
 
 public:
     phy(rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band band_obj);

@@ -34,6 +34,7 @@
 #include "../../lib/phy/physical_channel/physical_channel.h"
 #include "../../lib/utils/common_utils/common_utils.h"
 #include "../../lib/asn1c/nr_rrc/BCCH-DL-SCH-Message.h"
+#include "../../lib/asn1c/nr_rrc/FrequencyInfoUL-SIB.h"
 
 using namespace std;
 
@@ -423,6 +424,30 @@ int phy::extract_pbch() {
         final_pbch_modulation_symbols[i] = (pbch_symbols[i]) * conj(coefficients[i_b_ssb][channel_indexes[0][0][i]][channel_indexes[0][1][i]]) / (float) pow(abs(coefficients[i_b_ssb][channel_indexes[0][0][i]][channel_indexes[0][1][i]]),2);
     }
 
+    ss_pwr.ss_rsrp = 0;
+    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i ++){
+        ss_pwr.ss_rsrp +=pow(abs(sss_symbols[i]),2);
+    }
+    for (int i = 0; i < free5GRAN::SIZE_SSB_DMRS_SYMBOLS; i ++){
+        ss_pwr.ss_rsrp +=pow(abs(dmrs_symbols[i]),2);
+    }
+    ss_pwr.ss_rsrp /= (free5GRAN::SIZE_PSS_SSS_SIGNAL + free5GRAN::SIZE_SSB_DMRS_SYMBOLS);
+
+    ss_pwr.ss_rssi = 0;
+    for (int symb = 0 ; symb < free5GRAN::NUM_SYMBOLS_SSB - 1; symb++){
+        for (int sc = 0; sc < free5GRAN::NUM_SC_SSB; sc ++){
+            ss_pwr.ss_rssi += pow(abs(ssb_symbols[symb][sc]),2);
+        }
+    }
+    // 20 is the number of RB in SSB block
+    int n_rb = 20;
+    ss_pwr.ss_rssi /= n_rb;
+    ss_pwr.ss_rsrq = 10 * log(n_rb * ss_pwr.ss_rsrp / ss_pwr.ss_rssi);
+    // Converting RSRP and RSSI from W to dBm
+    ss_pwr.ss_rsrp  = 10 * log10(ss_pwr.ss_rsrp) + 30;
+    ss_pwr.ss_rssi = 10 * log10(ss_pwr.ss_rssi) + 30;
+    ss_pwr.ss_sinr = max_snr;
+
     this->i_b_ssb = i_b_ssb;
     if (l_max == 4){
         this-> i_ssb = i_b_ssb % 4;
@@ -454,7 +479,10 @@ void phy::print_cell_info() {
     */
     cout << "\n";
     cout << "###### RADIO" << endl;
-    cout << "# SNR: " + to_string(max_snr) + " db" << endl;
+    cout << "# SS-RSRP: " + to_string(ss_pwr.ss_rsrp) + " dbm" << endl;
+    cout << "# SS-RSSI: " + to_string(ss_pwr.ss_rssi) + " dbm" << endl;
+    cout << "# SS-RSRQ: " + to_string(ss_pwr.ss_rsrq) + " db" << endl;
+    cout << "# SS-SNR: " + to_string(ss_pwr.ss_sinr) + " db" << endl;
     cout << "# Frequency offset: " + to_string(freq_offset) + " Hz" << endl;
     cout << "\n";
     cout << "###### CELL" << endl;

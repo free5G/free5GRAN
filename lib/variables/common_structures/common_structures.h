@@ -65,6 +65,10 @@ namespace free5GRAN{
         int n0, sfn_parity, monitoring_slot;
     } pdcch_t0ss_monitoring_occasions;
 
+    typedef struct ss_power_indicator_ {
+        float ss_rsrp, ss_rssi, ss_rsrq, ss_sinr;
+    } ss_power_indicator;
+
 
     /*
      * 5G NR bands
