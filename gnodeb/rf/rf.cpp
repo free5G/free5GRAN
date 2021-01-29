@@ -163,7 +163,7 @@ void rf::buffer_transmition(
         //pas besoin de l'appeler pck déjà défini au dessus.
         //uhd::usrp::multi_usr::set_master_clock_rate();
         //std::vector<std::complex<double>> buff /**à changer par des float */ //SSB à mettre dans le buf"
-        std::vector<std::complex<float>> buff /**à changer par des float */ //SSB à mettre dans le buf"
+        std::vector<std::complex<float>> &buff /**à changer par des float */ //SSB à mettre dans le buf"
         //const std::string &cpu_format,
         //const std::string &wire_format,
         //const std::string &file,
@@ -186,10 +186,10 @@ void rf::buffer_transmition(
     //loop until the entire file has been read
 
     int i=0;
-    //while (true) {
+    while (true) {
         tx_stream->send(&buff.front(), buff.size(), md);
         BOOST_LOG_TRIVIAL(trace) << "Sending a SSB";
-    //}
+    }
 
     //infile.close();
 }

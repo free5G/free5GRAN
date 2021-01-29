@@ -46,7 +46,7 @@ void send_buffer_multithread_test(int u){
 }
 
 
-void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, std::vector<std::complex<float>> buff_to_send){
+void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, vector<complex<float>> * buff_to_send){
     //Emission for SCS = 30 KHz
     //BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
     //rf rf_variable(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
@@ -56,14 +56,20 @@ void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf 
 
     //std::cout << " ################ free5GRAN SENDING SSB EVERY " << ssb_period << " SECONDS ################"
     //          << std::endl;
-    rf_variable_2.buffer_transmition(buff_to_send);
-    BOOST_LOG_TRIVIAL(info) << "Hello from send_buffer_multithread";
+    while (true) {
+        if (free5GRAN::finish_to_copy == true) {
+            rf_variable_2.buffer_transmition(*buff_to_send);
+        }
+    }
 }
 
 
 
 
-std::vector<std::complex<float>> generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
+std::vector<std::complex<float>> generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
+
+    mib_object.sfn = sfn;
+    BOOST_LOG_TRIVIAL(info) << "SFN = " + std::to_string(sfn);
 
     /** MIB GENERATION -> Generate mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
@@ -790,14 +796,18 @@ int main(int argc, char *argv[]) {
 
         std::cout << " ################ SENDING a frame of 10ms continuously, with SSB every " << ssb_period
                   << " seconds" << std::endl;
+
         rf_variable.buffer_transmition(buff_main_10ms);
     }
+
+
 
     /** Sending buff_main_10ms MULTITHREAD */
 
 
     if(run_multi_thread) {
         std::vector<std::complex<float>> buff_main_10ms_3;
+        buff_main_10ms_3 = buff_main_10ms;
 
         BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
         rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
@@ -805,50 +815,41 @@ int main(int argc, char *argv[]) {
                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
 
 
+        thread t8(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_main_10ms_3);
+        //send_buffer_multithread(usrp_info_object, ssb_period, rf_variable_2, buff_main_10ms_3);
 
-
+        int sfn = 1;
         while (true) {
             auto start = chrono::high_resolution_clock::now();
 
-            buff_main_10ms_3 = generate_frame_10ms(mib_object, usrp_info_object, ssb_period, pci, N, gscn, i_b_ssb,
+            free5GRAN::finish_to_copy = false;
+            buff_main_10ms = generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn, i_b_ssb,
                                                    scaling_factor);
+            sfn++;
+            if (sfn == 1000){
+                sfn =0;
+            }
 
             auto stop = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
             cout <<duration.count() << endl;
 
-            //std::vector<std::complex<float>> buff_main_10ms_4;
-            //buff_main_10ms_4 = buff_main_10ms_3;
+            buff_main_10ms_3 = buff_main_10ms;
             free5GRAN::finish_to_copy = true;
-            free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms_3 from main");
+            //std::vector<std::complex<float>> *buff_main_10ms_4;
+            //buff_main_10ms_4 = &buff_main_10ms_3;
+
+
+            //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms_3 from main");
             //thread t6(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, buff_main_10ms_3);
             //t6.join();
-            //send_buffer_multithread(usrp_info_object, ssb_period, rf_variable_2, buff_main_10ms_4);
+            //send_buffer_multithread(usrp_info_object, ssb_period, rf_variable_2, buff_main_10ms);
         }
+
     }
 
 
 
-
-
-    /** MULTI-THREADING */
-
-    std::thread t1([]() {
-        for (int i = 0; i < 10; i++) {
-            std::cout << (i * 1000) << " ";
-        }
-        BOOST_LOG_TRIVIAL(info) << " Thread t1 ";
-    });
-    t1.join();
-
-
-
-    std::thread t3([]() {
-        send_buffer_multithread_test(5);
-        BOOST_LOG_TRIVIAL(info) << " Thread t3 ";
-    });
-    t3.join();
-    //t5.join();
 }
 
 
