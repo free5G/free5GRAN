@@ -1074,7 +1074,13 @@ void phy::extract_pdsch() {
                 }
                 dl_sch_bytes[i/8] += desegmented[i] * pow(2, 8 - (i%8) - 1);
             }
-            asn_decode(0, ATS_UNALIGNED_BASIC_PER, &asn_DEF_BCCH_DL_SCH_Message,(void **) &sib1, dl_sch_bytes, bytes_size);
+            asn_dec_rval_t dec_rval = asn_decode(0, ATS_UNALIGNED_BASIC_PER, &asn_DEF_BCCH_DL_SCH_Message,(void **) &sib1, dl_sch_bytes, bytes_size);
+            if (dec_rval.code == RC_OK) {
+                BOOST_LOG_TRIVIAL(trace) << "SIB1 parsing succeeded";
+            }
+            else {
+                BOOST_LOG_TRIVIAL(trace) << "SIB1 parsing failed";
+            }
             break;
         }
     }

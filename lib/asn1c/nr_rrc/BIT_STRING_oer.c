@@ -43,7 +43,7 @@ BIT_STRING_decode_oer(const asn_codec_ctx_t *opt_codec_ctx,
             size -= len_len;
         } else if(len_len == 0) {
             ASN__DECODE_STARVED;
-        } else if(len_len < 0) { // lgtm [cpp/constant-comparison]
+        } else if(len_len < 0) {
             ASN__DECODE_FAILED;
         }
 
@@ -154,7 +154,7 @@ BIT_STRING_encode_oer(const asn_TYPE_descriptor_t *td,
 
     if(trailing_zeros) {
         static uint8_t zeros[16];
-        while(trailing_zeros > 0) { // lgtm [cpp/constant-comparison]
+        while(trailing_zeros > 0) {
             int ret;
             if(trailing_zeros < sizeof(zeros)) {
                 ret = cb(zeros, trailing_zeros, app_key);
