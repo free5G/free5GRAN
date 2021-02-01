@@ -160,40 +160,33 @@ double rf::getGain() {
 //emplate<typename samp_type>
 
 void rf::buffer_transmition(
-        //uhd::usrp::multi_usrp::sptr usrp,
-        //pas besoin de l'appeler pck déjà défini au dessus.
-        //uhd::usrp::multi_usr::set_master_clock_rate();
-        //std::vector<std::complex<double>> buff /**à changer par des float */ //SSB à mettre dans le buf"
         std::vector<std::complex<float>> &buff /**à changer par des float */ //SSB à mettre dans le buf"
-        //const std::string &cpu_format,
-        //const std::string &wire_format,
-        //const std::string &file,
-        //size_t samps_per_buff
 ){
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
-    //create a transmit streamer
 
-    //uhd::stream_args_t stream_args("fc32", "sc16")
-    uhd::stream_args_t stream_args("fc32", "sc16"); //put 'fc64' if double are sent or 'fc32' if float are sent.
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args); //sptr est un type défini par la fonction. tx_stream est de type sptr.
-    // usrp est un objet. get_tx_strema est une méthode. (stream_args est une varialbe de type stram_args_t).
+    uhd::stream_args_t stream_args("fc32", "sc16");
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
-    uhd::tx_metadata_t md; //md est une objet à priori inutile//
+
+    uhd::tx_metadata_t md;
     md.start_of_burst = false;
     md.end_of_burst = false;
-    //std::vector<samp_type> buff(samps_per_buff);
-    //std::ifstream infile(file.c_str(), std::ifstream::binary);
 
-    //loop until the entire file has been read
+    //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
+    //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
 
-    int i=0;
     std::vector<std::complex<float>> buff_main_10ms_4;
+    std::cout << "Sending Frame indefinitely..."<<std::endl;
     while (true) {
-        buff_main_10ms_4 = buff;
-        free5GRAN::index_frame_sent ++;
-        tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
-        BOOST_LOG_TRIVIAL(warning) << "Sending a SSB";
+        if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) {
+            BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
+            BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
+            buff_main_10ms_4 = buff;
+            tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
+            BOOST_LOG_TRIVIAL(warning) << "Sending a SSB";
+            free5GRAN::index_frame_sent++;
+        }
     }
 
     //infile.close();
