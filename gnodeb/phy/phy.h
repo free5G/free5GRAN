@@ -40,13 +40,8 @@ private:
 
 public:
 
-    phy();
+    std::vector<std::complex<float>> generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor);
 
-    void calculate_SSB();
-    std::vector<std::complex<float>> AY_extract_pbch(std::complex<float> ** input_SSB, int pci);
-    int * AY_decode_pbch(int pci, std::vector<std::complex<float>> pbch_symbols);
-    void AY_decode_bch(int* bch_bits, int pci, int* mib_bits);
-    void AY_decode_mib(int* mib_bits, free5GRAN::mib &mib_object);
 
 };
 
