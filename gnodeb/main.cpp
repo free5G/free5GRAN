@@ -241,12 +241,18 @@ int main(int argc, char *argv[]) {
         BOOST_LOG_TRIVIAL(warning) << "index_frame_sent = " + std::to_string(free5GRAN::index_frame_sent);
         while (true) {
 
-            /** If the frame_sent has an index higher than the next frame_to_send, we generate the next frame_to_send */
+            /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                 auto start = chrono::high_resolution_clock::now();
-                buff_main_10ms = phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+
+
+                phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
                                                      i_b_ssb,
-                                                     scaling_factor);
+                                                     scaling_factor, buff_main_10ms);
+
+                /**buff_main_10ms = phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+                                                 i_b_ssb,
+                                                 scaling_factor); */
 
                 BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
 

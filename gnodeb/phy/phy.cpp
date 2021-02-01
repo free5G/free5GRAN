@@ -38,7 +38,8 @@
 #include_next <math.h>
 
 
-std::vector<std::complex<float>> phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
+void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_3){
+//std::vector<std::complex<float>> phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
 
     mib_object.sfn = sfn;
     BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
@@ -197,19 +198,21 @@ std::vector<std::complex<float>> phy::generate_frame_10ms(free5GRAN::mib mib_obj
 
 
     //Fill a buffer buff_main_10ms_3 with one_frame
-    std::vector<std::complex<float>> buff_main_10ms_3;
+    buff_main_10ms_3.clear();
+    //std::vector<std::complex<float>> buff_main_10ms_3;
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
         for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
+            //buff_main_10ms_3->push_back(one_frame[symbol][sample]);
             buff_main_10ms_3.push_back(one_frame[symbol][sample]);
         }
     }
 
     if (free5GRAN::display_variables) {
         //Display buff_main_10ms
-        free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms");
+        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms");
     }
     //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms_3 from generate_frame_10ms");
-    return buff_main_10ms_3;
+    //return buff_main_10ms_3;
 }
 
 
