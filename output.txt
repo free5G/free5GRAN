@@ -66,24 +66,24 @@ BCCH-DL-SCH-Message ::= {
                             freqBandIndicatorNR: 78
                         }
                     }
-                    offsetToPointA: 24
+                    offsetToPointA: 106
                     scs-SpecificCarrierList: scs-SpecificCarrierList ::= {
                         SCS-SpecificCarrier ::= {
                             offsetToCarrier: 0
                             subcarrierSpacing: 1 (kHz30)
-                            carrierBandwidth: 51
+                            carrierBandwidth: 133
                         }
                     }
                 }
                 initialDownlinkBWP: BWP-DownlinkCommon ::= {
                     genericParameters: BWP ::= {
-                        locationAndBandwidth: 13750
+                        locationAndBandwidth: 36300
                         subcarrierSpacing: 1 (kHz30)
                     }
                     pdcch-ConfigCommon: PDCCH-ConfigCommon ::= {
                         commonControlResourceSet: ControlResourceSet ::= {
                             controlResourceSetId: 1
-                            frequencyDomainResources: FF 00 00 00 00 00 (3 bits unused)
+                            frequencyDomainResources: 01 FC 00 00 00 00 (3 bits unused)
                             duration: 1
                             cce-REG-MappingType: <present>
                             precoderGranularity: 0 (sameAsREG-bundle)
@@ -108,27 +108,103 @@ BCCH-DL-SCH-Message ::= {
                             }
                         }
                         searchSpaceSIB1: 0
-                        searchSpaceOtherSystemInformation: 0
-                        pagingSearchSpace: 32
-                        ra-SearchSpace: 32
+                        searchSpaceOtherSystemInformation: 1
+                        pagingSearchSpace: 1
+                        ra-SearchSpace: 1
                     }
                     pdsch-ConfigCommon: PDSCH-ConfigCommon ::= {
+                        pdsch-TimeDomainAllocationList: PDSCH-TimeDomainResourceAllocationList ::= {
+                            PDSCH-TimeDomainResourceAllocation ::= {
+                                mappingType: 0 (typeA)
+                                startSymbolAndLength: 40
+                            }
+                        }
                     }
                 }
                 bcch-Config: BCCH-Config ::= {
-                    modificationPeriodCoeff: 0 (n2)
+                    modificationPeriodCoeff: 1 (n4)
                 }
                 pcch-Config: PCCH-Config ::= {
-                    defaultPagingCycle: 1 (rf64)
+                    defaultPagingCycle: 2 (rf128)
                     nAndPagingFrameOffset: <present>
-                    ns: 0 (four)
+                    ns: 2 (one)
                 }
             }
-            ssb-PositionsInBurst: ssb-PositionsInBurst ::= {
-                inOneGroup: <absent>
+            uplinkConfigCommon: UplinkConfigCommonSIB ::= {
+                frequencyInfoUL: FrequencyInfoUL-SIB ::= {
+                    scs-SpecificCarrierList: scs-SpecificCarrierList ::= {
+                        SCS-SpecificCarrier ::= {
+                            offsetToCarrier: 0
+                            subcarrierSpacing: 1 (kHz30)
+                            carrierBandwidth: 133
+                        }
+                    }
+                    p-Max: 10
+                }
+                initialUplinkBWP: BWP-UplinkCommon ::= {
+                    genericParameters: BWP ::= {
+                        locationAndBandwidth: 36300
+                        subcarrierSpacing: 1 (kHz30)
+                    }
+                    rach-ConfigCommon: RACH-ConfigCommon ::= {
+                        rach-ConfigGeneric: RACH-ConfigGeneric ::= {
+                            prach-ConfigurationIndex: 160
+                            msg1-FDM: 0 (one)
+                            msg1-FrequencyStart: 0
+                            zeroCorrelationZoneConfig: 15
+                            preambleReceivedTargetPower: -110
+                            preambleTransMax: 4 (n7)
+                            powerRampingStep: 2 (dB4)
+                            ra-ResponseWindow: 5 (sl20)
+                        }
+                        ssb-perRACH-OccasionAndCB-PreamblesPerSSB: 1 (n8)
+                        ra-ContentionResolutionTimer: 7 (sf64)
+                        prach-RootSequenceIndex: 1
+                        msg1-SubcarrierSpacing: 1 (kHz30)
+                        restrictedSetConfig: 0 (unrestrictedSet)
+                    }
+                    pusch-ConfigCommon: PUSCH-ConfigCommon ::= {
+                        pusch-TimeDomainAllocationList: PUSCH-TimeDomainResourceAllocationList ::= {
+                            PUSCH-TimeDomainResourceAllocation ::= {
+                                k2: 4
+                                mappingType: 0 (typeA)
+                                startSymbolAndLength: 27
+                            }
+                        }
+                        p0-NominalWithGrant: -90
+                    }
+                    pucch-ConfigCommon: PUCCH-ConfigCommon ::= {
+                        pucch-ResourceCommon: 11
+                        pucch-GroupHopping: 0 (neither)
+                        p0-nominal: -90
+                    }
+                }
+                timeAlignmentTimerCommon: 7 (infinity)
             }
-            ssb-PeriodicityServingCell: 0 (ms5)
-            ss-PBCH-BlockPower: 0
+            ssb-PositionsInBurst: ssb-PositionsInBurst ::= {
+                inOneGroup: 02
+            }
+            ssb-PeriodicityServingCell: 2 (ms20)
+            tdd-UL-DL-ConfigurationCommon: TDD-UL-DL-ConfigCommon ::= {
+                referenceSubcarrierSpacing: 1 (kHz30)
+                pattern1: TDD-UL-DL-Pattern ::= {
+                    dl-UL-TransmissionPeriodicity: 6 (ms5)
+                    nrofDownlinkSlots: 7
+                    nrofDownlinkSymbols: 2
+                    nrofUplinkSlots: 2
+                    nrofUplinkSymbols: 0
+                }
+            }
+            ss-PBCH-BlockPower: -32
+        }
+        ue-TimersAndConstants: UE-TimersAndConstants ::= {
+            t300: 5 (ms1000)
+            t301: 5 (ms1000)
+            t310: 5 (ms1000)
+            n310: 0 (n1)
+            t311: 6 (ms30000)
+            n311: 0 (n1)
+            t319: 5 (ms1000)
         }
     }
 }
