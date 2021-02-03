@@ -52,7 +52,7 @@ void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf 
 int main(int argc, char *argv[]) {
 
     /** put 'true' if runing_platform is attached to an USRP */
-    bool run_multi_thread = true;
+    bool run_multi_thread = false;
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
@@ -212,11 +212,9 @@ int main(int argc, char *argv[]) {
 
 
 
-    /** Sending buff_main_10ms MULTITHREAD  TO BE PUT IN A SEPARATED FUNCTION ! */
 
-    if(run_multi_thread) {
 
-        /** Calculate the number of sample that a frame (10 ms) will contain */
+        /** Calculate the number of sample that a frame (10 ms) will contain TO BE PUT IN A SEPARATED FUNCTION !*/
         int Num_symbols_per_subframe;
         if (mib_object.scs == 15000) {
             Num_symbols_per_subframe = 14;
@@ -249,18 +247,47 @@ int main(int argc, char *argv[]) {
 
 
 
+/** Some test to generate vector buff_main_10ms without push_back
 
+    std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
+    std::vector<std::complex<float>> buff_main_10ms_3(Num_samples_in_frame);
 
+    int sfn = 1;
+    phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+                                     i_b_ssb,
+                                     scaling_factor, buff_main_10ms);
+
+    buff_main_10ms_3 = buff_main_10ms;
+
+    free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
+    free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_samples_in_frame, "buff_main_10ms_3");
+*/
+
+/** Some test to generate one_frame_1_dimension */
+
+    int sfn = 500;
+    std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
+    phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+                                     i_b_ssb,
+                                     scaling_factor, buff_main_10ms);
+
+/** Sending buff_main_10ms MULTITHREAD   */
+
+    if(run_multi_thread) {
+
+        //std::vector<std::complex<float>> buff_main_10ms_3;
+        //std::vector<std::complex<float>> buff_main_10ms;
 
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        std::vector<std::complex<float>> buff_main_10ms_3;
+        std::vector<std::complex<float>> buff_main_10ms_3(Num_samples_in_frame);
+
         //buff_main_10ms_3 = buff_main_10ms;
 
 
-        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
+       rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                        usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
-        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
+       BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
 
 
         /** thread sending in continuous buff_main_10ms_3 */
@@ -313,6 +340,8 @@ int main(int argc, char *argv[]) {
                 if (i == 301) {
                     float mean_duration = (duration_sum)/300;
                     cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
+                    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
+                    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_samples_in_frame, "buff_main_10ms_3");
                 }
 
 

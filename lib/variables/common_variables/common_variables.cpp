@@ -353,7 +353,5 @@ int free5GRAN::MIB_BITS_SIZE = 32;
 
 bool free5GRAN::display_variables = false;
 
-bool free5GRAN::finish_to_copy = false;
-
 int free5GRAN::index_frame_sent = 0;
 int free5GRAN::index_frame_to_send = 0;

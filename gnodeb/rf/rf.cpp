@@ -160,7 +160,7 @@ double rf::getGain() {
 //emplate<typename samp_type>
 
 void rf::buffer_transmition(
-        std::vector<std::complex<float>> &buff /**à changer par des float */ //SSB à mettre dans le buf"
+        std::vector<std::complex<float>> &buff
 ){
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
@@ -173,16 +173,12 @@ void rf::buffer_transmition(
     md.start_of_burst = false;
     md.end_of_burst = false;
 
-    //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
-    //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
 
-    //std::vector<std::complex<float>> buff_main_10ms_4;
     std::cout << "Sending Frame indefinitely...."<<std::endl;
     while (true) {
         if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) {
             BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
             BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
-            //buff_main_10ms_4 = buff;
             free5GRAN::index_frame_sent++;
             //tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
             tx_stream->send(&buff.front(), buff.size(), md);

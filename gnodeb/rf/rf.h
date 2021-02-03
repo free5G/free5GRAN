@@ -74,9 +74,8 @@ public:
 
     void buffer_transmition(
             //uhd::usrp::multi_usrp::sptr usrp,
-            //pas besoin de l'appeler pck déjà défini au dessus.
-            //std::vector<std::complex<double>> buff /**à changer par des float */ //SSB à mettre dans le buf"
-            std::vector<std::complex<float>> &buff /**à changer par des float */ //SSB à mettre dans le buf"
+            //std::vector<std::complex<double>> buff
+            std::vector<std::complex<float>> &buff /**à changer par des float */
             //const std::string &cpu_format,
             //const std::string &wire_format,
             //const std::string &file,
