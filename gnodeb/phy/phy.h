@@ -40,7 +40,7 @@ private:
 
 public:
 
-    void generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_3);
+    void generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_5);
     //std::vector<std::complex<float>> generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor);
 
 };

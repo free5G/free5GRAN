@@ -212,11 +212,47 @@ int main(int argc, char *argv[]) {
 
 
 
-    /** Sending buff_main_10ms MULTITHREAD */
+    /** Sending buff_main_10ms MULTITHREAD  TO BE PUT IN A SEPARATED FUNCTION ! */
 
     if(run_multi_thread) {
 
-        std::vector<std::complex<float>> buff_main_10ms;
+        /** Calculate the number of sample that a frame (10 ms) will contain */
+        int Num_symbols_per_subframe;
+        if (mib_object.scs == 15000) {
+            Num_symbols_per_subframe = 14;
+        } else if (mib_object.scs == 30000) {
+            Num_symbols_per_subframe = 28;
+        }
+        int Num_symbols_per_frame = Num_symbols_per_subframe * 10;
+        //Calculate the cp_length
+        int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+        free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                              Num_symbols_per_subframe, &cp_lengths[0],
+                                                              &cum_sum_cp_lengths[0]);
+        //Initialize the cp_length for each symbols of a frame
+        int cp_lengths_one_frame[Num_symbols_per_frame];
+        for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+            for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+                cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths[symbol];
+            }
+        }
+        //Calculate size of each symbol in a frame
+        int symbols_size_one_frame[Num_symbols_per_frame];
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
+        }
+        int Num_samples_in_frame = 0;
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            Num_samples_in_frame = Num_samples_in_frame + symbols_size_one_frame[symbol];
+        }
+        std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
+
+
+
+
+
+
+        std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
         std::vector<std::complex<float>> buff_main_10ms_3;
         //buff_main_10ms_3 = buff_main_10ms;
 
@@ -237,10 +273,10 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Generating Frame indefinitely..."<<std::endl;
 
-        BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send = " + std::to_string(free5GRAN::index_frame_to_send);
-        BOOST_LOG_TRIVIAL(warning) << "index_frame_sent = " + std::to_string(free5GRAN::index_frame_sent);
-        while (true) {
+        BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
+        BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
 
+        while (true) {
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                 auto start = chrono::high_resolution_clock::now();
@@ -257,6 +293,9 @@ int main(int argc, char *argv[]) {
                 BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
 
                 buff_main_10ms_3 = buff_main_10ms;
+                BOOST_LOG_TRIVIAL(warning) << "Copy buff_main_10ms to buff_main_10ms_3 done";
+
+                free5GRAN::index_frame_to_send++;
 
                 sfn++;
                 if (sfn == 1024) {
@@ -264,17 +303,19 @@ int main(int argc, char *argv[]) {
                 }
 
                 auto stop = chrono::high_resolution_clock::now();
-                if (i < 100) {
+
+                /** Calculate the mean duration of the 300 first call of function 'generate_frame_10ms */
+                if (i < 300) {
                     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
                     int duration_int = duration.count();
                     duration_sum = duration_sum + duration_int;
                 }
-                if (i == 101) {
-                    float mean_duration = (duration_sum)/100;
-                    cout <<"\n"<<"duration of generate_frame_10ms (mean of 100 first) = "<< mean_duration/1000 <<" ms" <<endl;
+                if (i == 301) {
+                    float mean_duration = (duration_sum)/300;
+                    cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
                 }
 
-                free5GRAN::index_frame_to_send++;
+
                 i++;
             }
         }

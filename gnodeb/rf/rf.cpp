@@ -176,16 +176,17 @@ void rf::buffer_transmition(
     //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
     //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
 
-    std::vector<std::complex<float>> buff_main_10ms_4;
-    std::cout << "Sending Frame indefinitely..."<<std::endl;
+    //std::vector<std::complex<float>> buff_main_10ms_4;
+    std::cout << "Sending Frame indefinitely...."<<std::endl;
     while (true) {
         if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) {
             BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
             BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
-            buff_main_10ms_4 = buff;
+            //buff_main_10ms_4 = buff;
             free5GRAN::index_frame_sent++;
-            tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
-            BOOST_LOG_TRIVIAL(warning) << "Sending a SSB";
+            //tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
+            tx_stream->send(&buff.front(), buff.size(), md);
+            BOOST_LOG_TRIVIAL(warning) << "Sending a SSB ";
         }
     }
 

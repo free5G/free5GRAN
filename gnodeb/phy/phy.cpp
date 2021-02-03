@@ -38,7 +38,7 @@
 #include_next <math.h>
 
 
-void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_3){
+void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_5){
 //std::vector<std::complex<float>> phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
 
     mib_object.sfn = sfn;
@@ -197,22 +197,30 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
 
 
 
-    //Fill a buffer buff_main_10ms_3 with one_frame
-    buff_main_10ms_3.clear();
-    //std::vector<std::complex<float>> buff_main_10ms_3;
+    //Fill a buffer buff_main_10ms_5 with one_frame
+    buff_main_10ms_5.clear();
+    //std::vector<std::complex<float>> buff_main_10ms_5;
+
+    int Num_samples_in_frame = 0; //Just here to verify.
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
         for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
-            //buff_main_10ms_3->push_back(one_frame[symbol][sample]);
-            buff_main_10ms_3.push_back(one_frame[symbol][sample]);
+            //buff_main_10ms_5->push_back(one_frame[symbol][sample]);
+
+            //buff_main_10ms_5.push_back(one_frame[symbol][sample]);
+            buff_main_10ms_5[(symbol*Num_symbols_per_frame) + sample] = one_frame[symbol][sample];
+            Num_samples_in_frame++;
         }
     }
+    //std::cout<<"Num_samples_in_frame in phy = "<<Num_samples_in_frame<<std::endl;
+    //std::cout<<"Num_symbols_per_frame in phy = "<<Num_symbols_per_frame<<std::endl;
+
 
     if (free5GRAN::display_variables) {
         //Display buff_main_10ms
-        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms");
+        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_5, Num_sample_per_frame, "buff_main_10ms");
     }
-    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_sample_per_frame, "buff_main_10ms_3 from generate_frame_10ms");
-    //return buff_main_10ms_3;
+    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_5, Num_sample_per_frame, "buff_main_10ms_5 from generate_frame_10ms");
+    //return buff_main_10ms_5;
 }
 
 
