@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
     if(run_multi_thread) {
 
         /** Initialize the 2 buffers. One will be generated while the other will be send */
-        std::vector<std::complex<float>> buff_10ms_generate(Num_samples_in_frame);
+        std::vector<std::complex<float>> buff_10ms_generated(Num_samples_in_frame);
         std::vector<std::complex<float>> buff_10ms_sending(Num_samples_in_frame);
 
        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
@@ -258,12 +258,12 @@ int main(int argc, char *argv[]) {
 
                 phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
                                                  i_b_ssb,
-                                                 scaling_factor, buff_10ms_generate);
+                                                 scaling_factor, buff_10ms_generated);
 
                 BOOST_LOG_TRIVIAL(fatal) << "function generate_frame_10ms done";
 
-                buff_10ms_sending = buff_10ms_generate;
-                BOOST_LOG_TRIVIAL(fatal) << "Copy buff_10ms_generate to buff_10ms_sending done";
+                buff_10ms_sending = buff_10ms_generated;
+                BOOST_LOG_TRIVIAL(fatal) << "Copy buff_10ms_generated to buff_10ms_sending done";
 
                 free5GRAN::index_frame_to_send++;
 
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
                 if (i == 301) {
                     float mean_duration = (duration_sum)/300;
                     cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
-                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_generate, Num_samples_in_frame, "buff_10ms_generate");
+                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_generated, Num_samples_in_frame, "buff_10ms_generated");
                     //free5GRAN::utils::common_utils::display_vector(buff_10ms_sending, Num_samples_in_frame, "buff_10ms_sending");
                 }
                 i++;
