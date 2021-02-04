@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
 
     /** READING CONFIG FILE */
     libconfig::Config cfg_gNodeB;
-
     try {
         if (run_multi_thread) {
             cfg_gNodeB.readFile(
@@ -104,7 +103,7 @@ int main(int argc, char *argv[]) {
         std::cout << "################ SSB EMISSION #################" << std::endl;
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
-        /** Fill usrp_info with values contained in config file  */
+        /** Fill usrp_info_object with values contained in config file  */
         std::string device_args = usrp_info.lookup("device_args");
         usrp_info_object.device_args = device_args;
 
@@ -137,7 +136,6 @@ int main(int argc, char *argv[]) {
 
 
         /** Fill mib_object with values in config file */
-        //mib_object.sfn = mib_info.lookup("sfn"); /** stored on MIB on 10 bits */
         mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
         mib_object.k_ssb = mib_info.lookup(
                 "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
@@ -183,11 +181,6 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "usrp_info_object.sampling_rate = " + std::to_string(usrp_info_object.sampling_rate);
 
 
-
-
-    /** SENDING SIGNAL TO USRP  */
-
-
     /** Display some useful information */
     std::cout << "###### SSB" << std::endl;
     std::cout << "# ssb_period: " << ssb_period << " second" << std::endl;
@@ -214,56 +207,13 @@ int main(int argc, char *argv[]) {
 
 
 
-        /** Calculate the number of sample that a frame (10 ms) will contain TO BE PUT IN A SEPARATED FUNCTION !*/
-        int Num_symbols_per_subframe;
-        if (mib_object.scs == 15000) {
-            Num_symbols_per_subframe = 14;
-        } else if (mib_object.scs == 30000) {
-            Num_symbols_per_subframe = 28;
-        }
-        int Num_symbols_per_frame = Num_symbols_per_subframe * 10;
-        //Calculate the cp_length
-        int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
-        free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
-                                                              Num_symbols_per_subframe, &cp_lengths[0],
-                                                              &cum_sum_cp_lengths[0]);
-        //Initialize the cp_length for each symbols of a frame
-        int cp_lengths_one_frame[Num_symbols_per_frame];
-        for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
-            for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
-                cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths[symbol];
-            }
-        }
-        //Calculate size of each symbol in a frame
-        int symbols_size_one_frame[Num_symbols_per_frame];
-        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
-            symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
-        }
-        int Num_samples_in_frame = 0;
-        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
-            Num_samples_in_frame = Num_samples_in_frame + symbols_size_one_frame[symbol];
-        }
-        std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
+    /** Calculate the number of sample that a frame (10 ms) will contain */
+    int Num_samples_in_frame;
+    phy_variable.generate_num_sample_per_frame(mib_object, Num_samples_in_frame);
+    std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
 
 
-
-/** Some test to generate vector buff_main_10ms without push_back
-
-    std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-    std::vector<std::complex<float>> buff_main_10ms_3(Num_samples_in_frame);
-
-    int sfn = 1;
-    phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
-                                     i_b_ssb,
-                                     scaling_factor, buff_main_10ms);
-
-    buff_main_10ms_3 = buff_main_10ms;
-
-    free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
-    free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_samples_in_frame, "buff_main_10ms_3");
-*/
-
-/** Some test to generate one_frame_1_dimension */
+    /** Some test to generate one_frame_1_dimension */
 
     int sfn = 500;
     std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
@@ -271,18 +221,15 @@ int main(int argc, char *argv[]) {
                                      i_b_ssb,
                                      scaling_factor, buff_main_10ms);
 
-/** Sending buff_main_10ms MULTITHREAD   */
+    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
 
+
+    /** Sending buff_10ms MULTITHREAD */
     if(run_multi_thread) {
 
-        //std::vector<std::complex<float>> buff_main_10ms_3;
-        //std::vector<std::complex<float>> buff_main_10ms;
-
-        std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        std::vector<std::complex<float>> buff_main_10ms_3(Num_samples_in_frame);
-
-        //buff_main_10ms_3 = buff_main_10ms;
-
+        /** Initialize the 2 buffers. One will be generated while the other will be send */
+        std::vector<std::complex<float>> buff_10ms_generate(Num_samples_in_frame);
+        std::vector<std::complex<float>> buff_10ms_sending(Num_samples_in_frame);
 
        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                        usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
@@ -290,61 +237,53 @@ int main(int argc, char *argv[]) {
        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
 
 
-        /** thread sending in continuous buff_main_10ms_3 */
-        thread t8(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_main_10ms_3);
+        /** thread sending in continuous buff_10ms_sending */
+        thread t8(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_10ms_sending);
 
+
+
+        std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
+
+        BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
+        BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
 
         int sfn = 1;
         int i = 0;
         int duration_sum = 0;
-
-        std::cout << "Generating Frame indefinitely..."<<std::endl;
-
-        BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
-        BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
 
         while (true) {
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                 auto start = chrono::high_resolution_clock::now();
 
-
                 phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
-                                                     i_b_ssb,
-                                                     scaling_factor, buff_main_10ms);
-
-                /**buff_main_10ms = phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
                                                  i_b_ssb,
-                                                 scaling_factor); */
+                                                 scaling_factor, buff_10ms_generate);
 
-                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
+                BOOST_LOG_TRIVIAL(fatal) << "function generate_frame_10ms done";
 
-                buff_main_10ms_3 = buff_main_10ms;
-                BOOST_LOG_TRIVIAL(warning) << "Copy buff_main_10ms to buff_main_10ms_3 done";
+                buff_10ms_sending = buff_10ms_generate;
+                BOOST_LOG_TRIVIAL(fatal) << "Copy buff_10ms_generate to buff_10ms_sending done";
 
                 free5GRAN::index_frame_to_send++;
 
-                sfn++;
-                if (sfn == 1024) {
-                    sfn = 0;
-                }
+                sfn = (sfn+1)%1024;
 
                 auto stop = chrono::high_resolution_clock::now();
 
                 /** Calculate the mean duration of the 300 first call of function 'generate_frame_10ms */
+                int duration_int;
                 if (i < 300) {
                     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-                    int duration_int = duration.count();
+                    duration_int = duration.count();
                     duration_sum = duration_sum + duration_int;
                 }
                 if (i == 301) {
                     float mean_duration = (duration_sum)/300;
                     cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
-                    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
-                    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_3, Num_samples_in_frame, "buff_main_10ms_3");
+                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_generate, Num_samples_in_frame, "buff_10ms_generate");
+                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_sending, Num_samples_in_frame, "buff_10ms_sending");
                 }
-
-
                 i++;
             }
         }
