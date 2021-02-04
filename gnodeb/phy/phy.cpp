@@ -38,7 +38,7 @@
 #include_next <math.h>
 
 
-void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_5){
+void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_main_10ms_5) {
 //std::vector<std::complex<float>> phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor){
 
     mib_object.sfn = sfn;
@@ -89,7 +89,8 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
 
 
     BOOST_LOG_TRIVIAL(info) << "COMPUTE CP LENGTH from generate_frame_10ms";
-    BOOST_LOG_TRIVIAL(info) << "From generate_frame_10ms cp_lengths[1] (which will be used) = " + std::to_string(cp_lengths[1]);
+    BOOST_LOG_TRIVIAL(info)
+        << "From generate_frame_10ms cp_lengths[1] (which will be used) = " + std::to_string(cp_lengths[1]);
 
     /** ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED */
     std::complex<float> **SSB_signal_time_domain_CP;
@@ -123,8 +124,8 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
     int ssb_period_in_samples = ssb_period * usrp_info_object.sampling_rate;
     //std::cout << "ssb_period_in_samples = " << ssb_period_in_samples << std::endl;
 
-    int index_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
-    //std::cout << "index_first_ssb_in_frame = " << index_first_ssb_in_frame << std::endl;
+    int index_symbol_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
+    //std::cout << "index_symbol_first_ssb_in_frame = " << index_symbol_first_ssb_in_frame << std::endl;
 
 
     //Initialize the cp_length for each symbols of a frame
@@ -153,33 +154,53 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
     }
 
 
-    std::cout << "Num_samples_per_frame from phy = "<<Num_sample_per_frame<<std::endl;
+
+
+
+
 
     /**Initialise one_frame_1_dimension */
 
-    int Num_sample_per_subframe = cum_sum_cp_lengths[Num_symbols_per_subframe-1] + cp_lengths[1] + free5GRAN::SIZE_IFFT_SSB;
+    int Num_sample_per_subframe =
+            cum_sum_cp_lengths[Num_symbols_per_subframe - 1] + cp_lengths[1] + free5GRAN::SIZE_IFFT_SSB;
     std::complex<float> *one_frame_1_dimension;
     one_frame_1_dimension = new std::complex<float>[Num_sample_per_frame];
 
-    free5GRAN::utils::common_utils::display_complex_float(one_frame_1_dimension, Num_sample_per_frame,
-                                                              "one_frame_1_dimension = ");
+    int index_symbol_in_subframe_SSB = index_symbol_first_ssb_in_frame % Num_symbols_per_subframe;
+    int index_subframe_SSB = index_symbol_first_ssb_in_frame / Num_symbols_per_subframe;
 
+    int index_sample_begin_SSB =
+            index_subframe_SSB * Num_sample_per_subframe + cum_sum_cp_lengths[index_symbol_in_subframe_SSB];
+
+    int count = index_sample_begin_SSB;
+    for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
+        for (int sample = 0; sample < Num_samples_per_symbol_SSB; sample++) {
+            one_frame_1_dimension[count] = SSB_signal_time_domain_CP[symbol][sample];
+            count++;
+        }
+    }
+
+
+    /**
     free5GRAN::utils::common_utils::display_table(cp_lengths, Num_symbols_per_subframe, "cp_lengths = ");
-    free5GRAN::utils::common_utils::display_table(cum_sum_cp_lengths, Num_symbols_per_subframe, "cum_sum_cp_lengths = ");
-    std::cout<<"Num symbols per frame = "<<Num_symbols_per_frame<<std::endl;
-    std::cout<<"Num samples per frame = "<<Num_sample_per_frame<<std::endl;
-    std::cout<<"Num samples per symbols SSB = "<<Num_samples_per_symbol_SSB<<std::endl;
-    std::cout<<"Index first SSB in frame = "<<index_first_ssb_in_frame<<std::endl;
-    std::cout<<"Num_sample_per_subframe = "<<Num_sample_per_subframe<<std::endl;
+    free5GRAN::utils::common_utils::display_table(cum_sum_cp_lengths, Num_symbols_per_subframe,
+                                                  "cum_sum_cp_lengths = ");
+    std::cout << "Num symbols per frame = " << Num_symbols_per_frame << std::endl;
+    std::cout << "Num symbols per sub_frame = " << Num_symbols_per_subframe << std::endl;
+    std::cout << "Num samples per frame = " << Num_sample_per_frame << std::endl;
+    std::cout << "Num samples per symbols SSB = " << Num_samples_per_symbol_SSB << std::endl;
+    std::cout << "Index_symbol first SSB in frame = " << index_symbol_first_ssb_in_frame << std::endl;
+    std::cout << "Num_sample_per_subframe = " << Num_sample_per_subframe << std::endl;
+    std::cout << "index_subframe_SSB = " << index_subframe_SSB << std::endl;
+    std::cout << "index_symbol_in_subframe_SSB = " << index_symbol_in_subframe_SSB << std::endl;
+    std::cout << "index_sample_begin_SSB = " << index_sample_begin_SSB << std::endl;
+    std::cout << "Num_samples_per_frame from phy = " << Num_sample_per_frame << std::endl;
+    //free5GRAN::utils::common_utils::display_complex_float(one_frame_1_dimension, Num_sample_per_frame,
+    //                                                      "one_frame_1_dimension = ");
+    */
 
 
-
-
-
-
-
-
-    /** Initialise one_frame with the right number of sample for each symbols */
+    /** Initialise one_frame with the right number of sample for each symbols
     std::complex<float> **one_frame;
     one_frame = new std::complex<float> *[Num_symbols_per_frame];
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
@@ -194,7 +215,7 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
     }
 
     //Fill one_frame with SSB at the right place
-    int index_ssb_in_frame = index_first_ssb_in_frame;
+    int index_ssb_in_frame = index_symbol_first_ssb_in_frame;
     for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++) {
         one_frame[index_ssb_in_frame] = SSB_signal_time_domain_CP[symbol_SSB_index];
         index_ssb_in_frame++;
@@ -202,7 +223,7 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
 
     //If ssb_period = 0.005 sec, fill one_frame with SSB a second time
     if (ssb_period == 0.005) {
-        int index_second_ssb_in_frame = index_first_ssb_in_frame + Num_symbols_per_frame / 2;
+        int index_second_ssb_in_frame = index_symbol_first_ssb_in_frame + Num_symbols_per_frame / 2;
         int index_ssb_in_frame = index_second_ssb_in_frame;
         std::cout << "index_second_ssb_in_frame = " << index_second_ssb_in_frame << std::endl;
         for (int symbol_SSB_index = 0; symbol_SSB_index < free5GRAN::NUM_SYMBOLS_SSB; symbol_SSB_index++) {
@@ -213,7 +234,7 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
 
 
     if (free5GRAN::display_variables) {
-        /** Display one_frame */
+        //Display one_frame
         for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
             std::cout << "symbol " << symbol << " of ";
             free5GRAN::utils::common_utils::display_complex_float(one_frame[symbol], symbols_size_one_frame[symbol],
@@ -221,34 +242,52 @@ void phy::generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_ob
             std::cout << "" << std::endl;
         }
     }
+*/
 
-
-
-
-
-    //Fill a buffer buff_main_10ms_5 with one_frame
-
-    //buff_main_10ms_5.clear();
-    int Num_samples_in_frame = 0;
+    /** Display one_frame
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
-        for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
-            //buff_main_10ms_5->push_back(one_frame[symbol][sample]);
-            //buff_main_10ms_5.push_back(one_frame[symbol][sample]);
+        std::cout << "symbol " << symbol << " of ";
+        free5GRAN::utils::common_utils::display_complex_float(one_frame[symbol], symbols_size_one_frame[symbol],
+                                                              "one_frame = ");
+        std::cout << "" << std::endl;
+    }*/
 
-            //buff_main_10ms_5[(symbol*Num_symbols_per_frame) + sample] = one_frame[symbol][sample];
-            buff_main_10ms_5[Num_samples_in_frame] = one_frame[symbol][sample];
+
+
+
+        /**Fill a buffer buff_main_10ms_5 with one_frame
+        //buff_main_10ms_5.clear();
+        int Num_samples_in_frame = 0;
+        for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+            for (int sample = 0; sample < symbols_size_one_frame[symbol]; sample++) {
+                //buff_main_10ms_5->push_back(one_frame[symbol][sample]);
+                //buff_main_10ms_5.push_back(one_frame[symbol][sample]);
+
+                //buff_main_10ms_5[(symbol*Num_symbols_per_frame) + sample] = one_frame[symbol][sample];
+                buff_main_10ms_5[Num_samples_in_frame] = one_frame[symbol][sample];
+                Num_samples_in_frame++;
+            }
+        }*/
+
+        /** Fill vector buff_main_10ms_5 with table one_frame_1_dimension */
+        int Num_samples_in_frame = 0;
+        for (int sample = 0; sample < Num_sample_per_frame; sample++){
+            buff_main_10ms_5[Num_samples_in_frame] = one_frame_1_dimension[Num_samples_in_frame];
             Num_samples_in_frame++;
         }
-    }
 
-
-    if (free5GRAN::display_variables) {
-        //Display buff_main_10ms
         //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_5, Num_sample_per_frame, "buff_main_10ms");
+
+
+
+
+
+
+
+        if (free5GRAN::display_variables) {
+            //Display buff_main_10ms
+            //free5GRAN::utils::common_utils::display_vector(buff_main_10ms_5, Num_sample_per_frame, "buff_main_10ms");
+        }
     }
-}
-
-
-
 
 

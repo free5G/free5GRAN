@@ -255,7 +255,7 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
             std::cout <<""<< std::endl;
             std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
         }
-        if (i% 280 == 0){         /** 10 here means that every 280 elements displayed, a line break is done */
+        if (i% 274 == 0){         /** 10 here means that every 280 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         std::cout<<vector_to_display[i]<<"  "<< std::ends;
@@ -296,7 +296,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
     * \param[in] vector_name name to display
     */
     for (int i=0; i<vector_size; i++){
-        if (i % 100 == 0 && i !=0){        /** 10 here means that every 10 elements displayed, a line break is done */
+        if (i % 274 == 0 && i !=0){        /** 10 here means that every 10 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         if (i == 0){

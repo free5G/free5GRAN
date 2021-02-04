@@ -52,7 +52,7 @@ void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf 
 int main(int argc, char *argv[]) {
 
     /** put 'true' if runing_platform is attached to an USRP */
-    bool run_multi_thread = false;
+    bool run_multi_thread = true;
 
     free5GRAN::mib mib_object;
     usrp_info2 usrp_info_object;
