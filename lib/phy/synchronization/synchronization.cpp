@@ -285,7 +285,6 @@ void free5GRAN::phy::synchronization::get_sss(int &n_id_1, float &peak_value, ve
     float max_value = -1;
     n_id_1 = -1;
     complex<float> correlation_value;
-    float abs_value;
 
     /*
      * Trying to correlate frequency domain signal to SSS sequences to find n_id_2
@@ -295,7 +294,7 @@ void free5GRAN::phy::synchronization::get_sss(int &n_id_1, float &peak_value, ve
         int sss_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL];
         free5GRAN::utils::sequence_generator::generate_sss_sequence(i, n_id_2, sss_seq);
         correlation_value = correlate(frequency_sss, sss_seq, free5GRAN::SIZE_PSS_SSS_SIGNAL);
-        abs_value = abs(correlation_value);
+        float abs_value = abs(correlation_value);
         if (abs_value > max_value){
             max_value = abs_value;
             n_id_1 = i;

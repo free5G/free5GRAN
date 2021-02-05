@@ -23,12 +23,13 @@
 #include <iostream>
 #include <complex>
 #include <vector>
+using namespace std;
 
 /*
  * Initialize USRP device
  */
 rf::rf(double sample_rate, double center_frequency, double gain, double bandwidth,
-         std::string subdev, std::string antenna_mode, std::string ref, std::string device_args) {
+         const string &subdev, const string &antenna_mode, const string &ref, const string &device_args) {
 
     /**
      * \fn rf
@@ -76,7 +77,7 @@ double rf::getSampleRate() const {
 /*
  * Get samples from USRP device
  */
-void rf::get_samples(std::vector<std::complex<float>> *buff, double &time_first_sample) {
+void rf::get_samples(vector<complex<float>> *buff, double &time_first_sample) {
     /**
      * \fn get_samples
      * \brief Get samples from RF device.
@@ -103,16 +104,16 @@ void rf::get_samples(std::vector<std::complex<float>> *buff, double &time_first_
     while (total_rcvd_samples<num_samples){
         size_t num_rx_samps = rx_stream->recv(&buff->front(), buff->size() - total_rcvd_samples, md, 10.0, false);
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
-            std::cout << boost::format("Timeout while streaming") << std::endl;
+            cout << boost::format("Timeout while streaming") << endl;
             break;
         }
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) {
-            std::cout << boost::format("Overflow\n") << std::endl;
+            cout << boost::format("Overflow\n") << endl;
 
             continue;
         }
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-            std::string error = str(boost::format("Receiver error: %s") % md.strerror());
+            string error = str(boost::format("Receiver error: %s") % md.strerror());
         }
         total_rcvd_samples += num_rx_samps;
     }
