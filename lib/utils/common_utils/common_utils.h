@@ -45,6 +45,8 @@ namespace free5GRAN {
             void display_complex_double(std::complex<double> *vector_to_display, int vector_size, char* vector_name);
             void display_complex_float(std::complex<float> *vector_to_display, int vector_size, char* vector_name);
             void display_table(int* table_to_display, int size, char* table_name);
+
+            void read_config_gNodeB(free5GRAN::gNodeB_config, char *argv[]);
         }
     }
 }

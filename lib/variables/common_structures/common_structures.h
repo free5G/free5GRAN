@@ -84,7 +84,7 @@ namespace free5GRAN{
 
     extern bandwidth_info  BANDWIDTH_30_KHZ;
 
-}
+
 
 
 /** Bellow, it's additions from Benoit. Be Carrful during merging */
@@ -96,4 +96,31 @@ typedef struct usrp_info2_ {
     float center_frequency, gain, bandwidth;
 } usrp_info2;
 
+typedef struct gNodeB_config_ {
+    std::string function;
+    std::string log_level;
+    bool display_variable;
+    int sfn;
+    int pddchc_config;
+    int k_ssb;
+    int cell_barred;
+    int dmrs_type_a_position;
+    int intra_freq_reselection;
+    int gscn;
+    int pci;
+    int i_b_ssb;
+    float ssb_period;
+    std::string device_args;
+    std::string subdev;
+    std::string ant;
+    std::string ref2;
+    float center_frequency;
+    float gain;
+    float scaling_factor;
+    float bandwidth;
+    float sampling_rate;
+    int scs;
+} gNodeB_config;
+
+}
 #endif

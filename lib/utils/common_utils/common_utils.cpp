@@ -39,7 +39,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/utility/setup/file.hpp>
-
+#include <libconfig.h++>
 
 
 void free5GRAN::utils::common_utils::parse_mib(int *mib_bits, free5GRAN::mib &mib_object) {
@@ -329,6 +329,165 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
     std::cout <<""<< std::endl;
 }
 
+
+
+
+
+
+
+
+
+/** Initialize a logging file
+void init_logging(std::string level)
+{
+    boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
+    boost::log::add_file_log
+            (
+                    boost::log::keywords::file_name = "free5GRAN_gNodeB.log",
+                    boost::log::keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%] %Message%"
+            );
+
+    if (level == "trace"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::trace
+                );
+    }else if (level == "debug"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::debug
+                );
+    }else if (level == "info"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::info
+                );
+    }else if (level == "warning"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::warning
+                );
+    }else if (level == "error"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::error
+                );
+    }else {
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::fatal
+                );
+    }
+    //boost::log::add_common_attributes();
+}
+*/
+
+
+
+
+
+
+
+
+
+void free5GRAN::utils::common_utils::read_config_gNodeB(free5GRAN::gNodeB_config gNodeBConfig, char *argv[]) {
+
+    bool run_multi_thread = true;
+
+    namespace logging = boost::log;
+    void init_logging(string warning); /** 'warning' has to be deleted */
+    libconfig::Config cfg_gNodeB_lib;
+
+    /** READING CONFIG FILE */
+    libconfig::Config cfg_gNodeB_Lib;
+    try {
+        if (run_multi_thread) {
+            cfg_gNodeB_Lib.readFile(
+                    argv[1]);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
+        } else {
+            cfg_gNodeB_Lib.readFile("../config/ssb_emission.cfg"); /** Use this for launch in CLion */
+        }
+    }
+
+    /** Return an error if config file is not found */
+    catch (libconfig::FileIOException &e) {
+        std::cout << "FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
+        // return (EXIT_FAILURE);
+    }
+
+    catch (libconfig::ParseException &pe) {
+        std::cout << "Parse error at " << pe.getFile() << " : " << pe.getLine() << " - " << pe.getError() << std::endl;
+        //return (EXIT_FAILURE);
+    }
+
+    /** Read 'level' in config_file and create the log file */
+    std::string log_level = cfg_gNodeB_Lib.lookup("logging");
+    gNodeBConfig.log_level = log_level;
+    std::cout << "log level = " << log_level << std::endl;
+    //init_logging(log_level);
+
+    /** Read 'display_variables' in config_file */
+    free5GRAN::display_variables = cfg_gNodeB_Lib.lookup("display_variables");
+
+    /** Look at function's name in config file */
+    std::string func_gNodeB = cfg_gNodeB_Lib.lookup("function");
+    const libconfig::Setting &root = cfg_gNodeB_Lib.getRoot();
+
+    /** Initialize variables defined in the config file */
+    int gscn, pci, i_b_ssb;
+    float scaling_factor;
+    double ssb_period;
+
+    //----------------------------------------------------------------------------------------
+
+    if (func_gNodeB == "SSB_EMISSION") {
+        BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
+
+        const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
+
+        /** Fill usrp_info_object with values contained in config file  */
+        std::string device_args = usrp_info.lookup("device_args");
+        gNodeBConfig.device_args = device_args;
+        std::string subdev = usrp_info.lookup("subdev");
+        gNodeBConfig.subdev = subdev;
+        std::string ant = usrp_info.lookup("ant");
+        gNodeBConfig.ant = ant;
+        std::string ref2 = usrp_info.lookup("ref2");
+        gNodeBConfig.ref2 = ref2;
+        gNodeBConfig.center_frequency = usrp_info.lookup("center_frequency");
+        gNodeBConfig.gain = usrp_info.lookup("gain");
+        scaling_factor = usrp_info.lookup(
+                "scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
+
+        /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
+        /** Calculation according to !! TS TO BE ADDED !! */
+        if (gNodeBConfig.center_frequency < 3000e6) {
+            gNodeBConfig.scs = 15e3; /** in Hz */
+        } else {
+            gNodeBConfig.scs = 30e3; /** in Hz */
+        }
+
+        gNodeBConfig.sampling_rate = free5GRAN::SIZE_IFFT_SSB * gNodeBConfig.scs;
+        gNodeBConfig.bandwidth = gNodeBConfig.sampling_rate;
+
+        /** Fill mib_object with values in config file */
+        gNodeBConfig.pddchc_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
+        gNodeBConfig.k_ssb = mib_info.lookup(
+                "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
+        gNodeBConfig.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
+        gNodeBConfig.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
+        gNodeBConfig.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
+
+        /** Fill cell_info with values contained in config file */
+        pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
+        i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
+        ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
+    } else {
+        std::cout << "Please enter a function name in config file" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
+        //return (EXIT_FAILURE);
+    }
+}
 
 
 

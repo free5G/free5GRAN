@@ -41,7 +41,7 @@ namespace logging = boost::log;
 void init_logging(string warning);
 
 
-void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, vector<complex<float>> * buff_to_send){
+void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, vector<complex<float>> * buff_to_send){
     BOOST_LOG_TRIVIAL(warning) << "Function send_buffer_multithread begins ";
     rf_variable_2.buffer_transmition(*buff_to_send);
 }
@@ -51,10 +51,10 @@ void send_buffer_multithread(usrp_info2 usrp_info_object, double ssb_period, rf 
 int main(int argc, char *argv[]) {
 
     /** put 'true' if runing_platform is attached to an USRP */
-    bool run_multi_thread = true;
+    bool run_multi_thread = false;
 
     free5GRAN::mib mib_object;
-    usrp_info2 usrp_info_object;
+    free5GRAN::usrp_info2 usrp_info_object;
     phy phy_variable;
 
     /** READING CONFIG FILE */
@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
         return (EXIT_FAILURE);
     }
 
+
     /** Return an error if config file contains parse error */
     catch (libconfig::ParseException &pe) {
         std::cout << "Parse error at " << pe.getFile() << " : " << pe.getLine() << " - " << pe.getError() << std::endl;
@@ -88,6 +89,8 @@ int main(int argc, char *argv[]) {
     /** Read 'display_variables' in config_file */
     free5GRAN::display_variables = cfg_gNodeB.lookup("display_variables");
 
+
+
     /** Look at function's name in config file */
     std::string func_gNodeB = cfg_gNodeB.lookup("function");
     const libconfig::Setting &root = cfg_gNodeB.getRoot();
@@ -96,6 +99,8 @@ int main(int argc, char *argv[]) {
     int gscn, pci, i_b_ssb;
     float scaling_factor;
     double ssb_period;
+
+    //--------------------------------------------------------------------------------------------
 
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
@@ -144,6 +149,10 @@ int main(int argc, char *argv[]) {
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
         return (EXIT_FAILURE);
     }
+
+    //----------------------------------------------------------------------------------------------
+
+    std::cout << "################ SSB EMISSION #################" << std::endl;
 
     /** Generate N which is the length of BCH payload after polar encode */
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,
@@ -281,7 +290,7 @@ int main(int argc, char *argv[]) {
 
 
 
-/** Initialize a logging file */
+/** Initialize a logging file*/
 void init_logging(std::string level)
 {
     boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
@@ -324,4 +333,3 @@ void init_logging(std::string level)
     }
     boost::log::add_common_attributes();
 }
-

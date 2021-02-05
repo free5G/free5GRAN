@@ -97,18 +97,12 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
                                                  SSB_signal_time_domain_CP);
     BOOST_LOG_TRIVIAL(info) << "Add CP (Cyclic Prefix) to the SSB (time domain)";
 
-
     int Num_samples_in_frame;
     phy::compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
     BOOST_LOG_TRIVIAL(info)<< "Num_samples_in_frame = " + std::to_string(Num_samples_in_frame);
 
-    /** Generate one_frame */
-    //std::complex<float>* one_frame;
-    //one_frame = new std::complex<float>[Num_samples_in_frame];
-    //std::vector<std::complex<float>> one_frame_vector(Num_samples_in_frame);
+    /** Generate one_frame_vector */
 
-    // To be modify when delete 'return' in place_SSB_in_frame
-    //one_frame = phy::place_SSB_in_frame(mib_object, Num_symbols_per_subframe, SSB_signal_time_domain_CP, ssb_period, i_b_ssb);
     phy::place_SSB_in_frame(mib_object, Num_symbols_per_subframe, SSB_signal_time_domain_CP, ssb_period, i_b_ssb, one_frame_vector);
 
     //free5GRAN::utils::common_utils::display_complex_float(one_frame, Num_samples_in_frame, "\n\n\n\n\n\none_frame from phy>generate_frame");
@@ -134,8 +128,6 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
 
 
 void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::vector<std::complex<float>> &one_frame_vector){
-//void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::complex<float> *one_frame_1_dimension){
-//std::complex<float>* phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb){
 
     /** Compute cp_lengths */
     int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
@@ -147,7 +139,6 @@ void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subf
     int Num_samples_per_symbol_SSB = free5GRAN::SIZE_IFFT_SSB + cp_lengths[1];
     int Num_samples_in_frame;
     phy::compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
-
 
     int Num_symbols_per_frame = Num_symbols_per_subframe * 10;
     int index_symbol_first_ssb_in_frame = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
@@ -179,10 +170,6 @@ void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subf
     /**Initialise one_frame_1_dimension */
     int Num_sample_per_subframe =
             cum_sum_cp_lengths[Num_symbols_per_subframe - 1] + cp_lengths[1] + free5GRAN::SIZE_IFFT_SSB;
-
-    // TO be deleted when return will be deleted
-    //std::complex<float> *one_frame_1_dimension;
-    //one_frame_1_dimension = new std::complex<float>[Num_samples_in_frame];
 
     int index_symbol_in_subframe_SSB = index_symbol_first_ssb_in_frame % Num_symbols_per_subframe;
     int index_subframe_SSB = index_symbol_first_ssb_in_frame / Num_symbols_per_subframe;
@@ -227,7 +214,6 @@ void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subf
         std::cout << "Num_symbols_per_subframe = " << Num_symbols_per_subframe << std::endl;
     }
 
-    //return one_frame_1_dimension;
 }
 
 
