@@ -193,14 +193,15 @@ int main(int argc, char *argv[]) {
     phy_variable.compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
     std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
 
-    /** Some test to generate one_frame_1_dimension */
-    int sfn = 500;
-    std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-    phy_variable.generate_frame_10ms(mib_object, sfn, ssb_period, pci, N, gscn,
-                                     i_b_ssb,
-                                     scaling_factor, buff_main_10ms);
-    free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
-
+    if (run_multi_thread == false) {
+        /** Run generate_frame one time for testing */
+        int sfn = 500;
+        std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
+        phy_variable.generate_frame(mib_object, sfn, ssb_period, pci, N, gscn,
+                                    i_b_ssb,
+                                    scaling_factor, buff_main_10ms);
+        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
+    }
 
     /** Sending buffer MULTITHREADING */
     if(run_multi_thread) {
@@ -232,7 +233,7 @@ int main(int argc, char *argv[]) {
                 phy_variable.generate_frame(mib_object, sfn, ssb_period, pci, N, gscn, i_b_ssb, scaling_factor, buffer_generated);
 
                 auto stop = chrono::high_resolution_clock::now();
-                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
 
                 if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                     buffer_to_send = buffer_generated;
@@ -244,7 +245,7 @@ int main(int argc, char *argv[]) {
 
                 }
 
-                /** Calculate the mean duration of the 300 first call of function 'generate_frame_10ms */
+                /** Calculate the mean duration of the 300 first call of function 'generate_frame */
                 int duration_int;
                 if (i < 300) {
                     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
@@ -253,7 +254,7 @@ int main(int argc, char *argv[]) {
                 }
                 if (i == 301) {
                     float mean_duration = (duration_sum)/300;
-                    cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
+                    cout <<"\n"<<"duration of generate_frame (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
                     //free5GRAN::utils::common_utils::display_vector(buffer_generated, Num_samples_in_frame, "buffer_generated");
                 }
                 i++;
