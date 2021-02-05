@@ -12,7 +12,7 @@
 
  * \author Télécom Paris, P5G Lab ; Benoit Oehmicen & Aymeric de Javel
  * \version 0.2
- * \date January 2021
+ * \date February 2021
  */
 
 #ifndef FREE5GRAN_PHY_H
@@ -31,19 +31,18 @@
 class phy {
 
 private:
-    int bch_crc[24]; // erreur ?
+    //int bch_crc[24]; // erreur ?
     bool crc_validated;
     int i_ssb;
-    //int i_b_ssb;
     int l_max;
 
 
 public:
 
-    //void place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::complex<float> *one_frame_1_dimension);
-    std::complex<float> * place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb);
-    void generate_frame_10ms(free5GRAN::mib mib_object, usrp_info2 usrp_info_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy_10ms);
-    void generate_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
+    void place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::complex<float> *one_frame_1_dimension);
+    //std::complex<float> * place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb);
+    void generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy_10ms);
+    void compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
 };
 
 

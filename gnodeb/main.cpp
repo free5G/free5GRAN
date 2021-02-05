@@ -12,7 +12,7 @@
 
  * \author Télécom Paris, P5G Lab ; Benoit Oehmicen & Aymeric de Javel
  * \version 0.2
- * \date January 2021
+ * \date February 2021
  */
 
 
@@ -36,7 +36,6 @@
 #include "../lib/phy/physical_channel/physical_channel.h"
 #include "../lib/variables/common_variables/common_variables.h"
 #include <chrono>
-
 
 namespace logging = boost::log;
 void init_logging(string warning);
@@ -106,20 +105,14 @@ int main(int argc, char *argv[]) {
         /** Fill usrp_info_object with values contained in config file  */
         std::string device_args = usrp_info.lookup("device_args");
         usrp_info_object.device_args = device_args;
-
         std::string subdev = usrp_info.lookup("subdev");
         usrp_info_object.subdev = subdev;
-
         std::string ant = usrp_info.lookup("ant");
         usrp_info_object.ant = ant;
-
         std::string ref2 = usrp_info.lookup("ref2");
         usrp_info_object.ref2 = ref2;
-
         usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
-
         usrp_info_object.gain = usrp_info.lookup("gain");
-
         scaling_factor = usrp_info.lookup(
                 "scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
 
@@ -134,7 +127,6 @@ int main(int argc, char *argv[]) {
         usrp_info_object.sampling_rate = free5GRAN::SIZE_IFFT_SSB * mib_object.scs;
         usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
 
-
         /** Fill mib_object with values in config file */
         mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
         mib_object.k_ssb = mib_info.lookup(
@@ -143,14 +135,10 @@ int main(int argc, char *argv[]) {
         mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
         mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
 
-
-
         /** Fill cell_info with values contained in config file */
         pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
         i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
         ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
-
-
     } else {
         std::cout << "Please enter a function name in config file" << std::endl;
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
@@ -186,8 +174,7 @@ int main(int argc, char *argv[]) {
     std::cout << "# ssb_period: " << ssb_period << " second" << std::endl;
     std::cout << "# i_b_ssb: " << i_b_ssb << std::endl;
     std::cout << "# ifft_size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "###### CELL & MIB" << std::endl;
+    std::cout << "\n###### CELL & MIB" << std::endl;
     std::cout << "# pddchc_config: " << mib_object.pdcch_config << std::endl;
     std::cout << "# k_ssb: " << mib_object.k_ssb << std::endl;
     std::cout << "# SCS: " << mib_object.scs << std::endl;
@@ -195,81 +182,67 @@ int main(int argc, char *argv[]) {
     std::cout << "# dmrs_type_a_position: " << mib_object.dmrs_type_a_position << std::endl;
     std::cout << "# intra_freq_reselection: " << mib_object.intra_freq_reselection << std::endl;
     std::cout << "# PCI: " << pci << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "###### USRP" << std::endl;
+    std::cout << "\n###### USRP" << std::endl;
     std::cout << "# Sampling rate: " << usrp_info_object.sampling_rate << " Hz" << std::endl;
     std::cout << "# Bandwidth: " << usrp_info_object.bandwidth << " Hz" << std::endl;
     std::cout << "# Center frequency: " << usrp_info_object.center_frequency << " Hz" << std::endl;
-    std::cout << "# Emission Gain: " << usrp_info_object.gain << " dB" << std::endl;
-    std::cout << "" << std::endl;
-
-
-
-
+    std::cout << "# Emission Gain: " << usrp_info_object.gain << " dB\n" << std::endl;
 
     /** Calculate the number of sample that a frame (10 ms) will contain */
     int Num_samples_in_frame;
-    phy_variable.generate_num_sample_per_frame(mib_object, Num_samples_in_frame);
+    phy_variable.compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
     std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
 
-
     /** Some test to generate one_frame_1_dimension */
-
     int sfn = 500;
     std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-    phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
+    phy_variable.generate_frame_10ms(mib_object, sfn, ssb_period, pci, N, gscn,
                                      i_b_ssb,
                                      scaling_factor, buff_main_10ms);
+    free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
 
-    //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
 
-
-    /** Sending buff_10ms MULTITHREAD */
+    /** Sending buffer MULTITHREADING */
     if(run_multi_thread) {
 
         /** Initialize the 2 buffers. One will be generated while the other will be send */
-        std::vector<std::complex<float>> buff_10ms_generated(Num_samples_in_frame);
-        std::vector<std::complex<float>> buff_10ms_sending(Num_samples_in_frame);
+        std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
+        std::vector<std::complex<float>> buffer_to_send(Num_samples_in_frame);
 
        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                        usrp_info_object.gain, usrp_info_object.bandwidth, usrp_info_object.subdev,
                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
 
-
-        /** thread sending in continuous buff_10ms_sending */
-        thread sending(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_10ms_sending);
-
-
+        /** thread sending in continuous buffer_to_send */
+        thread sending(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buffer_to_send);
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
 
         BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
         BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
 
-        int sfn = 1;
-        int i = 0;
-        int duration_sum = 0;
+        int sfn = 1, i = 0, duration_sum = 0;
 
         while (true) {
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
-            if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+
                 auto start = chrono::high_resolution_clock::now();
 
-                phy_variable.generate_frame_10ms(mib_object, usrp_info_object, sfn, ssb_period, pci, N, gscn,
-                                                 i_b_ssb,
-                                                 scaling_factor, buff_10ms_generated);
-
-                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
-
-                buff_10ms_sending = buff_10ms_generated;
-                BOOST_LOG_TRIVIAL(warning) << "Copy buff_10ms_generated to buff_10ms_sending done";
-
-                free5GRAN::index_frame_to_send++;
-
-                sfn = (sfn+1)%1024;
+                phy_variable.generate_frame(mib_object, sfn, ssb_period, pci, N, gscn, i_b_ssb, scaling_factor, buffer_generated);
 
                 auto stop = chrono::high_resolution_clock::now();
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
+
+                if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+                    buffer_to_send = buffer_generated;
+                    BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
+
+                    free5GRAN::index_frame_to_send++;
+
+                    sfn = (sfn + 1) % 1024;
+
+                }
 
                 /** Calculate the mean duration of the 300 first call of function 'generate_frame_10ms */
                 int duration_int;
@@ -281,11 +254,10 @@ int main(int argc, char *argv[]) {
                 if (i == 301) {
                     float mean_duration = (duration_sum)/300;
                     cout <<"\n"<<"duration of generate_frame_10ms (mean of 300 first) = "<< mean_duration/1000 <<" ms" <<endl;
-                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_generated, Num_samples_in_frame, "buff_10ms_generated");
-                    //free5GRAN::utils::common_utils::display_vector(buff_10ms_sending, Num_samples_in_frame, "buff_10ms_sending");
+                    //free5GRAN::utils::common_utils::display_vector(buffer_generated, Num_samples_in_frame, "buffer_generated");
                 }
                 i++;
-            }
+
         }
     }
 }
