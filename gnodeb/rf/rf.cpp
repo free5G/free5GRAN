@@ -182,7 +182,6 @@ void rf::buffer_transmition(
             free5GRAN::index_frame_sent++;
             //tx_stream->send(&buff_main_10ms_4.front(), buff_main_10ms_4.size(), md);
             tx_stream->send(&buff.front(), buff.size(), md);
-            BOOST_LOG_TRIVIAL(fatal) << "Sending a SSB ";
             BOOST_LOG_TRIVIAL(warning) << "Sending a SSB ";
         }
     }

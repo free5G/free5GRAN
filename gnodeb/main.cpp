@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
 
 
         /** thread sending in continuous buff_10ms_sending */
-        thread t8(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_10ms_sending);
+        thread sending(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buff_10ms_sending);
 
 
 
@@ -260,10 +260,10 @@ int main(int argc, char *argv[]) {
                                                  i_b_ssb,
                                                  scaling_factor, buff_10ms_generated);
 
-                BOOST_LOG_TRIVIAL(fatal) << "function generate_frame_10ms done";
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame_10ms done";
 
                 buff_10ms_sending = buff_10ms_generated;
-                BOOST_LOG_TRIVIAL(fatal) << "Copy buff_10ms_generated to buff_10ms_sending done";
+                BOOST_LOG_TRIVIAL(warning) << "Copy buff_10ms_generated to buff_10ms_sending done";
 
                 free5GRAN::index_frame_to_send++;
 
