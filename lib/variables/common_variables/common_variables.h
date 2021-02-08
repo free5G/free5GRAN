@@ -209,5 +209,9 @@ namespace free5GRAN{
 
     extern int index_frame_sent;
     extern int index_frame_to_send;
+
+    extern free5GRAN::gNodeB_config gnodeB_config_globale;
 }
+
+
 #endif

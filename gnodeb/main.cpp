@@ -51,75 +51,92 @@ void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if runing_platform is attached to an USRP */
-    bool run_multi_thread = false;
+    bool run_multi_thread = true;
 
     free5GRAN::mib mib_object;
     free5GRAN::usrp_info2 usrp_info_object;
     phy phy_variable;
 
-    /** READING CONFIG FILE */
+    /** Read Config File with function read_config_gNodeB */
+
+    const char *config_file;
+    if (run_multi_thread == false) {
+        const char *config_file = ("../config/ssb_emission.cfg");
+    }else{
+        const char *config_file = argv[1];
+    }
+    free5GRAN::utils::common_utils::read_config_gNodeB(argv[1]);
+    //free5GRAN::utils::common_utils::read_config_gNodeB(config_file);
+
+
+
+
+    /** READING CONFIG FILE
     libconfig::Config cfg_gNodeB;
     try {
         if (run_multi_thread) {
             cfg_gNodeB.readFile(
-                    argv[1]);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
+                    argv[1]);   // Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg
         } else {
-            cfg_gNodeB.readFile("../config/ssb_emission.cfg"); /** Use this for launch in CLion */
+            cfg_gNodeB.readFile("../config/ssb_emission.cfg"); // Use this for launch in CLion
         }
-    }
+    }*/
 
-    /** Return an error if config file is not found */
+    /** Return an error if config file is not found
     catch (libconfig::FileIOException &e) {
         std::cout << "FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
         return (EXIT_FAILURE);
-    }
+    }*/
 
 
-    /** Return an error if config file contains parse error */
+    /** Return an error if config file contains parse error
     catch (libconfig::ParseException &pe) {
         std::cout << "Parse error at " << pe.getFile() << " : " << pe.getLine() << " - " << pe.getError() << std::endl;
         return (EXIT_FAILURE);
-    }
+    }*/
 
-    /** Read 'level' in config_file and create the log file */
+    /** Read 'level' in config_file and create the log file
     std::string level = cfg_gNodeB.lookup("logging");
     std::cout << "log level = " << level << std::endl;
-    init_logging(level);
+    init_logging(level); */
 
-    /** Read 'display_variables' in config_file */
-    free5GRAN::display_variables = cfg_gNodeB.lookup("display_variables");
-
+    free5GRAN::display_variables = free5GRAN::gnodeB_config_globale.display_variable;
 
 
-    /** Look at function's name in config file */
+
+    /** Look at function's name in config file
     std::string func_gNodeB = cfg_gNodeB.lookup("function");
     const libconfig::Setting &root = cfg_gNodeB.getRoot();
+*/
 
-    /** Initialize variables defined in the config file */
+    /** Initialize variables defined in the config file
     int gscn, pci, i_b_ssb;
     float scaling_factor;
-    double ssb_period;
+    double ssb_period;*/
 
     //--------------------------------------------------------------------------------------------
 
+    /**
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
         std::cout << "################ SSB EMISSION #################" << std::endl;
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
         /** Fill usrp_info_object with values contained in config file  */
-        std::string device_args = usrp_info.lookup("device_args");
-        usrp_info_object.device_args = device_args;
-        std::string subdev = usrp_info.lookup("subdev");
-        usrp_info_object.subdev = subdev;
-        std::string ant = usrp_info.lookup("ant");
-        usrp_info_object.ant = ant;
-        std::string ref2 = usrp_info.lookup("ref2");
-        usrp_info_object.ref2 = ref2;
-        usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
-        usrp_info_object.gain = usrp_info.lookup("gain");
-        scaling_factor = usrp_info.lookup(
-                "scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
+        //std::string device_args = usrp_info.lookup("device_args");
+        usrp_info_object.device_args = free5GRAN::gnodeB_config_globale.device_args;
+        //std::string subdev = usrp_info.lookup("subdev");
+        usrp_info_object.subdev = free5GRAN::gnodeB_config_globale.subdev;
+        //std::string ant = usrp_info.lookup("ant");
+        usrp_info_object.ant = free5GRAN::gnodeB_config_globale.ant;
+        //std::string ref2 = usrp_info.lookup("ref2");
+        usrp_info_object.ref2 = free5GRAN::gnodeB_config_globale.ref2;
+        //usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
+        usrp_info_object.center_frequency = free5GRAN::gnodeB_config_globale.center_frequency;
+        //usrp_info_object.gain = usrp_info.lookup("gain");
+        usrp_info_object.gain = free5GRAN::gnodeB_config_globale.gain;
+        //scaling_factor = usrp_info.lookup(
+        //                "scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
 
         /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
         /** Calculation according to !! TS TO BE ADDED !! */
@@ -133,22 +150,21 @@ int main(int argc, char *argv[]) {
         usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
 
         /** Fill mib_object with values in config file */
-        mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
-        mib_object.k_ssb = mib_info.lookup(
-                "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
-        mib_object.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
-        mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
-        mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
+        mib_object.pdcch_config = free5GRAN::gnodeB_config_globale.pddchc_config; /** stored on MIB on 8 bits */
+        mib_object.k_ssb = free5GRAN::gnodeB_config_globale.k_ssb; /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
+        mib_object.cell_barred = free5GRAN::gnodeB_config_globale.cell_barred; /** stored on MIB on 1 bit */
+        mib_object.dmrs_type_a_position = free5GRAN::gnodeB_config_globale.dmrs_type_a_position; /** stored on MIB on 1 bit */
+        mib_object.intra_freq_reselection = free5GRAN::gnodeB_config_globale.intra_freq_reselection; /** stored on MIB on 1 bit */
 
-        /** Fill cell_info with values contained in config file */
-        pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
-        i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
-        ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
+        /** Fill cell_info with values contained in config file
+        //pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007
+        //i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7.
+        //ssb_period = cell_info.lookup("ssb_period"); /** in seconds
     } else {
         std::cout << "Please enter a function name in config file" << std::endl;
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
         return (EXIT_FAILURE);
-    }
+    }*/
 
     //----------------------------------------------------------------------------------------------
 
@@ -165,9 +181,9 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "dmrs_type_a_position = " + std::to_string(mib_object.dmrs_type_a_position);
     BOOST_LOG_TRIVIAL(info) << "intra_freq_reselection = " + std::to_string(mib_object.intra_freq_reselection);
     BOOST_LOG_TRIVIAL(info) << "cell_barred = " + std::to_string(mib_object.cell_barred);
-    BOOST_LOG_TRIVIAL(info) << "pci = " + std::to_string(pci);
-    BOOST_LOG_TRIVIAL(info) << "i_b_ssb = " + std::to_string(i_b_ssb);
-    BOOST_LOG_TRIVIAL(info) << "ssb_perdiod (seconds) = " + std::to_string(ssb_period);
+    BOOST_LOG_TRIVIAL(info) << "pci = " + std::to_string(free5GRAN::gnodeB_config_globale.pci);
+    BOOST_LOG_TRIVIAL(info) << "i_b_ssb = " + std::to_string(free5GRAN::gnodeB_config_globale.i_b_ssb);
+    BOOST_LOG_TRIVIAL(info) << "ssb_perdiod (seconds) = " + std::to_string(free5GRAN::gnodeB_config_globale.ssb_period);
     BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
     BOOST_LOG_TRIVIAL(info) << "N (length of BCH payload after polar encode) = " + std::to_string(N);
     BOOST_LOG_TRIVIAL(info) << "sampling rate for USRP = " + std::to_string(usrp_info_object.sampling_rate);
@@ -180,8 +196,8 @@ int main(int argc, char *argv[]) {
 
     /** Display some useful information */
     std::cout << "###### SSB" << std::endl;
-    std::cout << "# ssb_period: " << ssb_period << " second" << std::endl;
-    std::cout << "# i_b_ssb: " << i_b_ssb << std::endl;
+    std::cout << "# ssb_period: " << free5GRAN::gnodeB_config_globale.ssb_period << " second" << std::endl;
+    std::cout << "# i_b_ssb: " << free5GRAN::gnodeB_config_globale.i_b_ssb << std::endl;
     std::cout << "# ifft_size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
     std::cout << "\n###### CELL & MIB" << std::endl;
     std::cout << "# pddchc_config: " << mib_object.pdcch_config << std::endl;
@@ -190,7 +206,7 @@ int main(int argc, char *argv[]) {
     std::cout << "# cell_barred: " << mib_object.cell_barred << std::endl;
     std::cout << "# dmrs_type_a_position: " << mib_object.dmrs_type_a_position << std::endl;
     std::cout << "# intra_freq_reselection: " << mib_object.intra_freq_reselection << std::endl;
-    std::cout << "# PCI: " << pci << std::endl;
+    std::cout << "# PCI: " << free5GRAN::gnodeB_config_globale.pci << std::endl;
     std::cout << "\n###### USRP" << std::endl;
     std::cout << "# Sampling rate: " << usrp_info_object.sampling_rate << " Hz" << std::endl;
     std::cout << "# Bandwidth: " << usrp_info_object.bandwidth << " Hz" << std::endl;
@@ -206,9 +222,9 @@ int main(int argc, char *argv[]) {
         /** Run generate_frame one time for testing */
         int sfn = 500;
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        phy_variable.generate_frame(mib_object, sfn, ssb_period, pci, N, gscn,
-                                    i_b_ssb,
-                                    scaling_factor, buff_main_10ms);
+        phy_variable.generate_frame(mib_object, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
+                                    free5GRAN::gnodeB_config_globale.i_b_ssb,
+                                    free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
     }
 
@@ -225,7 +241,7 @@ int main(int argc, char *argv[]) {
        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
 
         /** thread sending in continuous buffer_to_send */
-        thread sending(send_buffer_multithread, usrp_info_object, ssb_period, rf_variable_2, &buffer_to_send);
+        thread sending(send_buffer_multithread, usrp_info_object, free5GRAN::gnodeB_config_globale.ssb_period, rf_variable_2, &buffer_to_send);
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
 
@@ -239,7 +255,7 @@ int main(int argc, char *argv[]) {
 
                 auto start = chrono::high_resolution_clock::now();
 
-                phy_variable.generate_frame(mib_object, sfn, ssb_period, pci, N, gscn, i_b_ssb, scaling_factor, buffer_generated);
+                phy_variable.generate_frame(mib_object, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn, free5GRAN::gnodeB_config_globale.i_b_ssb, free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
 
                 auto stop = chrono::high_resolution_clock::now();
                 BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";

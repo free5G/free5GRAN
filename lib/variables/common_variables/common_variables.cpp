@@ -355,3 +355,5 @@ bool free5GRAN::display_variables = false;
 
 int free5GRAN::index_frame_sent = 0;
 int free5GRAN::index_frame_to_send = 0;
+
+free5GRAN::gNodeB_config free5GRAN::gnodeB_config_globale = {"", "", false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, "", "", "","", 0.0, 0.0, 0.0, 0.0, 0.0, 0};

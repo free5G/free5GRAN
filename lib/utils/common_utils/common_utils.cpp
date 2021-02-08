@@ -389,21 +389,19 @@ void init_logging(std::string level)
 
 
 
-
-void free5GRAN::utils::common_utils::read_config_gNodeB(free5GRAN::gNodeB_config gNodeBConfig, char *argv[]) {
+void free5GRAN::utils::common_utils::read_config_gNodeB(const char argv[]) {
 
     bool run_multi_thread = true;
 
     namespace logging = boost::log;
     void init_logging(string warning); /** 'warning' has to be deleted */
-    libconfig::Config cfg_gNodeB_lib;
 
     /** READING CONFIG FILE */
     libconfig::Config cfg_gNodeB_Lib;
     try {
         if (run_multi_thread) {
             cfg_gNodeB_Lib.readFile(
-                    argv[1]);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
+                    argv);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
         } else {
             cfg_gNodeB_Lib.readFile("../config/ssb_emission.cfg"); /** Use this for launch in CLion */
         }
@@ -422,7 +420,7 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(free5GRAN::gNodeB_config
 
     /** Read 'level' in config_file and create the log file */
     std::string log_level = cfg_gNodeB_Lib.lookup("logging");
-    gNodeBConfig.log_level = log_level;
+    free5GRAN::gnodeB_config_globale.log_level = log_level;
     std::cout << "log level = " << log_level << std::endl;
     //init_logging(log_level);
 
@@ -445,43 +443,47 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(free5GRAN::gNodeB_config
 
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
-        /** Fill usrp_info_object with values contained in config file  */
+        /** Fill usrp infos with values contained in config file  */
         std::string device_args = usrp_info.lookup("device_args");
-        gNodeBConfig.device_args = device_args;
+        free5GRAN::gnodeB_config_globale.device_args = device_args;
         std::string subdev = usrp_info.lookup("subdev");
-        gNodeBConfig.subdev = subdev;
+        free5GRAN::gnodeB_config_globale.subdev = subdev;
         std::string ant = usrp_info.lookup("ant");
-        gNodeBConfig.ant = ant;
+        free5GRAN::gnodeB_config_globale.ant = ant;
         std::string ref2 = usrp_info.lookup("ref2");
-        gNodeBConfig.ref2 = ref2;
-        gNodeBConfig.center_frequency = usrp_info.lookup("center_frequency");
-        gNodeBConfig.gain = usrp_info.lookup("gain");
-        scaling_factor = usrp_info.lookup(
-                "scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
+        free5GRAN::gnodeB_config_globale.ref2 = ref2;
+        free5GRAN::gnodeB_config_globale.center_frequency = usrp_info.lookup("center_frequency");
+        free5GRAN::gnodeB_config_globale.gain = usrp_info.lookup("gain");
+        free5GRAN::gnodeB_config_globale.scaling_factor = usrp_info.lookup("scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
 
         /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
         /** Calculation according to !! TS TO BE ADDED !! */
-        if (gNodeBConfig.center_frequency < 3000e6) {
-            gNodeBConfig.scs = 15e3; /** in Hz */
+        if (free5GRAN::gnodeB_config_globale.center_frequency < 3000e6) {
+            free5GRAN::gnodeB_config_globale.scs = 15e3; /** in Hz */
         } else {
-            gNodeBConfig.scs = 30e3; /** in Hz */
+            free5GRAN::gnodeB_config_globale.scs = 30e3; /** in Hz */
         }
 
-        gNodeBConfig.sampling_rate = free5GRAN::SIZE_IFFT_SSB * gNodeBConfig.scs;
-        gNodeBConfig.bandwidth = gNodeBConfig.sampling_rate;
+        free5GRAN::gnodeB_config_globale.sampling_rate = free5GRAN::SIZE_IFFT_SSB * free5GRAN::gnodeB_config_globale.scs;
+        free5GRAN::gnodeB_config_globale.bandwidth = free5GRAN::gnodeB_config_globale.sampling_rate;
 
-        /** Fill mib_object with values in config file */
-        gNodeBConfig.pddchc_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
-        gNodeBConfig.k_ssb = mib_info.lookup(
+        /** Fill mib info with values in config file */
+        free5GRAN::gnodeB_config_globale.pddchc_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
+        free5GRAN::gnodeB_config_globale.k_ssb = mib_info.lookup(
                 "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
-        gNodeBConfig.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
-        gNodeBConfig.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
-        gNodeBConfig.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
 
         /** Fill cell_info with values contained in config file */
-        pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
-        i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
-        ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
+        free5GRAN::gnodeB_config_globale.pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
+        free5GRAN::gnodeB_config_globale.pci = cell_info.lookup("pci");
+
+        std::cout << "gNodeBConfig.pci = "<<free5GRAN::gnodeB_config_globale.pci<<std::endl;
+        std::cout << "gNodeB_config_globale.pci from common-utils= "<<free5GRAN::gnodeB_config_globale.pci<<std::endl;
+
+        free5GRAN::gnodeB_config_globale.i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
+        free5GRAN::gnodeB_config_globale.ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
     } else {
         std::cout << "Please enter a function name in config file" << std::endl;
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
