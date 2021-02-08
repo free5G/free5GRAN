@@ -51,7 +51,7 @@ void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = true;
+    bool run_with_usrp = false;
 
     phy phy_variable;
 

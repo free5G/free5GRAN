@@ -56,11 +56,15 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH from generate_frame";
 
     /** GENERATE SSB -> Generate SSB_signal_time_domain (4 * 256 symbols in our case) from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */
+
+    /** To be deleted
     std::complex<float> **SSB_signal_time_domain;
     SSB_signal_time_domain = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
         SSB_signal_time_domain[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
-    }
+    }*/
+
+    vector<vector<complex<float>>> SSB_signal_time_domain(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
     free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, scaling_factor,
                                                                 free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);
@@ -86,11 +90,15 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
         << "From generate_frame cp_lengths[1] (which will be used) = " + std::to_string(cp_lengths[1]);
 
     /** ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED */
+
+    /** To be deleted
     std::complex<float> **SSB_signal_time_domain_CP;
     SSB_signal_time_domain_CP = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
         SSB_signal_time_domain_CP[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
-    }
+    }*/
+
+    vector<vector<complex<float>>> SSB_signal_time_domain_CP(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]));
 
     free5GRAN::phy::signal_processing::adding_cp(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB,
                                                  free5GRAN::SIZE_IFFT_SSB, cp_lengths[1],
@@ -127,7 +135,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
 
 
 
-void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, std::complex<float> **SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::vector<std::complex<float>> &one_frame_vector){
+void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, vector<vector<complex<float>>> SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::vector<std::complex<float>> &one_frame_vector){
 
     /** Compute cp_lengths */
     int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];

@@ -123,7 +123,7 @@ void free5GRAN::phy::transport_channel::rate_recover(int *input_bits, int *outpu
 }
 
 void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *output_bits, int N, int K, int nmax, int i_il, int n_pc,
-                                    int n_wm_pc, int E) {
+                                                     int n_wm_pc, int E) {
     /**
      * \fn polar_decode
      * \brief Polar decoding
@@ -844,9 +844,9 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
      * \param[in] i_ls: Zc set index
      * \param[out] output_sequence: Corrected output bits sequence
      */
-     /*
-      * H matrix generation
-      */
+    /*
+     * H matrix generation
+     */
     int size_i, size_j;
     size_i = 52;
     size_j = 42;

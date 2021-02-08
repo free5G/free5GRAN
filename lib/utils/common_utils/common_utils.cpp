@@ -308,14 +308,14 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
 
 
 void free5GRAN::utils::common_utils::display_table(int *table_to_display, int size, char *table_name) {
-   /**
-   * \fn display_table (int* table_to_display, int size, char* table_name)
-   * \brief Displays a table in the console.
-   *
-   * \param[in] table_to_display
-   * \param[in] size number of element in the table
-   * \param[in] table_name name to display
-   */
+    /**
+    * \fn display_table (int* table_to_display, int size, char* table_name)
+    * \brief Displays a table in the console.
+    *
+    * \param[in] table_to_display
+    * \param[in] size number of element in the table
+    * \param[in] table_name name to display
+    */
 
     for (int i = 0; i<size; i++) {
         if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
@@ -356,7 +356,7 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     try {
         cfg_gNodeB_Lib.readFile(config_file);
     }
-    /** Return an error if config file is not found */
+        /** Return an error if config file is not found */
     catch (libconfig::FileIOException &e) {
         std::cout << "FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
         // return (EXIT_FAILURE);
