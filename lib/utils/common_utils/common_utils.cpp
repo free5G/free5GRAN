@@ -337,50 +337,6 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
 
 
 
-/** Initialize a logging file
-void init_logging(std::string level)
-{
-    boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
-    boost::log::add_file_log
-            (
-                    boost::log::keywords::file_name = "free5GRAN_gNodeB.log",
-                    boost::log::keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%] %Message%"
-            );
-
-    if (level == "trace"){
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::trace
-                );
-    }else if (level == "debug"){
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::debug
-                );
-    }else if (level == "info"){
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::info
-                );
-    }else if (level == "warning"){
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::warning
-                );
-    }else if (level == "error"){
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::error
-                );
-    }else {
-        boost::log::core::get()->set_filter
-                (
-                        boost::log::trivial::severity >= boost::log::trivial::fatal
-                );
-    }
-    //boost::log::add_common_attributes();
-}
-*/
 
 
 
@@ -388,25 +344,18 @@ void init_logging(std::string level)
 
 
 
+void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]) {
 
-void free5GRAN::utils::common_utils::read_config_gNodeB(const char argv[]) {
-
-    bool run_multi_thread = true;
 
     namespace logging = boost::log;
     void init_logging(string warning); /** 'warning' has to be deleted */
 
     /** READING CONFIG FILE */
     libconfig::Config cfg_gNodeB_Lib;
-    try {
-        if (run_multi_thread) {
-            cfg_gNodeB_Lib.readFile(
-                    argv);   /** Use this for CLI launch. command in /build : sudo ./NRPhy_2 ../config/ssb_emission.cfg */
-        } else {
-            cfg_gNodeB_Lib.readFile("../config/ssb_emission.cfg"); /** Use this for launch in CLion */
-        }
-    }
 
+    try {
+        cfg_gNodeB_Lib.readFile(config_file);
+    }
     /** Return an error if config file is not found */
     catch (libconfig::FileIOException &e) {
         std::cout << "FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
@@ -436,52 +385,35 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char argv[]) {
     float scaling_factor;
     double ssb_period;
 
-    //----------------------------------------------------------------------------------------
-
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
 
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
-        /** Fill usrp infos with values contained in config file  */
+
         std::string device_args = usrp_info.lookup("device_args");
-        free5GRAN::gnodeB_config_globale.device_args = device_args;
+        free5GRAN::gnodeB_config_globale.usrp_info_object.device_args = device_args;
         std::string subdev = usrp_info.lookup("subdev");
-        free5GRAN::gnodeB_config_globale.subdev = subdev;
+        free5GRAN::gnodeB_config_globale.usrp_info_object.subdev = subdev;
         std::string ant = usrp_info.lookup("ant");
-        free5GRAN::gnodeB_config_globale.ant = ant;
+        free5GRAN::gnodeB_config_globale.usrp_info_object.ant = ant;
         std::string ref2 = usrp_info.lookup("ref2");
-        free5GRAN::gnodeB_config_globale.ref2 = ref2;
-        free5GRAN::gnodeB_config_globale.center_frequency = usrp_info.lookup("center_frequency");
-        free5GRAN::gnodeB_config_globale.gain = usrp_info.lookup("gain");
+        free5GRAN::gnodeB_config_globale.usrp_info_object.ref2 = ref2;
+        free5GRAN::gnodeB_config_globale.usrp_info_object.center_frequency = usrp_info.lookup("center_frequency");
+        free5GRAN::gnodeB_config_globale.usrp_info_object.gain = usrp_info.lookup("gain");
+
         free5GRAN::gnodeB_config_globale.scaling_factor = usrp_info.lookup("scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
 
-        /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
-        /** Calculation according to !! TS TO BE ADDED !! */
-        if (free5GRAN::gnodeB_config_globale.center_frequency < 3000e6) {
-            free5GRAN::gnodeB_config_globale.scs = 15e3; /** in Hz */
-        } else {
-            free5GRAN::gnodeB_config_globale.scs = 30e3; /** in Hz */
-        }
-
-        free5GRAN::gnodeB_config_globale.sampling_rate = free5GRAN::SIZE_IFFT_SSB * free5GRAN::gnodeB_config_globale.scs;
-        free5GRAN::gnodeB_config_globale.bandwidth = free5GRAN::gnodeB_config_globale.sampling_rate;
-
         /** Fill mib info with values in config file */
-        free5GRAN::gnodeB_config_globale.pddchc_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
-        free5GRAN::gnodeB_config_globale.k_ssb = mib_info.lookup(
+        free5GRAN::gnodeB_config_globale.mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
+        free5GRAN::gnodeB_config_globale.mib_object.k_ssb = mib_info.lookup(
                 "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */
-        free5GRAN::gnodeB_config_globale.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
-        free5GRAN::gnodeB_config_globale.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
-        free5GRAN::gnodeB_config_globale.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.mib_object.cell_barred = mib_info.lookup("cell_barred"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.mib_object.dmrs_type_a_position = mib_info.lookup("dmrs_type_a_position"); /** stored on MIB on 1 bit */
+        free5GRAN::gnodeB_config_globale.mib_object.intra_freq_reselection = mib_info.lookup("intra_freq_reselection"); /** stored on MIB on 1 bit */
 
         /** Fill cell_info with values contained in config file */
         free5GRAN::gnodeB_config_globale.pci = cell_info.lookup("pci"); /** (Physical Cell Id). int between 0 and 1007 */
-        free5GRAN::gnodeB_config_globale.pci = cell_info.lookup("pci");
-
-        std::cout << "gNodeBConfig.pci = "<<free5GRAN::gnodeB_config_globale.pci<<std::endl;
-        std::cout << "gNodeB_config_globale.pci from common-utils= "<<free5GRAN::gnodeB_config_globale.pci<<std::endl;
-
         free5GRAN::gnodeB_config_globale.i_b_ssb = cell_info.lookup("i_b_ssb"); /** SSB index. int between 0 and 7. */
         free5GRAN::gnodeB_config_globale.ssb_period = cell_info.lookup("ssb_period"); /** in seconds */
     } else {

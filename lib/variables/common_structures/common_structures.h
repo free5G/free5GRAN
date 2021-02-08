@@ -120,6 +120,8 @@ typedef struct gNodeB_config_ {
     float bandwidth;
     float sampling_rate;
     int scs;
+    free5GRAN::mib mib_object;
+    free5GRAN::usrp_info2 usrp_info_object;
 } gNodeB_config;
 
 }
