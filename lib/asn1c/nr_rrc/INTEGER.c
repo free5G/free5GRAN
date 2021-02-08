@@ -1173,7 +1173,6 @@ asn_INTEGER2imax(const INTEGER_t *iptr, intmax_t *lptr) {
 	return 0;
 }
 
-/* FIXME: negative INTEGER values are silently interpreted as large unsigned ones. */
 int
 asn_INTEGER2umax(const INTEGER_t *iptr, uintmax_t *lptr) {
 	uint8_t *b, *end;
