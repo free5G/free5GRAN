@@ -175,7 +175,7 @@ void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subf
                                                       "symbols_size_one_frame from generate_frame");
     }
 
-    /**Initialise one_frame_1_dimension */
+    /** Calculate the position of SSB in the frame and subframe */
     int Num_sample_per_subframe =
             cum_sum_cp_lengths[Num_symbols_per_subframe - 1] + cp_lengths[1] + free5GRAN::SIZE_IFFT_SSB;
 
@@ -222,6 +222,20 @@ void phy::place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subf
         std::cout << "Num_symbols_per_subframe = " << Num_symbols_per_subframe << std::endl;
     }
 
+    //To be deleted
+    free5GRAN::utils::common_utils::display_table(cp_lengths, Num_symbols_per_subframe, "cp_lengths = ");
+    free5GRAN::utils::common_utils::display_table(cum_sum_cp_lengths, Num_symbols_per_subframe,
+                                                  "cum_sum_cp_lengths = ");
+    std::cout << "Num symbols per frame = " << Num_symbols_per_frame << std::endl;
+    std::cout << "Num symbols per sub_frame = " << Num_symbols_per_subframe << std::endl;
+    std::cout << "Num samples per symbols SSB = " << Num_samples_per_symbol_SSB << std::endl;
+    std::cout << "Index_symbol first SSB in frame = " << index_symbol_first_ssb_in_frame << std::endl;
+    std::cout << "Num_sample_per_subframe = " << Num_sample_per_subframe << std::endl;
+    std::cout << "index_subframe_SSB = " << index_subframe_SSB << std::endl;
+    std::cout << "index_symbol_in_subframe_SSB = " << index_symbol_in_subframe_SSB << std::endl;
+    std::cout << "index_sample_begin_SSB = " << index_sample_begin_SSB << std::endl;
+    std::cout << "Num_symbols_per_subframe = " << Num_symbols_per_subframe << std::endl;
+
 }
 
 
@@ -266,6 +280,12 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
         Num_samples_in_frame = Num_samples_in_frame + symbols_size_one_frame[symbol];
     }
+}
+
+
+
+void phy::execute_IFFT(){
+
 }
 
 

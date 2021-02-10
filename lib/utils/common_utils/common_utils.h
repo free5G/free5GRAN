@@ -41,6 +41,7 @@ namespace free5GRAN {
             void convert_decimal_to_binary(int size, int decimal, int* table_output);
 
             void display_signal_float(std::complex<float> ** signal_to_display, int num_symbols, int num_sc, char* signal_name);
+            void display_vector_2D(std::vector<std::vector<std::complex<float>>> vector_to_display, int vector_size1, int vector_size2, char *vector_name);
             void display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size, char* vector_name);
             void display_complex_double(std::complex<double> *vector_to_display, int vector_size, char* vector_name);
             void display_complex_float(std::complex<float> *vector_to_display, int vector_size, char* vector_name);

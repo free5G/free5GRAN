@@ -51,7 +51,7 @@ void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = true;
+    bool run_with_usrp = false;
 
     phy phy_variable;
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
         phy_variable.generate_frame(mib_object, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
-        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms");
+        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms from main");
     }
 
     /** Sending buffer MULTITHREADING */
