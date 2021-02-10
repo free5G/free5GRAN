@@ -69,15 +69,15 @@ namespace free5GRAN {
 
             //To be deleted
             //void increase_size_ssb(std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output);
-            void increase_size_ssb(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> output_channel, int num_symbols, int num_sc_input, int num_sc_output);
+            void increase_size_ssb(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols, int num_sc_input, int num_sc_output);
 
-            void reverse_ssb(vector<vector<complex<float>>> input_ssb, vector<vector<complex<float>>> output_reversed_ssb, int num_symbols, int num_sc);
+            void reverse_ssb(vector<vector<complex<float>>> input_ssb, vector<vector<complex<float>>> &output_reversed_ssb, int num_symbols, int num_sc);
 
-            void ifft(vector<vector<complex<float>>> in_freq_domain_channel, vector<vector<complex<float>>> out_time_domain_channel, int fft_size, float scaling_factor, int sc_number);
+            void ifft(vector<vector<complex<float>>> in_freq_domain_channel, vector<vector<complex<float>>> &out_time_domain_channel, int fft_size, float scaling_factor, int sc_number);
 
-            void adding_cp(vector<vector<complex<float>>> input_channel, int num_symbols, int num_sc_in, int cp_lengths, vector<vector<complex<float>>> output_channel_with_cp);
+            void adding_cp(vector<vector<complex<float>>> input_channel, int num_symbols, int num_sc_in, int cp_lengths, vector<vector<complex<float>>> &output_channel_with_cp);
 
-            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<vector<complex<float>>> SSB_signal_time_domain);
+            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<vector<complex<float>>> &SSB_signal_time_domain);
         }
     }
 }
