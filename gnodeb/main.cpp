@@ -51,7 +51,7 @@ void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = false;
+    bool run_with_usrp = true;
 
     phy phy_variable;
 
@@ -119,17 +119,44 @@ int main(int argc, char *argv[]) {
 
     if (run_with_usrp == false) {
         /** Run generate_frame one time for testing */
+            /** CP lengths */
+            int Num_symbols_per_subframe;
+            if (mib_object.scs == 15000) {
+                Num_symbols_per_subframe = 14;
+            } else if (mib_object.scs == 30000) {
+                Num_symbols_per_subframe = 28;
+            }
+            int num_symbols_frame = Num_symbols_per_subframe * 10;
+
+            /** Calculate cp_length */
+            int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+            free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                                  Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
+                                                                  &cum_sum_cp_lengths[0]);
+
+            /** Initialize cp_length for each symbols of a frame */
+            int cp_lengths_one_frame[num_symbols_frame];
+            for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+                for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+                    cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
+                }
+            }
+
+            free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, num_symbols_frame, "cp_lenghts_one_frame from main, just before while true");
+
+        int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
         int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        phy_variable.generate_frame(mib_object, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
+        phy_variable.generate_frame(mib_object, index_symbol_ssb, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
-        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "buff_main_10ms from main");
+        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "\n\nbuff_main_10ms from main");
     }
 
     /** Sending buffer MULTITHREADING */
     if(run_with_usrp) {
 
+        std::cout<<"\nNum_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
         /** Initialize the 2 buffers. One will be generated while the other will be send */
         std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
         std::vector<std::complex<float>> buffer_to_send(Num_samples_in_frame);
@@ -144,12 +171,9 @@ int main(int argc, char *argv[]) {
         std::cout << "# Frequency: " << usrp_info_object.center_frequency /1e6<< " MHz" << std::endl;
         std::cout << "# Ifft Size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
         std::cout << "# ssb_period: " << free5GRAN::gnodeB_config_globale.ssb_period << " second" << std::endl;
-
         std::cout << "\n###### CELL" << std::endl;
         std::cout << "# PCI: " << free5GRAN::gnodeB_config_globale.pci << std::endl;
         std::cout << "# I_B_SSB: " << free5GRAN::gnodeB_config_globale.i_b_ssb << std::endl;
-
-
         std::cout << "\n###### MIB" << std::endl;
         std::cout << "# Frame number: varies cyclically between 0 and 1023" << std::endl;
         std::cout << "# PDCCH configuration: " << mib_object.pdcch_config << std::endl;
@@ -158,7 +182,6 @@ int main(int argc, char *argv[]) {
         std::cout << "# DMRS type A position: " << mib_object.dmrs_type_a_position << std::endl;
         std::cout << "# k SSB: " << mib_object.k_ssb << std::endl;
         std::cout << "# Intra freq reselection: " << mib_object.intra_freq_reselection << std::endl;
-
         std::cout << "\n###### USRP" << std::endl;
         std::cout << "# Sampling rate: " << usrp_info_object.sampling_rate/1e6 << " MHz" << std::endl;
         std::cout << "# Bandwidth: " << usrp_info_object.bandwidth/1e6 << " MHz" << std::endl;
@@ -174,18 +197,47 @@ int main(int argc, char *argv[]) {
 
         int sfn = 1, i = 0, duration_sum = 0;
 
+        /** Calculation of some variables to reduce the work of generate_frame */
+        int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
+
+                /** CP LENGTH CALCULATION FOR EACH SYMBOLS OF A FRAME*/
+
+                int Num_symbols_per_subframe;
+                if (mib_object.scs == 15000) {
+                    Num_symbols_per_subframe = 14;
+                } else if (mib_object.scs == 30000) {
+                    Num_symbols_per_subframe = 28;
+                }
+                int num_symbols_frame = Num_symbols_per_subframe * 10;
+
+                /** Calculate cp_length */
+                int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+                free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                                      Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
+                                                                      &cum_sum_cp_lengths[0]);
+
+                /** Initialize cp_length for each symbols of a frame */
+                int cp_lengths_one_frame[num_symbols_frame];
+                for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+                    for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+                        cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
+                    }
+                }
+
+                free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, num_symbols_frame, "cp_lenghts_one_frame from main, just before while true");
+
         while (true) {
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
 
+            BOOST_LOG_TRIVIAL(error) << "One Loop while true in MAIN done";
             auto start = chrono::high_resolution_clock::now();
             auto stop = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
             int duration_int;
-
-                //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
-                while (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+                if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+                //while (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                     auto start = chrono::high_resolution_clock::now();
-                    phy_variable.generate_frame(mib_object, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
+                    phy_variable.generate_frame(mib_object, index_symbol_ssb, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
                                                 free5GRAN::gnodeB_config_globale.gscn,
                                                 free5GRAN::gnodeB_config_globale.i_b_ssb,
@@ -214,7 +266,6 @@ int main(int argc, char *argv[]) {
                     }
                     i++;
                 }
-            //BOOST_LOG_TRIVIAL(warning) << "One loop while True of main done";
         }
     }
 }

@@ -287,6 +287,9 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
             size_symbol = 274;
         }
         for (int sc = 0; sc<size_symbol; sc ++){
+            if (sc % 10 == 0){
+                std::cout <<"  ||||  "<<std::ends;
+            }
             std::cout <<vector_to_display[j]<<" " <<std::ends;
             j++;
         }

@@ -34,7 +34,7 @@
 #include <boost/log/utility/setup/file.hpp>
 
 
-void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
 
     mib_object.sfn = sfn;
     BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
@@ -64,13 +64,25 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
         SSB_signal_time_domain[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB];
     }*/
 
-    vector<vector<complex<float>>> SSB_signal_time_domain(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
+    /** Use function IFFT */
+
+    /** Version 01: Use this to generate a frame doing the ifft for SSB symbols only and then put it in a frame
     free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, mib_object, pci, i_b_ssb, scaling_factor,
-                                                                free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);
+                                                                free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);*/
+
+    /** Version 02:  Use this to generate a frame beginning by placing the SSB on the grid and (freq domain) and then doing an ifft for each symbols of the frame */
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, mib_object, index_symbol_ssb, cp_lengths_one_frame, pci, i_b_ssb, scaling_factor,
+                                                                free5GRAN::SIZE_IFFT_SSB, one_frame_vector);
+
+
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB_signal_time_domain";
 
-    /** COMPUTE CP. TS38.211 V15.2.0 Section 5.3 */
+    /** Version 2: for this version, we don't need what's below */
+
+    /** //
+        //COMPUTE CP. TS38.211 V15.2.0 Section 5.3
+    vector<vector<complex<float>>> SSB_signal_time_domain(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
     int Num_symbols_per_subframe;
     if (mib_object.scs == 15000) {
         Num_symbols_per_subframe = 14;
@@ -89,14 +101,14 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
     BOOST_LOG_TRIVIAL(info)
         << "From generate_frame cp_lengths[1] (which will be used) = " + std::to_string(cp_lengths[1]);
 
-    /** ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED */
+        //ADDING CP TO SSB -> Generate SSB_signal_time_domain_CP from SSB_signal_time_domain TS TO BE ADDED
 
-    /** To be deleted
-    std::complex<float> **SSB_signal_time_domain_CP;
-    SSB_signal_time_domain_CP = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
-    for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
-        SSB_signal_time_domain_CP[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
-    }*/
+        //To be deleted
+            //std::complex<float> **SSB_signal_time_domain_CP;
+            //SSB_signal_time_domain_CP = new std::complex<float> *[free5GRAN::NUM_SYMBOLS_SSB];
+            //for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
+                //SSB_signal_time_domain_CP[symbol] = new std::complex<float>[free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]];
+            //}
 
     vector<vector<complex<float>>> SSB_signal_time_domain_CP(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB + cp_lengths[1]));
 
@@ -109,26 +121,27 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
     phy::compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
     BOOST_LOG_TRIVIAL(info)<< "Num_samples_in_frame = " + std::to_string(Num_samples_in_frame);
 
-    /** Generate one_frame_vector */
+        //Generate one_frame_vector
 
     phy::place_SSB_in_frame(mib_object, Num_symbols_per_subframe, SSB_signal_time_domain_CP, ssb_period, i_b_ssb, one_frame_vector);
 
     //free5GRAN::utils::common_utils::display_complex_float(one_frame, Num_samples_in_frame, "\n\n\n\n\n\none_frame from phy>generate_frame");
     BOOST_LOG_TRIVIAL(info)<<"Place SSB in a 10 ms frame";
 
-    /** Fill vector buff_phy with table one_frame
-    int count3 = 0;
-    for (int sample = 0; sample < Num_samples_in_frame; sample++){
-        buff_phy[sample] = one_frame_vector[sample];
-        count3++;
-    }
-    BOOST_LOG_TRIVIAL(info)<<"Transform the frame from table to vector";
-    */
+     //Fill vector buff_phy with table one_frame
+        //int count3 = 0;
+        //for (int sample = 0; sample < Num_samples_in_frame; sample++){
+            //buff_phy[sample] = one_frame_vector[sample];
+            //count3++;
+        //}
+        //BOOST_LOG_TRIVIAL(info)<<"Transform the frame from table to vector";
+
 
     if (free5GRAN::display_variables) {
         free5GRAN::utils::common_utils::display_vector(one_frame_vector, Num_samples_in_frame, "buff_phy");
     }
     //free5GRAN::utils::common_utils::display_vector(buff_phy, Num_sample_per_frame, "buff_phy");
+     */
 }
 
 
@@ -282,10 +295,5 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
     }
 }
 
-
-
-void phy::execute_IFFT(){
-
-}
 
 

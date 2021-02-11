@@ -974,19 +974,21 @@ void free5GRAN::phy::signal_processing::adding_cp(vector<vector<complex<float>>>
 
 
 
-void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> input_ssb, free5GRAN::mib mib_object, int num_symbols_SSB, int num_symbols_frame, int fft_size, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
+void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> input_ssb, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
 
 
     /** Initialize the time/frequency grid */
 
-    free5GRAN::utils::common_utils::display_vector_2D(input_ssb, num_symbols_SSB, free5GRAN::SIZE_IFFT_SSB,
-                                                      "input_ssb");
+    //free5GRAN::utils::common_utils::display_vector_2D(input_ssb, num_symbols_SSB, free5GRAN::SIZE_IFFT_SSB,
+    //                                                  "input_ssb");
 
-    float default_value = 0.0/scaling_factor;
+    //float default_value = 0.0;
     //float default_value = 0.01/scaling_factor;
     //float default_value = 3;
-    complex<float> default_value2 = {default_value, default_value};
+    complex<float> default_value2 = {0.0, 0.0};
 
+    /** This vector will indicates which symbol of the frame is not nul and has to process the signal processing (Reverse, scaling factor and ifft) */
+    vector<bool> Symbol_not_nul(num_symbols_frame, false);
 
     vector<vector<complex<float>>> ONEframe2(num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
@@ -994,16 +996,14 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
     }
 
 
-
     /** Place the 4 symbols of SSB at the right place in ONEframe2 */
-    int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
-    std::cout << "\n\nindex_symbol_ssb = " << index_symbol_ssb << std::endl;
+    //int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[i_b_ssb];
+    //std::cout << "\n\nindex_symbol_ssb = " << index_symbol_ssb << std::endl;
     int i = 0;
     for (int symbol_ssb = index_symbol_ssb; symbol_ssb < index_symbol_ssb + NUM_SYMBOLS_SSB; symbol_ssb++) {
-
         ONEframe2[symbol_ssb] = input_ssb[i];
-
-        std::cout << "\nsymbol_ssb in loop = " << symbol_ssb << "  & i in loop = " << i << std::endl;
+        Symbol_not_nul[symbol_ssb] = true;
+        //std::cout << "\nsymbol_ssb in loop = " << symbol_ssb << "  & i in loop = " << i << std::endl;
         i++;
     }
 
@@ -1011,22 +1011,24 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
 
 
 
-    /** Reverse each symbol. This is done to put the frequency values at the right place, before making ifft */
+    /** Reverse each symbol && Scaling factor. This is done to put the frequency values at the right place, before making ifft */
 
     vector<vector<complex<float>>> ONEframe2_reversed(num_symbols_frame,
                                                       vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
-        int sc_counter1 = free5GRAN::SIZE_IFFT_SSB / 2, sc_counter2 = 0;
-        //std::cout << "sc_counter1 = "<<sc_counter1<<" && sc_counter2 = "<<sc_counter2<<std::endl;
-        /** Loop over all subcarriers of output signal */
-        for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-            if (sc < free5GRAN::SIZE_IFFT_SSB / 2) {
-                ONEframe2_reversed[symbol][sc] = ONEframe2[symbol][sc_counter1];
-                sc_counter1++;
-            } else {
-                ONEframe2_reversed[symbol][sc] = ONEframe2[symbol][sc_counter2];
-                sc_counter2++;
+        if (Symbol_not_nul[symbol]) {
+            int sc_counter1 = free5GRAN::SIZE_IFFT_SSB / 2, sc_counter2 = 0;
+            //std::cout << "sc_counter1 = "<<sc_counter1<<" && sc_counter2 = "<<sc_counter2<<std::endl;
+            /** Loop over all subcarriers of output signal */
+            for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
+                if (sc < free5GRAN::SIZE_IFFT_SSB / 2) {
+                    ONEframe2_reversed[symbol][sc] = ONEframe2[symbol][sc_counter1] * scaling_factor;
+                    sc_counter1++;
+                } else {
+                    ONEframe2_reversed[symbol][sc] = ONEframe2[symbol][sc_counter2] * scaling_factor;
+                    sc_counter2++;
+                }
             }
         }
     }
@@ -1034,16 +1036,16 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
     //                                                  "ONEframe2_reversed");
 
 
-    /** Scaling Factor : multiply each value by scaling_factor (in config file) to enhance the radio transmission */
+    /** Scaling Factor : multiply each value by scaling_factor (in config file) to enhance the radio transmission
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
         for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
             ONEframe2_reversed[symbol][sc] = {(ONEframe2_reversed[symbol][sc].real()) * scaling_factor,
                                               (ONEframe2_reversed[symbol][sc].imag()) * scaling_factor};
         }
-    }
+    }*/
 
-    free5GRAN::utils::common_utils::display_vector_2D(ONEframe2_reversed, num_symbols_frame, SIZE_IFFT_SSB,
-                                                      "ONEframe2_reversed");
+    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe2_reversed, num_symbols_frame, SIZE_IFFT_SSB,
+    //                                                  "ONEframe2_reversed");
 
     /** ifft : execute ifft for each symbol */
 
@@ -1052,50 +1054,49 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
 
     /** Loop over all symbols */
 
-    std::ofstream file_gnodeb;
-    file_gnodeb.open("IFFT_ONEframe2_time_domain.txt");
+    //std::ofstream file_gnodeb;
+    //file_gnodeb.open("IFFT_ONEframe2_time_domain.txt");
     for (int symbol = 0; symbol < 280; symbol++) {
+        if (Symbol_not_nul[symbol]) {
+            /** Generate complex arrays to store IFFT signals */
+            fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
+            fftw_complex *signal_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
 
-        /** Generate complex arrays to store IFFT signals */
-        fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
-        fftw_complex *signal_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
+            /** Generate plans */
+            fftw_plan ifft_plan = fftw_plan_dft_1d(free5GRAN::SIZE_IFFT_SSB, signal_in, signal_out, FFTW_BACKWARD,
+                                                   FFTW_MEASURE);
 
-        /** Generate plans */
-        fftw_plan ifft_plan = fftw_plan_dft_1d(free5GRAN::SIZE_IFFT_SSB, signal_in, signal_out, FFTW_BACKWARD,
-                                               FFTW_MEASURE);
+            /** Initialize arrays */
+            for (int i = 0; i < free5GRAN::SIZE_IFFT_SSB; i++) {
+                signal_in[i][0] = 0;
+                signal_out[i][1] = 0;
+            }
 
-        /** Initialize arrays */
-        for (int i = 0; i < free5GRAN::SIZE_IFFT_SSB; i++) {
-            signal_in[i][0] = 0;
-            signal_out[i][1] = 0;
-        }
-
-        /** Fill signal_in with the input signal */
-        for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-            signal_in[sc][0] = ONEframe2_reversed[symbol][sc].real();
-            signal_in[sc][1] = ONEframe2_reversed[symbol][sc].imag();
-        }
-
-
-        /** Execute the IFFT */
-        fftw_execute(ifft_plan);
-
-        /** Fill output signal with signal_out*/
-        for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-            ONEframe2_time_domain[symbol][sc] = {signal_out[sc][0], signal_out[sc][1]};
-        }
+            /** Fill signal_in with the ONEframe2_reversed signal */
+            for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
+                signal_in[sc][0] = ONEframe2_reversed[symbol][sc].real();
+                signal_in[sc][1] = ONEframe2_reversed[symbol][sc].imag();
+            }
 
 
+            /** Execute the IFFT */
+            fftw_execute(ifft_plan);
 
-        /** Fill a txt file to check spectogram on Python or Matlab */
-        for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-            file_gnodeb << ONEframe2_time_domain[symbol][sc];
-            file_gnodeb << "\n";
+            /** Fill output signal with signal_out*/
+            for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
+                ONEframe2_time_domain[symbol][sc] = {signal_out[sc][0], signal_out[sc][1]};
+            }
+
+            /** Fill a txt file to check spectogram on Python or Matlab
+            for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
+                file_gnodeb << ONEframe2_time_domain[symbol][sc];
+                file_gnodeb << "\n";
+            }*/
         }
     }
-    free5GRAN::utils::common_utils::display_vector_2D(ONEframe2_time_domain, num_symbols_frame, SIZE_IFFT_SSB,
-                                                      "ONEframe2_time_domain");
-    file_gnodeb.close();
+    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe2_time_domain, num_symbols_frame, SIZE_IFFT_SSB,
+    //                                                  "ONEframe2_time_domain");
+    //file_gnodeb.close();
 
 
     /** Calculte the CP length for each symbol in a frame */
@@ -1109,23 +1110,24 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
                 Num_symbols_per_subframe = 28;
             }*/
 
-            int Num_symbols_per_subframe = num_symbols_frame / 10;
+            /** What's Below is now done in MAIN
+                int Num_symbols_per_subframe = num_symbols_frame / 10;
 
-            /** Calculate cp_length */
-            int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
-            free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
-                                                                  Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
-                                                                  &cum_sum_cp_lengths[0]);
+                    //Calculate cp_length
+                int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+                free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                                      Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
+                                                                      &cum_sum_cp_lengths[0]);
 
-            /** Initialize cp_length for each symbols of a frame */
-            int cp_lengths_one_frame[num_symbols_frame];
-            for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
-                for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
-                    cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
-                }
-            }
+                    //Initialize cp_length for each symbols of a frame
+                int cp_lengths_one_frame[num_symbols_frame];
+                for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+                    for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+                        cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
+                    }
+                   }*/
 
-            free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, num_symbols_frame, "cp_lengths_one_frame");
+            //free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, num_symbols_frame, "cp_lengths_one_frame");
 
         /** Adding the Cyclic Prefix for each symbol and put all in ONEframe2_CP */
 
@@ -1149,7 +1151,7 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
                 }
             }
 
-         free5GRAN::utils::common_utils::display_vector(ONEframe2_time_CP, 76800, "ONEframe2_time_CP");
+         //free5GRAN::utils::common_utils::display_vector(ONEframe2_time_CP, 76800, "ONEframe2_time_CP");
 }
 
 
@@ -1162,10 +1164,16 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
 
 
 
-
+/** Version 01: Use this to generate a frame doing the ifft for SSB symbols only and then put it in a frame
 void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci,
                                                                  int i_b_ssb, float scaling_factor, int ifft_size,
-                                                                 vector<vector<complex<float>>> &SSB_signal_time_domain) {
+                                                                 vector<vector<complex<float>>> &SSB_signal_time_domain) {/*
+
+/** Version 02:  Use this to generate a frame beginning by placing the SSB on the grid and (freq domain) and then doing an ifft for each symbols of the frame */
+void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int pci,
+                                                                 int i_b_ssb, float scaling_factor, int ifft_size,
+                                                                 vector<complex<float>> &ONEframe2_time_CP) {
+
     /**
     * \fn generate_SSB_time (std::complex<float> * pbch_symbols, int pci, int i_b_ssb, int scaling_factor, std::complex<float> ** SSB_signal_time_domain)
     * \brief Generates from a pbch sequence a SSB (Synchronization Signal Block), without Cyclic Prefix, in time domain.
@@ -1337,13 +1345,15 @@ void free5GRAN::phy::signal_processing::generate_time_domain_ssb(std::complex<fl
         //free5GRAN::utils::common_utils::display_signal_float(SSB_signal_extended_reversed, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended_reversed from libphy");
     }
 
-    /**ifft --> SSB from frequency domain to time domain */
+    /** Use this to generate a frame doing the ifft for SSB symbols only and then put it in a frame */
+    /**ifft --> SSB from frequency domain to time domain
     free5GRAN::phy::signal_processing::ifft(SSB_signal_extended_reversed, SSB_signal_time_domain, free5GRAN::SIZE_IFFT_SSB, scaling_factor, free5GRAN::SIZE_IFFT_SSB);
     if (free5GRAN::display_variables){
         //free5GRAN::utils::common_utils::display_signal_float(SSB_signal_time_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_time_domain from libphy");
-    }
+    }*/
 
+    /** Use this to generate a frame beginning by placing the SSB on the grid and (freq domain) and then doing an ifft for each symbols of the frame */
     /**IFFT --> Test to merge 'reverse_ssb', 'ifft', 'adding_cp' and 'place_SSB_in_frame */
     vector<complex<float>> ONEframe2_time_CP_after_IFFT (76800, std::complex<float>());
-    IFFT(SSB_signal_extended, mib_object, NUM_SYMBOLS_SSB, 280, free5GRAN::SIZE_IFFT_SSB, scaling_factor, pci, i_b_ssb, ONEframe2_time_CP_after_IFFT);
+    IFFT(SSB_signal_extended, mib_object, index_symbol_ssb, cp_lengths_one_frame, NUM_SYMBOLS_SSB, 280, scaling_factor, pci, i_b_ssb, ONEframe2_time_CP);
 }
