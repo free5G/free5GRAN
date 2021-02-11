@@ -273,15 +273,23 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
     * \param[in] vector_size number of element in the vector
     * \param[in] vector_name name to display
     */
-    for (int i=0; i<vector_size; i++){
-        if (i==0){
-            std::cout <<""<< std::endl;
-            std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
+    int j = 0;
+    int size_symbol;
+    std::cout <<""<< std::endl;
+    std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
+
+    for (int symbol = 0; symbol < 280; symbol++){
+        std::cout<<"\nsymbol "<<symbol<<" = "<<std::ends;
+        if (symbol % 14 == 0){
+            size_symbol = 278;
         }
-        if (i% 274 == 0){         /** 10 here means that every 280 elements displayed, a line break is done */
-            std::cout <<""<< std::endl;
+        if (symbol % 14 != 0){
+            size_symbol = 274;
         }
-        std::cout<<vector_to_display[i]<<"  "<< std::ends;
+        for (int sc = 0; sc<size_symbol; sc ++){
+            std::cout <<vector_to_display[j]<<" " <<std::ends;
+            j++;
+        }
     }
 }
 

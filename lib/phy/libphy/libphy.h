@@ -79,9 +79,9 @@ namespace free5GRAN {
             void adding_cp(vector<vector<complex<float>>> input_channel, int num_symbols, int num_sc_in, int cp_lengths, vector<vector<complex<float>>> &output_channel_with_cp);
 
 
-            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<vector<complex<float>>> &SSB_signal_time_domain);
+            void generate_time_domain_ssb(std::complex<float> * pbch_symbols, free5GRAN::mib mib_object, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<vector<complex<float>>> &SSB_signal_time_domain);
 
-            void IFFT(vector<vector<complex<float>>> input_ssb, int num_symbols_SSB, int num_symbols_frame, int fft_size, float scaling_factor, int pci, int i_b_ssb, vector<vector<complex<float>>> &ONEframe);
+            void IFFT(vector<vector<complex<float>>> input_ssb, free5GRAN::mib mib_object, int num_symbols_SSB, int num_symbols_frame, int fft_size, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP);
         }
     }
 }

@@ -66,7 +66,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int sfn, double ssb_period,i
 
     vector<vector<complex<float>>> SSB_signal_time_domain(free5GRAN::NUM_SYMBOLS_SSB, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
-    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, pci, i_b_ssb, scaling_factor,
+    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, mib_object, pci, i_b_ssb, scaling_factor,
                                                                 free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB_signal_time_domain";
 
