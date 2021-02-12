@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -40,7 +40,7 @@ private:
 public:
 
     void place_SSB_in_frame(free5GRAN::mib mib_object, int Num_symbols_per_subframe, vector<vector<complex<float>>> SSB_signal_time_domain_CP, float ssb_period, int i_b_ssb, std::vector<std::complex<float>> &one_frame_vector);
-    void generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
+    void generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     void compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
     void execute_IFFT();
 };

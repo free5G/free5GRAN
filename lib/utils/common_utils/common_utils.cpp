@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -278,13 +278,13 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
     std::cout <<""<< std::endl;
     std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
 
-    for (int symbol = 0; symbol < 280; symbol++){
+    for (int symbol = 0; symbol < 140; symbol++){
         std::cout<<"\nsymbol "<<symbol<<" = "<<std::ends;
-        if (symbol % 14 == 0){
-            size_symbol = 278;
+        if (symbol % 7 == 0){
+            size_symbol = 552;
         }
-        if (symbol % 14 != 0){
-            size_symbol = 274;
+        if (symbol % 7 != 0){
+            size_symbol = 548;
         }
         for (int sc = 0; sc<size_symbol; sc ++){
             if (sc % 10 == 0){

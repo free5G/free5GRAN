@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -34,7 +34,8 @@
 #include <boost/log/utility/setup/file.hpp>
 
 
-void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+
 
     mib_object.sfn = sfn;
     BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
@@ -72,11 +73,20 @@ void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int *c
                                                                 free5GRAN::SIZE_IFFT_SSB, SSB_signal_time_domain);*/
 
     /** Version 02:  Use this to generate a frame beginning by placing the SSB on the grid and (freq domain) and then doing an ifft for each symbols of the frame */
-    free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, mib_object, index_symbol_ssb, cp_lengths_one_frame, pci, i_b_ssb, scaling_factor,
-                                                                free5GRAN::SIZE_IFFT_SSB, one_frame_vector);
+    //free5GRAN::phy::signal_processing::generate_time_domain_ssb(pbch_symbols, mib_object, index_symbol_ssb, cp_lengths_one_frame, pci, i_b_ssb, scaling_factor,free5GRAN::SIZE_IFFT_SSB, one_frame_vector);
 
+    /** Version 03: Use this to generate generate only SSB signal in frequency domain and do the IFFT in a separate function */
+    vector<vector<complex<float>>> SSB_signal_extended(free5GRAN::NUM_SYMBOLS_SSB,
+                                                       vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
+    free5GRAN::phy::signal_processing::generate_freq_domain_ssb(pbch_symbols, mib_object, pci, i_b_ssb, free5GRAN::SIZE_IFFT_SSB, SSB_signal_extended);
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB_signal_time_domain";
+
+    /** IFFT (to be used for version 03) */
+    free5GRAN::phy::signal_processing::IFFT(SSB_signal_extended, mib_object, index_symbol_ssb, cp_lengths_one_frame, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
+
+
+
 
     /** Version 2: for this version, we don't need what's below */
 

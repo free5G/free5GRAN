@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -127,6 +127,7 @@ int main(int argc, char *argv[]) {
                 Num_symbols_per_subframe = 28;
             }
             int num_symbols_frame = Num_symbols_per_subframe * 10;
+            std::cout <<"num_symbols_frame = "<<num_symbols_frame<<std::endl;
 
             /** Calculate cp_length */
             int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
         int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
         int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        phy_variable.generate_frame(mib_object, index_symbol_ssb, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
+        phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "\n\nbuff_main_10ms from main");
@@ -237,7 +238,7 @@ int main(int argc, char *argv[]) {
                 if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                 //while (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
                     auto start = chrono::high_resolution_clock::now();
-                    phy_variable.generate_frame(mib_object, index_symbol_ssb, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
+                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
                                                 free5GRAN::gnodeB_config_globale.gscn,
                                                 free5GRAN::gnodeB_config_globale.i_b_ssb,

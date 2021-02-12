@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -347,7 +347,7 @@ int free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[] = {22};
 int free5GRAN::INTERVAL_SSB_PSS[] = {56, 182};
 int free5GRAN::INTERVAL_SSB_SSS[] = {56, 182};
 
-int free5GRAN::SIZE_IFFT_SSB = 256;
+int free5GRAN::SIZE_IFFT_SSB = 512;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 

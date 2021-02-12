@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -82,7 +82,11 @@ namespace free5GRAN {
 //void generate_time_domain_ssb(std::complex<float> * pbch_symbols, free5GRAN::mib mib_object, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<vector<complex<float>>> &SSB_signal_time_domain);
 
 /** Version 02:  Use this to generate a frame beginning by placing the SSB on the grid and (freq domain) and then doing an ifft for each symbols of the frame */
-void generate_time_domain_ssb(std::complex<float> * pbch_symbols, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<complex<float>> &ONEframe2_time_CP);
+//void generate_time_domain_ssb(std::complex<float> * pbch_symbols, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int pci, int i_b_ssb, float scaling_factor, int ifft_size, vector<complex<float>> &ONEframe2_time_CP);
+
+/** Version 03: Use this to generate generate only SSB signal in frequency domain and do the IFFT in a separate function */
+void generate_freq_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci, int i_b_ssb, int ifft_size, vector<vector<complex<float>>> &SSB_signal_extended);
+
 
 void IFFT(vector<vector<complex<float>>> input_ssb, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP);
 }
