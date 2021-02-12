@@ -41,7 +41,6 @@ private:
 
 public:
     rf(
-
             double sample_rate,
             double center_frequency,
             double gain,
@@ -70,19 +69,9 @@ public:
 
     double getGain();
 
-
-
     void buffer_transmition(
-            //uhd::usrp::multi_usrp::sptr usrp,
-            //std::vector<std::complex<double>> buff
-            std::vector<std::complex<float>> &buff /**à changer par des float */
-            //const std::string &cpu_format,
-            //const std::string &wire_format,
-            //const std::string &file,
-            //size_t samps_per_buff
+            std::vector<std::complex<float>> &buff
     );
-
-
 };
 
 #endif //FREE5GRAN_RF_H

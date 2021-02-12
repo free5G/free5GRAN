@@ -41,8 +41,8 @@ namespace logging = boost::log;
 void init_logging(string warning);
 
 
-/** This function will run continuous to send frames */
-void send_buffer_multithread(free5GRAN::usrp_info2 usrp_info_object, double ssb_period, rf rf_variable_2, vector<complex<float>> * buff_to_send){
+/** This function will run continuously to send frames */
+void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send){
     BOOST_LOG_TRIVIAL(warning) << "Function send_buffer_multithread begins ";
     rf_variable_2.buffer_transmition(*buff_to_send);
 }
@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
     bool run_with_usrp = true;
 
     phy phy_variable;
-
     const char *config_file;
     if (run_with_usrp) {
         config_file = argv[1];
@@ -71,7 +70,6 @@ int main(int argc, char *argv[]) {
 
     /** Initialize log file */
     init_logging(free5GRAN::gnodeB_config_globale.log_level);
-
     free5GRAN::display_variables = free5GRAN::gnodeB_config_globale.display_variable;
 
     /** Calculate scs (sub-carrier spacing) in function of center_frequency. scs is stored on MIB on 1 bit */
@@ -85,8 +83,6 @@ int main(int argc, char *argv[]) {
     /** Calculate sampling_rate */
     usrp_info_object.sampling_rate = free5GRAN::SIZE_IFFT_SSB * mib_object.scs;
     usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
-
-    std::cout << "################ SSB EMISSION #################" << std::endl;
 
     /** Generate N which is the length of BCH payload after polar encode */
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,
@@ -115,7 +111,9 @@ int main(int argc, char *argv[]) {
     /** Calculate the number of sample that a frame (10 ms) will contain */
     int Num_samples_in_frame;
     phy_variable.compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
-    std::cout << "Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
+
+    /** For version 03 : Initialize ONEframe_null */
+    //std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
 
     if (run_with_usrp == false) {
         /** Run generate_frame one time for testing */
@@ -127,7 +125,8 @@ int main(int argc, char *argv[]) {
                 Num_symbols_per_subframe = 28;
             }
             int num_symbols_frame = Num_symbols_per_subframe * 10;
-            std::cout <<"num_symbols_frame = "<<num_symbols_frame<<std::endl;
+            free5GRAN::num_symbols_frame = num_symbols_frame; // To be optimize, we can reduce number of lines
+            std::cout<<"num_symbols_frame = "<<num_symbols_frame<<std::endl;
 
             /** Calculate cp_length */
             int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
@@ -157,7 +156,6 @@ int main(int argc, char *argv[]) {
     /** Sending buffer MULTITHREADING */
     if(run_with_usrp) {
 
-        std::cout<<"\nNum_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
         /** Initialize the 2 buffers. One will be generated while the other will be send */
         std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
         std::vector<std::complex<float>> buffer_to_send(Num_samples_in_frame);
@@ -168,10 +166,11 @@ int main(int argc, char *argv[]) {
        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters ";
 
         /** Display some useful information */
-        std::cout << "###### RADIO" << std::endl;
+        std::cout << "\n###### RADIO" << std::endl;
         std::cout << "# Frequency: " << usrp_info_object.center_frequency /1e6<< " MHz" << std::endl;
         std::cout << "# Ifft Size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
         std::cout << "# ssb_period: " << free5GRAN::gnodeB_config_globale.ssb_period << " second" << std::endl;
+        std::cout<<"Num_samples_in_frame = "<<Num_samples_in_frame<<std::endl;
         std::cout << "\n###### CELL" << std::endl;
         std::cout << "# PCI: " << free5GRAN::gnodeB_config_globale.pci << std::endl;
         std::cout << "# I_B_SSB: " << free5GRAN::gnodeB_config_globale.i_b_ssb << std::endl;
@@ -189,20 +188,15 @@ int main(int argc, char *argv[]) {
         std::cout << "# Emission Gain: " << usrp_info_object.gain << " dB\n" << std::endl;
 
         /** thread sending in continuous buffer_to_send */
-        thread sending(send_buffer_multithread, usrp_info_object, free5GRAN::gnodeB_config_globale.ssb_period, rf_variable_2, &buffer_to_send);
-
-        std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
+        thread sending(send_buffer_multithread, rf_variable_2, &buffer_to_send);
 
         BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
         BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
-
-        int sfn = 1, i = 0, duration_sum = 0;
 
         /** Calculation of some variables to reduce the work of generate_frame */
         int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
 
                 /** CP LENGTH CALCULATION FOR EACH SYMBOLS OF A FRAME*/
-
                 int Num_symbols_per_subframe;
                 if (mib_object.scs == 15000) {
                     Num_symbols_per_subframe = 14;
@@ -210,6 +204,7 @@ int main(int argc, char *argv[]) {
                     Num_symbols_per_subframe = 28;
                 }
                 int num_symbols_frame = Num_symbols_per_subframe * 10;
+                free5GRAN::num_symbols_frame = num_symbols_frame; // To be optimize, we can reduce number of lines
 
                 /** Calculate cp_length */
                 int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
@@ -225,48 +220,52 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                free5GRAN::utils::common_utils::display_table(cp_lengths_one_frame, num_symbols_frame, "cp_lenghts_one_frame from main, just before while true");
+                std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
 
+
+        /** Initialize variables before loop 'while true' */
+        int sfn = 1, duration_sum = 0;
+        auto start = chrono::high_resolution_clock::now();
+        auto stop = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        int duration_int;
+
+
+        std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
         while (true) {
-            /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
 
-            BOOST_LOG_TRIVIAL(error) << "One Loop while true in MAIN done";
-            auto start = chrono::high_resolution_clock::now();
-            auto stop = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-            int duration_int;
-                if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
-                //while (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
-                    auto start = chrono::high_resolution_clock::now();
-                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
+            BOOST_LOG_TRIVIAL(warning) << "One Loop while true in MAIN done";
+
+            /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
+            if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+                auto start = chrono::high_resolution_clock::now();
+                phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
                                                 free5GRAN::gnodeB_config_globale.gscn,
                                                 free5GRAN::gnodeB_config_globale.i_b_ssb,
                                                 free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
-                    BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
 
-                    buffer_to_send = buffer_generated;
-                    BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
+                buffer_to_send = buffer_generated;
+                BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
 
-                    free5GRAN::index_frame_to_send++;
-                    sfn = (sfn + 1) % 1024;
-                    auto stop = chrono::high_resolution_clock::now();
+                free5GRAN::index_frame_to_send = (free5GRAN::index_frame_to_send + 1) % 10000;
+                sfn = (sfn + 1) % 1024;
+                auto stop = chrono::high_resolution_clock::now();
 
-                    /** Calculate the mean duration of the 300 first call of function 'generate_frame */
+                /** Calculate the mean duration of the 300 first call of function 'generate_frame */
 
-                    if (i < 300) {
+                if (free5GRAN::index_frame_to_send < 300) {
                         duration = chrono::duration_cast<chrono::microseconds>(stop - start);
                         duration_int = duration.count();
                         duration_sum = duration_sum + duration_int;
-                    }
-                    if (i == 301) {
-                        float mean_duration = (duration_sum) / 300;
-                        cout << "\n" << "duration of generate_frame (mean of 300 first) = " << mean_duration / 1000
-                             << " ms" << endl;
-                        //free5GRAN::utils::common_utils::display_vector(buffer_generated, Num_samples_in_frame, "buffer_generated");
-                    }
-                    i++;
                 }
+                if (free5GRAN::index_frame_to_send == 301) {
+                    float mean_duration = (duration_sum) / 300;
+                    cout << "\n" << "duration of generate_frame (mean of 300 first) = " << mean_duration / 1000
+                    << " ms" << endl;
+                }
+            }
         }
     }
 }

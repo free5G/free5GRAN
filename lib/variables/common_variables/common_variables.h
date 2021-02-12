@@ -15,6 +15,8 @@
  */
 
 #include "../common_structures/common_structures.h"
+#include <complex>
+#include <vector>
 
 #ifndef FREE5GRAN_COMMON_VARIABLES_H
 #define FREE5GRAN_COMMON_VARIABLES_H
@@ -205,12 +207,18 @@ namespace free5GRAN{
 
     extern bool display_variables;
 
-    extern bool finish_to_copy;
-
     extern int index_frame_sent;
     extern int index_frame_to_send;
 
+    extern int num_symbols_frame;
+
     extern free5GRAN::gNodeB_config gnodeB_config_globale;
+
+    /** Version 02 */
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_null; //Used in function IFFT
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_freq; //Used in function IFFT
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_reversed; //Used in function IFFT
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_time; //Used in function IFFT
 }
 
 

@@ -364,25 +364,10 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]) {
 
 
     namespace logging = boost::log;
-    void init_logging(string warning); /** 'warning' has to be deleted */
 
     /** READING CONFIG FILE */
     libconfig::Config cfg_gNodeB_Lib;
@@ -413,11 +398,6 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     /** Look at function's name in config file */
     std::string func_gNodeB = cfg_gNodeB_Lib.lookup("function");
     const libconfig::Setting &root = cfg_gNodeB_Lib.getRoot();
-
-    /** Initialize variables defined in the config file */
-    int gscn, pci, i_b_ssb;
-    float scaling_factor;
-    double ssb_period;
 
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
