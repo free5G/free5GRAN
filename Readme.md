@@ -10,6 +10,9 @@ free5GRAN includes a library which can be reused for further developments. Docum
 
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/free5G/free5GRAN.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/free5G/free5GRAN/context:cpp)
 
+## Codacy score
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/81153c8875f147b3aa9565b8ea5e56b6)](https://app.codacy.com/gh/free5G/free5GRAN?utm_source=github.com&utm_medium=referral&utm_content=free5G/free5GRAN&utm_campaign=Badge_Grade)
+
 ## Installation & Running
 
 ### Requirements

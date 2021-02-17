@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <complex>
 
+using namespace std;
+
 class rf {
     /*
      * rf class implements the exchanges between NRPhy and USRP based on UHD lib (https://files.ettus.com/manual/index.html).
@@ -34,10 +36,10 @@ private:
     double center_frequency;
     double gain;
     double bandwidth;
-    std::string device_args;
-    std::string subdev;
-    std::string antenna_mode;
-    std::string ref;
+    string device_args;
+    string subdev;
+    string antenna_mode;
+    string ref;
     uhd::usrp::multi_usrp::sptr usrp;
 
 public:
@@ -46,17 +48,17 @@ public:
             double center_frequency,
             double gain,
             double bandwidth,
-            std::string subdev,
-            std::string antenna_mode,
-            std::string ref,
-            std::string device_args);
+            const string &subdev,
+            const string &antenna_mode,
+            const string &ref,
+            const string &device_args);
 
     /*
      * Get samples from RF device
      * buff is the output buffer
      * time_first_sample is the time of the first received sample
      */
-    void get_samples(std::vector<std::complex<float>> *buff, double &time_first_sample);
+    void get_samples(vector<complex<float>> *buff, double &time_first_sample);
 
     double getSampleRate() const;
 

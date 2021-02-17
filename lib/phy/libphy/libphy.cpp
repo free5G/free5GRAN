@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -217,7 +217,6 @@ void free5GRAN::phy::signal_processing::soft_demodulation(vector<complex<float>>
      * QPSK soft-demodulation
      */
     if(modulation_scheme == 1){
-        double l_01,l_02, l_11, l_12, min0, min1;
         complex<float> s_00, s_01, s_10, s_11;
         double const_power = 1 / sqrt(2);
         s_00 = complex<double>(const_power,const_power);
@@ -225,6 +224,7 @@ void free5GRAN::phy::signal_processing::soft_demodulation(vector<complex<float>>
         s_10 = complex<double>(-const_power,const_power);
         s_11 = complex<double>(-const_power,-const_power);
         for (int i = 0; i < signal_length; i ++){
+            double l_01,l_02, l_11, l_12;
             // Computing distance from current signal point to each of the four theoretical QPSK points
             l_01 = abs(signal[i] - s_00);
             l_02 = abs(signal[i] - s_01);
@@ -343,9 +343,10 @@ double free5GRAN::phy::signal_processing::compute_freq_from_gscn(int gscn){
      *
      * \param[in] gscn: Input GSCN
      */
-    int M,N;
+    int N;
     double freq;
     if (gscn < 7499){
+        int M;
         for (int i = 0; i < 3; i ++){
             M = 2 * i + 1;
             if ((gscn - (M - 3)/2) % 3 == 0){
@@ -380,7 +381,7 @@ free5GRAN::pdcch_t0ss_monitoring_occasions  free5GRAN::phy::signal_processing::c
     int index1,index2;
     index1 = pdcch_config / 16;
     index2 = pdcch_config % 16;
-    int *table1;
+    int *table1 = new int[4];
     float *table2;
     if (pbch_scs==15e3 && common_scs == 15e3){
         table1 = free5GRAN::TS_38_213_TABLE_13_1[index1];
@@ -434,7 +435,7 @@ void free5GRAN::phy::signal_processing::compute_rb_start_lrb_dci(int RIV, int n_
     }
 }
 
-void free5GRAN::phy::signal_processing::get_pdsch_dmrs_symbols(string type, int duration, int additionnal_position, int l0, int **output, int &size){
+void free5GRAN::phy::signal_processing::get_pdsch_dmrs_symbols(const string &type, int duration, int additionnal_position, int l0, int **output, int &size){
     /**
      * \fn get_pdsch_dmrs_symbols
      * \brief Retrieve DMRS symbols
@@ -520,10 +521,9 @@ void free5GRAN::phy::signal_processing::compute_phase_decomp(int* cp_lengths, in
      * \param[in] num_symb_per_subframes: Number of symbols per subframes
      * \param[out] phase_decomp_factor: Phase de-compensator vector
     */
-    float t_start, t_cp;
     for (int i = 0; i < num_symb_per_subframes; i ++){
-        t_start = cum_sum_symb[i]/ sampling_rate;
-        t_cp = cp_lengths[i] / sampling_rate;
+        float t_start = cum_sum_symb[i]/ sampling_rate;
+        float t_cp = cp_lengths[i] / sampling_rate;
         phase_decomp_factor[i] = exp(complex<float>(0,- 2 * f0 * M_PI) * (- t_start - t_cp));
     }
 
@@ -552,7 +552,7 @@ void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_s
  * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
  * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
  * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
- * \param[in] offset: Number of samples to be left before extracting. Can be used while extracting specific slots in a radio frame.
+ * \param[in] offset: Number of amples to be left before extracting. Can be used while extracting specific slots in a radio frame.
 */
     // Initializing fft parameters
     fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
@@ -560,10 +560,8 @@ void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_s
 
     fftw_plan fft_plan = fftw_plan_dft_1d(fft_size, fft_in, fft_out, FFTW_FORWARD, FFTW_MEASURE);
 
-    int symb_index;
-
     for (int symbol = 0; symbol < num_symbols; symbol ++){
-        symb_index = (first_symb_index + symbol) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
+        int symb_index = (first_symb_index + symbol) % free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
         // Filling fft input signal with current symbol IQ
         for (int i = 0; i < fft_size; i++){
             fft_in[i][0] = real(time_domain_signal[i + offset + cum_sum_symb[symb_index] + cp_lengths[symb_index]]);

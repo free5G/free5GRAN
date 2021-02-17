@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ void free5GRAN::phy::transport_channel::rate_recover(int *input_bits, int *outpu
      * \param[in] E: Rate matching output sequence length
      * \param[in] N: Rate matching input sequence length
     */
-    int i, j_n, e[E], y[N];
+    int e[E], y[N];
     /*
      * Coded bit-interleaving/de-interleaving TS38.212 5.4.1.3
      * No coded-bits interleaving
@@ -116,8 +116,8 @@ void free5GRAN::phy::transport_channel::rate_recover(int *input_bits, int *outpu
      * Sub-block de-interleaving TS38.212 5.4.1.1
      */
     for (int n = 0; n < N; n++){
-        i = floor(32 * (double) n / (double) N );
-        j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
+        int i = floor(32 * (double) n / (double) N );
+        int j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
         output_bits[j_n] = y[n];
     }
 }
@@ -146,7 +146,7 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
      * \param[in] n_pc: Number of parity check bits
      * \param[in] n_wm_pc: Number of other parity check bits
     */
-    int q_0_n_1[N], count_seq, q_i_n[K + n_pc], c_p[K], pi_seq[K], i, j_n, u[N];
+    int q_0_n_1[N], count_seq, q_i_n[K + n_pc], c_p[K], pi_seq[K], j_n, u[N];
     int K_max = 164;
     bool found;
 
@@ -221,7 +221,7 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
     if (E < N){
         if ((float) K / (float) E <= 7.0/16.0){
             for (int n = 0; n < N - E; n ++){
-                i = floor(32 * (double) n / (double) N );
+                int i = floor(32 * (double) n / (double) N );
                 j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
                 q_ftmp_n.push_back(j_n);
             }
@@ -622,7 +622,7 @@ void free5GRAN::phy::transport_channel::rate_recover_ldpc(int *input_bits, int N
     /*
      * Compute k0
      */
-    int k0, k, index, j;
+    int k0, k, j;
     if (id_rv == 0){
         k0 = 0;
     }else if (id_rv == 1){
@@ -639,7 +639,7 @@ void free5GRAN::phy::transport_channel::rate_recover_ldpc(int *input_bits, int N
     j = 0;
     k = 0;
     while(k < E){
-        index = (k0 + j) % N_cb;
+        int index = (k0 + j) % N_cb;
         if (index >= K_p - 2 * Zc && index < K - 2 * Zc){
             output_sequence[index] = -1;
         }else {
@@ -796,7 +796,6 @@ void free5GRAN::phy::transport_channel::compute_H_matrix_ldpc(int Zc, int graph,
      * \param[out] size_i: H matrix number of rows
      * \param[out] size_i: H matrix number of columns
      */
-    int **sub_matrix, index_i, index_j,v_ij;
     if (graph == 1){
         size_i = 46;
         size_j = 68;
@@ -812,13 +811,11 @@ void free5GRAN::phy::transport_channel::compute_H_matrix_ldpc(int Zc, int graph,
         ldpc_table = free5GRAN::TS_38_212_TABLE_5_3_2_3;
     }
     for (int p = 0; p < ldpc_table.size(); p ++){
-        index_i = ldpc_table[p][0];
-        index_j = ldpc_table[p][1];
-        v_ij = ldpc_table[p][i_ls + 2];
+        int index_i = ldpc_table[p][0];
+        int index_j = ldpc_table[p][1];
+        int v_ij = ldpc_table[p][i_ls + 2];
         matrix[index_i][index_j] = v_ij;
-
     }
-
 }
 
 void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, int Zc, int graph, int K, int i_ls, int*output_sequence){
@@ -861,7 +858,6 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
         ldpc_input_bits[k] = input_bits[k - 2 * Zc];
     }
     double new_bits[N + 2 * Zc];
-    bool validated;
     vector<vector<int>> R[N + 2 * Zc], R_tot;
     vector<int> new_vec, new_vec_tot;
 
@@ -916,7 +912,7 @@ void free5GRAN::phy::transport_channel::ldpc_decode(double *input_bits, int N, i
             }
         }
 
-        validated = true;
+        bool validated = true;
         for (int j = 0; j < size_j * Zc; j ++){
             rest = 0;
             for (int i = 0; i < R_tot[j].size(); i ++){

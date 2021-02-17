@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ phy::phy(rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band b
     this->band_object = band_obj;
     l_max = band_obj.l_max;
     this->is_extended_cp = 0;
+    common_cp_length = 0;
 }
 
 int phy::cell_synchronization(float &received_power) {
@@ -71,7 +72,6 @@ int phy::cell_synchronization(float &received_power) {
 
     int n_id_2,synchronisation_index;
     float peak_value;
-    double time_first_sample;
     received_power = 0;
 
     size_t num_samples = 2 * ssb_period * rf_device->getSampleRate();
@@ -85,6 +85,7 @@ int phy::cell_synchronization(float &received_power) {
     // Get samples from RF layer and put them in buff variable
     time_first_pss = chrono::high_resolution_clock::now();
     try {
+        double time_first_sample;
         rf_device->get_samples(&buff_2_ssb_periods, time_first_sample);
     }catch (const exception& e) {
         return 1;
@@ -210,10 +211,10 @@ int phy::extract_pbch() {
     buff.clear();
     buff.resize(num_samples);
 
-    double second_frame_time;
     // Getting samples
     auto now = chrono::high_resolution_clock::now();
     try {
+        double second_frame_time;
         rf_device->get_samples(&buff, second_frame_time);
     }catch (const exception& e) {
         return 1;
@@ -251,7 +252,8 @@ int phy::extract_pbch() {
     /*
      * Isolate PSS signal around calculated new PSS occurence (based on timestamp of first synchronization step)
      */
-    int begin_offset, end_offset;
+    int begin_offset = 0;
+    int end_offset = 0;
     if (pss_signal.size()/2 <= index_second_pss && pss_signal.size()/2  <= num_samples - index_second_pss){
         begin_offset = pss_signal.size()/2;
         end_offset = pss_signal.size()/2;
@@ -282,7 +284,7 @@ int phy::extract_pbch() {
 
     vector<complex<float>> pss_signal_downsampled(48 * symbol_duration_downsampled);
     for (int i = 0; i < 48 * symbol_duration_downsampled; i ++){
-        pss_signal_downsampled[i] = pss_signal[downsampling_factor * i];
+        pss_signal_downsampled[i] = pss_signal[(size_t) downsampling_factor * i];
     }
 
     free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length / downsampling_factor, pss_signal_downsampled,fft_size / downsampling_factor);
@@ -331,7 +333,7 @@ int phy::extract_pbch() {
      * Trying to extract DMRS AND PBCH
      */
 
-    vector<complex<float>> ssb_signal(4 * symbol_duration), new_ssb_signal(4 * symbol_duration);
+    vector<complex<float>> ssb_signal(4 * symbol_duration);
 
     // Extract SSB signal
     for (int i = 0; i < free5GRAN::NUM_SYMBOLS_SSB * symbol_duration; i ++){
@@ -348,7 +350,7 @@ int phy::extract_pbch() {
     // Correcting signal based on frequency offset
     free5GRAN::phy::signal_processing::transpose_signal(&buff, freq_offset, rf_device->getSampleRate(), buff.size());
 
-    vector<complex<float>> pbch_modulation_symbols(free5GRAN::SIZE_SSB_PBCH_SYMBOLS), final_pbch_modulation_symbols(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
+    vector<complex<float>> final_pbch_modulation_symbols(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
 
     /*
      * Extracting DMRS AND PBCH modulation symbols
@@ -454,7 +456,6 @@ int phy::extract_pbch() {
     }else {
         this-> i_ssb = i_b_ssb;
     }
-    this->pci = pci;
 
     /*
      * Physical and transport channel decoding
@@ -933,6 +934,8 @@ void phy::extract_pdsch() {
             additionnal_position = 0;
         }else if(L == 7){
             additionnal_position = 1;
+        }else {
+            additionnal_position = 0;
         }
     }
 
@@ -947,7 +950,6 @@ void phy::extract_pdsch() {
     complex<float> dmrs_sequence[6 * lrb * num_symbols_dmrs];
 
     int count_dmrs_symbol = 0;
-    bool dmrs_symbol;
 
 
     int num_symbols_per_subframe_pdsch = free5GRAN::NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP * mib_object.scs/15;
@@ -975,7 +977,7 @@ void phy::extract_pdsch() {
      * PDSCH extraction
      */
     for (int symb = 0; symb < L; symb ++){
-        dmrs_symbol = false;
+        bool dmrs_symbol = false;
         /*
          * Check if studied symbol is a DMRS
          */
@@ -1009,7 +1011,6 @@ void phy::extract_pdsch() {
     free5GRAN::phy::signal_processing::channel_demapper(pdsch_samples, ref, output_channels, channel_indexes, 2, L, 12 * lrb);
     bool validated;
     float f0 = 0;
-    float phase_offset;
     /*
     * Phase decompensator. As phase compensation is not known a priori, we have to loop over different possibles phase compensation for decoding
     */
@@ -1018,7 +1019,7 @@ void phy::extract_pdsch() {
          * Compute phase decomp value
          */
         f0 += (phase_decomp_index % 2) * pow(2,mu) * 1e3;
-        phase_offset = (phase_decomp_index % 2) ? f0 : -f0;
+        float phase_offset = (phase_decomp_index % 2) ? f0 : -f0;
         BOOST_LOG_TRIVIAL(trace) << "PHASE DECOMP " << phase_offset ;
         complex<float> phase_decomp[num_symbols_per_subframe_pdsch];
         /*
@@ -1066,6 +1067,10 @@ void phy::extract_pdsch() {
          * If DL-SCH CRC is validated, Phase decompensation is validated
          */
         if (validated){
+            for (int i =0; i < desegmented.size(); i ++){
+                cout << desegmented[i];
+            }
+            cout << "\n";
             int bytes_size = (int) ceil(desegmented.size()/8.0);
             uint8_t dl_sch_bytes[bytes_size];
             for (int i = 0; i < desegmented.size(); i ++){

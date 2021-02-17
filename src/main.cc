@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ typedef struct found_cell_ {
 
 } found_cell;
 
-void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band, int input_gain);
-void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period,string rf_address, int input_gain);
-void init_logging(string level);
+void search_cell_with_defined_params(double frequency, double ssb_period, const string &rf_address, free5GRAN::band band, int input_gain);
+void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &rf_address, int input_gain);
+void init_logging(const string &level);
 
 
 int main(int argc, char *argv[]) {
@@ -109,8 +109,7 @@ int main(int argc, char *argv[]) {
             cout << "##  CELL SEARCH  ##" << endl;
             BOOST_LOG_TRIVIAL(info) << "CELL SEARCH";
             const libconfig::Setting& cell_info = root["cell_info"];
-            double frequency, ssb_period;
-            int gscn;
+            double ssb_period;
             int band;
             free5GRAN::band band_obj;
             if (!root.lookupValue("ssb_period", ssb_period)){
@@ -127,6 +126,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 if (found_band) {
+                    double frequency;
+                    int gscn;
                     if (cell_info.lookupValue("ssb_frequency", frequency) || cell_info.lookupValue("gscn", gscn)){
                         if (!cell_info.lookupValue("ssb_frequency", frequency)){
                             frequency = free5GRAN::phy::signal_processing::compute_freq_from_gscn(gscn);
@@ -148,11 +149,10 @@ int main(int argc, char *argv[]) {
             cout << "##  BAND SCAN  ##" << endl;
             const libconfig::Setting& bands = root["bands"];
             int count = bands.getLength();
-            int band_id;
             vector<free5GRAN::band> band_array;
             BOOST_LOG_TRIVIAL(trace) << "Adding bands to scan: ";
             for (int i = 0; i < count; i ++){
-                band_id = bands[i];
+                int band_id = bands[i];
                 for (int j = 0; j < free5GRAN::NUM_SUPPORTED_BANDS; j ++){
                     if (free5GRAN::AVAILABLE_BANDS[j].number == band_id){
                         band_array.push_back(free5GRAN::AVAILABLE_BANDS[j]);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_address, int input_gain){
+void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &rf_address, int input_gain){
     /*
      * USRP parameters
      */
@@ -307,7 +307,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, string rf_addr
 
 
 
-void search_cell_with_defined_params(double frequency, double ssb_period, string rf_address, free5GRAN::band band, int input_gain){
+void search_cell_with_defined_params(double frequency, double ssb_period, const string &rf_address, free5GRAN::band band, int input_gain){
     /*
      * USRP parameters
      */
@@ -393,7 +393,7 @@ void search_cell_with_defined_params(double frequency, double ssb_period, string
 
 }
 
-void init_logging(string level)
+void init_logging(const string &level)
 {
     boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ namespace free5GRAN {
 
             void compute_rb_start_lrb_dci(int RIV, int n_size_bwp, int &lrb, int &rb_start);
 
-            void get_pdsch_dmrs_symbols(string type, int duration, int additionnal_position, int l0, int **output, int &size);
+            void get_pdsch_dmrs_symbols(const string &type, int duration, int additionnal_position, int l0, int **output, int &size);
 
             void compute_cp_lengths(int scs, int nfft, int is_extended_cp, int num_symb_per_subframes, int *cp_lengths, int *cum_sum_cp_lengths);
 

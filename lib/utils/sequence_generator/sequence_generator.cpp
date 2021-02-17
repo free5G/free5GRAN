@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Telecom Paris
+ * Copyright 2020-2021 Telecom Paris
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ void free5GRAN::utils::sequence_generator::generate_pss_sequence(int n_id_2, int
      * \param[in] n_id_2: N_ID_2 for which PSS is generated
      * \param[out] output_sequence: output sequence
      */
-    int x_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL], m;
+    int x_seq[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++){
         if (i < 7){
             x_seq[i] = free5GRAN::PSS_BASE_SEQUENCE[i];
@@ -38,7 +38,7 @@ void free5GRAN::utils::sequence_generator::generate_pss_sequence(int n_id_2, int
         }
     }
     for (int n = 0; n < free5GRAN::SIZE_PSS_SSS_SIGNAL; n++){
-        m = (n + 43 * n_id_2) % free5GRAN::SIZE_PSS_SSS_SIGNAL;
+        int m = (n + 43 * n_id_2) % free5GRAN::SIZE_PSS_SSS_SIGNAL;
         output_sequence[n] = 1 - 2 * x_seq[m];
     }
 
