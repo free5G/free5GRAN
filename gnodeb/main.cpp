@@ -51,7 +51,7 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = false;
+    bool run_with_usrp = true;
 
     phy phy_variable;
     const char *config_file;
@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
     /** Calculate the number of sample that a frame (10 ms) will contain */
     int Num_samples_in_frame;
     phy_variable.compute_num_sample_per_frame(mib_object, Num_samples_in_frame);
+    std::cout<<"Num_samples_in_frame from main = "<<Num_samples_in_frame<<std::endl;
 
     /** For version 03 : Initialize ONEframe_null */
     //std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
@@ -154,7 +155,7 @@ int main(int argc, char *argv[]) {
         phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
-        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "\n\nbuff_main_10ms from main");
+        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "\n\nbuff_main_10ms from main");
     }
 
     /** Sending buffer MULTITHREADING */
@@ -163,6 +164,7 @@ int main(int argc, char *argv[]) {
         /** Initialize the 2 buffers. One will be generated while the other will be send */
         std::vector<std::complex<float>> buffer_generated(Num_samples_in_frame);
         std::vector<std::complex<float>> buffer_to_send(Num_samples_in_frame);
+        std::vector<std::complex<float>> buffer_nul(Num_samples_in_frame, 0);
 
        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                         usrp_info_object.gain,usrp_info_object.bandwidth, usrp_info_object.subdev,
@@ -228,6 +230,19 @@ int main(int argc, char *argv[]) {
 
 
         /** Initialize variables before loop 'while true' */
+        int ssb_period_symbol_int = 0;
+        int num_SSB_in_this_frame;
+        std::cout<<"gnodeB_config_globale.ssb_period"<<free5GRAN::gnodeB_config_globale.ssb_period<<std::endl;
+        if (free5GRAN::gnodeB_config_globale.ssb_period == 0.005){
+            num_SSB_in_this_frame = 2;
+        }else{
+            float ssb_period_symbol = free5GRAN::gnodeB_config_globale.ssb_period / 0.01;
+            std::cout<<"ssb_period_symbol = "<<ssb_period_symbol<<std::endl;
+            ssb_period_symbol_int = ssb_period_symbol;
+            std::cout<<"ssb_period_symbol_int = "<<ssb_period_symbol_int<<std::endl;
+        }
+
+
         int sfn = 1, duration_sum = 0;
         auto start = chrono::high_resolution_clock::now();
         auto stop = chrono::high_resolution_clock::now();
@@ -238,19 +253,34 @@ int main(int argc, char *argv[]) {
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
         while (true) {
 
+            num_SSB_in_this_frame = 0;
             BOOST_LOG_TRIVIAL(warning) << "One Loop while true in MAIN done";
 
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+
+                /** To be optimize */
+                if (sfn % ssb_period_symbol_int == 0) {
+                    num_SSB_in_this_frame = 1;
+                }
+
+                //std::cout<<"sfn in while true = "<<sfn<<std::endl;
+                //std::cout<<"num_SSB_in_this_frame"<<num_SSB_in_this_frame<<std::endl;
+
                 auto start = chrono::high_resolution_clock::now();
-                phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period,
+                if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
+                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame,
+                                                sfn, free5GRAN::gnodeB_config_globale.ssb_period,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
                                                 free5GRAN::gnodeB_config_globale.gscn,
                                                 free5GRAN::gnodeB_config_globale.i_b_ssb,
                                                 free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
-                BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
+                    BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
+                    buffer_to_send = buffer_generated;
+                }else{
+                    buffer_to_send = buffer_nul;
+                }
 
-                buffer_to_send = buffer_generated;
                 BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
 
                 free5GRAN::index_frame_to_send = (free5GRAN::index_frame_to_send + 1) % 10000;

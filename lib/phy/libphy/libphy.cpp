@@ -777,12 +777,12 @@ void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, i
 }
 
 
-void free5GRAN::phy::signal_processing::channel_mapper(std::complex<float> **input_channels, int ***ref,
-                                                           vector<vector<complex<float>>> &output_channels, int num_channels,
-                                                           int num_symbols, int num_sc){
+void free5GRAN::phy::signal_processing::map_SSB(std::complex<float> **input_channels, int ***ref,
+                                                vector<vector<complex<float>>> &output_channels, int num_channels,
+                                                int num_symbols, int num_sc){
 
     /**
-   * \fn channel_mapper (std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc)
+   * \fn map_SSB (std::complex<float> **input_channels, int ***ref, std::complex<float> ** output_channels, int num_channels, int num_symbols, int num_sc)
    * \brief Fill the SSB signal with the 4 channels (PSS, SSS, PBCH and DMRS) using the ref table constructed before.
    * \standard TS38.211 V15.2.0 Section 7.4.3
    *
@@ -814,16 +814,17 @@ void free5GRAN::phy::signal_processing::channel_mapper(std::complex<float> **inp
             }
         }
     }
-    //BOOST_LOG_TRIVIAL(info) << "function channel_mapper done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
+    //BOOST_LOG_TRIVIAL(info) << "function map_SSB done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc)+ " complex symbols";
 }
 
 
 
-void free5GRAN::phy::signal_processing::increase_size_ssb(vector<vector<complex<float>>> input_channel,
-                                                          vector<vector<complex<float>>> &output_channel, int num_symbols,
-                                                          int num_sc_input, int num_sc_output) {
+void free5GRAN::phy::signal_processing::channel_MAPPER(vector<vector<complex<float>>> input_channel,
+                                                       vector<vector<complex<float>>> &output_channel, int num_symbols, int index_symbol_ssb,
+                                                       int num_sc_input, int num_sc_output) {
     /**
-    * \fn increase_size_ssb (std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output)
+    * TO BE MODIFIED
+    * \fn channel_MAPPER (std::complex<float> ** input_channel, std::complex<float> ** output_channel, int num_symbols, int num_sc_input, int num_sc_output)
     * \brief Increase the size of a signal, to prepare it for an IFFT (Inverse Fast Fourier Transform).
     * \details
      * - In our case, 8 zero values are added at the beginning and at the end of the complex signal, making it 256 symbols long.
@@ -836,58 +837,65 @@ void free5GRAN::phy::signal_processing::increase_size_ssb(vector<vector<complex<
     * \param[out] std::complex<float> ** output_channel. 2 dimensions table of complexes. In our case, it is the SSB signal extended (4*256 symbols)
     */
 
+    /** INCREASE SIZE SSB */
     /** Loop over all symbols */
     for (int symbol = 0; symbol < num_symbols; symbol++){
         int sc_in_counter = 0;
         /** Loop over all subcarriers of output signal */
         for (int sc_out = 0; sc_out < num_sc_output; sc_out++){
             if (sc_out < ((num_sc_output - num_sc_input)/2) || sc_out > num_sc_output - ((num_sc_output - num_sc_input)/2)){
-                output_channel[symbol][sc_out] = {0,0};
+                free5GRAN::SSB_signal_extended[symbol][sc_out] = {0,0};
             }else{
-                output_channel[symbol][sc_out] = input_channel[symbol][sc_in_counter];
+                free5GRAN::SSB_signal_extended[symbol][sc_out] = input_channel[symbol][sc_in_counter];
                 sc_in_counter++;
             }
         }
     }
-    //BOOST_LOG_TRIVIAL(info) << "function increase_size_ssb done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc_output)+ " complex symbols";
-}
+
+    //TO be deleted
+    //free5GRAN::utils::common_utils::display_vector_2D(free5GRAN::SSB_signal_extended, NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "free5GRAN::SSB_signal_extended from libphy");
 
 
+    /** PLACE SSB IN A FRAME */
 
-void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> input_ssb, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
-
-
-    /** Version 01 Initialize the time/frequency grid vector : create variable at each loop
-    vector<vector<complex<float>>> ONEframe2(num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));*/
-
-    /**
-    complex<float> default_value2 = {0.0, 0.0};
-    for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
-        ONEframe2[symbol] = vector<complex<float>>(SIZE_IFFT_SSB, default_value2);
-    }*/
-
-    /** Version 02 Initialize the time/frequency grid vector : use an extern variable
-    complex<float> default_value2 = {0.0, 0.0};
-    for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
-        for (int sc = 0; sc < SIZE_IFFT_SSB; sc++) {
-            free5GRAN::ONEframe_null[symbol][sc] = default_value2;
-        }
-    }
-*/
-
-    /** This vector will indicates which symbols of the frame is not nul and has to perform the signal processing (Reverse, scaling factor and ifft) */
-    vector<int> Symbol_not_nul(num_symbols_frame, 0);
 
 
     /** Place the 4 symbols of SSB at the right place in ONEframe2 */
     /** */
     int i = 0;
     for (int symbol_ssb = index_symbol_ssb; symbol_ssb < index_symbol_ssb + NUM_SYMBOLS_SSB; symbol_ssb++) {
-        free5GRAN::ONEframe_SSB_freq[symbol_ssb] = input_ssb[i];
-        Symbol_not_nul[symbol_ssb] = 1;
+        output_channel[symbol_ssb] = free5GRAN::SSB_signal_extended[i];
         //std::cout << "\nsymbol_ssb in loop = " << symbol_ssb << "  & i in loop = " << i << std::endl;
         i++;
     }
+    //BOOST_LOG_TRIVIAL(info) << "function channel_MAPPER done. It will give "+std::to_string(num_symbols)+ " * "+std::to_string(num_sc_output)+ " complex symbols";
+
+    //TO be deleted
+    //free5GRAN::utils::common_utils::display_vector_2D(output_channel, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "output_channel from channel_MAPPER");
+}
+
+
+
+
+
+void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> ONEframe_SSB_freq, int *cp_lengths_one_frame, vector<int> Symbol_not_nul, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
+
+    //To be deleted
+    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_SSB_freq, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "ONEframe_SSB_freq from IFFT");
+
+    /** This vector will indicates which symbols of the frame is not nul and has to perform the signal processing (Reverse, scaling factor and ifft)
+    vector<int> Symbol_not_nul(num_symbols_frame, 0); */
+
+
+    /** Place the 4 symbols of SSB at the right place in ONEframe2 */
+    /** TO BE DELETED. This is now done in function channel_MAPPER
+    int i = 0;
+    for (int symbol_ssb = index_symbol_ssb; symbol_ssb < index_symbol_ssb + NUM_SYMBOLS_SSB; symbol_ssb++) {
+        free5GRAN::ONEframe_SSB_freq[symbol_ssb] = ONEframe_SSB_freq[i];
+        Symbol_not_nul[symbol_ssb] = 1;
+        //std::cout << "\nsymbol_ssb in loop = " << symbol_ssb << "  & i in loop = " << i << std::endl;
+        i++;
+    }*/
 
 
     /** Reverse each symbol && Scaling factor. This is done to put the frequency values at the right place, before making ifft */
@@ -906,18 +914,19 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
                     // Version 1 : ONEframe2_reversed[symbol][sc] = free5GRAN::ONEframe_null[symbol][sc_counter1] * scaling_factor; // TO BE DELETED
                     // Version 2
                     free5GRAN::ONEframe_reversed[symbol][sc] =
-                            free5GRAN::ONEframe_SSB_freq[symbol][sc_counter1] * scaling_factor;
+                            ONEframe_SSB_freq[symbol][sc_counter1] * scaling_factor;
                     sc_counter1++;
                 } else {
                     // Version 1 : ONEframe2_reversed[symbol][sc] = free5GRAN::ONEframe_null[symbol][sc_counter2] * scaling_factor;
                     // Version 2 :
                     free5GRAN::ONEframe_reversed[symbol][sc] =
-                            free5GRAN::ONEframe_SSB_freq[symbol][sc_counter2] * scaling_factor;
+                            ONEframe_SSB_freq[symbol][sc_counter2] * scaling_factor;
                     sc_counter2++;
                 }
             }
         }
     }
+    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_reversed, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "ONEframe_reversed from libphy");
     //free5GRAN::utils::common_utils::display_vector_2D(ONEframe2_reversed, num_symbols_frame, SIZE_IFFT_SSB,
     //                                                  "ONEframe2_reversed");
 
@@ -933,6 +942,7 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
     //file_gnodeb.open("IFFT_ONEframe2_time_domain.txt");
 
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
+        // if to be added
         if (Symbol_not_nul[symbol] == 1) {
             //Generate complex arrays to store IFFT signals
             fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
@@ -1002,9 +1012,9 @@ void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> inpu
 
 
 
-void free5GRAN::phy::signal_processing::generate_freq_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci,
+void free5GRAN::phy::signal_processing::generate_freq_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci, int index_symbol_ssb,
                                                                      int i_b_ssb, int ifft_size,
-                                                                     vector<vector<complex<float>>> &SSB_signal_extended) {
+                                                                     vector<vector<complex<float>>> &ONEframe_SSB_freq) {
 
     /**
     * DESCRIPTION TO BE MODIFIED
@@ -1103,21 +1113,22 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_ssb(std::complex<fl
     lenght_input[3] = SIZE_SSB_DMRS_SYMBOLS;
 
 
-
-    free5GRAN::phy::signal_processing::channel_mapper(
+    free5GRAN::phy::signal_processing::map_SSB(
             new std::complex<float> *[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref,
             SSB_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+
+    // To be deleted
+    //free5GRAN::utils::common_utils::display_vector_2D(SSB_signal_freq_domain, NUM_SYMBOLS_SSB, NUM_SC_SSB, "SSB_signal_freq_domain from libphy");
     if (free5GRAN::display_variables) {
         //free5GRAN::utils::common_utils::display_signal_float(SSB_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "SSB_signal_freq_domain from libphy");
     }
 
 
-
-    free5GRAN::phy::signal_processing::increase_size_ssb(SSB_signal_freq_domain, SSB_signal_extended,
-                                                         free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB,
-                                                         free5GRAN::SIZE_IFFT_SSB);
+    free5GRAN::phy::signal_processing::channel_MAPPER(SSB_signal_freq_domain, ONEframe_SSB_freq,
+                                                      free5GRAN::NUM_SYMBOLS_SSB, index_symbol_ssb, free5GRAN::NUM_SC_SSB,
+                                                      free5GRAN::SIZE_IFFT_SSB);
 
     if (free5GRAN::display_variables) {
-        //free5GRAN::utils::common_utils::display_signal_float(SSB_signal_extended, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "SSB_signal_extended from libphy");
+        //free5GRAN::utils::common_utils::display_signal_float(ONEframe_SSB_freq, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "ONEframe_SSB_freq from libphy");
     }
 }

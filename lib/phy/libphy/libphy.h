@@ -63,13 +63,13 @@ namespace free5GRAN {
 
             void build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref);
 
-            void channel_mapper(std::complex<float> **input_channels, int ***ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
+            void map_SSB(std::complex<float> **input_channels, int ***ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
 
-            void increase_size_ssb(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols, int num_sc_input, int num_sc_output);
+            void channel_MAPPER(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols, int index_symbol_ssb, int num_sc_input, int num_sc_output);
 
-            void generate_freq_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci, int i_b_ssb, int ifft_size, vector<vector<complex<float>>> &SSB_signal_extended);
+            void generate_freq_domain_ssb(std::complex<float> *pbch_symbols, free5GRAN::mib mib_object, int pci, int index_symbol_ssb, int i_b_ssb, int ifft_size, vector<vector<complex<float>>> &ONEframe_SSB_freq);
 
-            void IFFT(vector<vector<complex<float>>> input_ssb, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP);
+            void IFFT(vector<vector<complex<float>>> ONEframe_SSB_freq, int *cp_lengths_one_frame, vector<int> Symbol_not_nul, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP);
             }
         }
 }

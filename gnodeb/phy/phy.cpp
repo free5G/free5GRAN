@@ -57,15 +57,28 @@ void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int nu
 
     /** GENERATE SSB -> Generate SSB_signal_frequency_domain from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */
 
-    vector<vector<complex<float>>> SSB_signal_extended(free5GRAN::NUM_SYMBOLS_SSB,
-                                                       vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
+    /** TO BE Deleted */
+    /**vector<vector<complex<float>>> SSB_signal_extended(free5GRAN::NUM_SYMBOLS_SSB,
+                                                       vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB)); */
 
-    free5GRAN::phy::signal_processing::generate_freq_domain_ssb(pbch_symbols, mib_object, pci, i_b_ssb, free5GRAN::SIZE_IFFT_SSB, SSB_signal_extended);
-    BOOST_LOG_TRIVIAL(info) << "GENERATE SSB_signal_time_domain";
+    vector<vector<complex<float>>> ONEframe_SSB_freq(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
+
+    free5GRAN::phy::signal_processing::generate_freq_domain_ssb(pbch_symbols, mib_object, pci, index_symbol_ssb, i_b_ssb, free5GRAN::SIZE_IFFT_SSB, ONEframe_SSB_freq);
+    BOOST_LOG_TRIVIAL(info) << "GENERATE ONEframe_SSB_freq";
+    //TO be deleted
+    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_SSB_freq, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "ONEframe_SSB_freq from phy");
+
+    vector<int> Symbol_not_nul(num_symbols_frame, 0);
+    int count = index_symbol_ssb;
+    for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
+        Symbol_not_nul[count] = 1;
+        count ++;
+    }
     /** IFFT -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
-    free5GRAN::phy::signal_processing::IFFT(SSB_signal_extended, index_symbol_ssb, cp_lengths_one_frame, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
+    free5GRAN::phy::signal_processing::IFFT(ONEframe_SSB_freq, cp_lengths_one_frame, Symbol_not_nul, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
     BOOST_LOG_TRIVIAL(info) << "IFFT from SSB_signal_extended to get one_frame_vector";
+    //free5GRAN::utils::common_utils::display_vector(one_frame_vector, 7680000, "one_frame_vector from phy");
 }
 
 
