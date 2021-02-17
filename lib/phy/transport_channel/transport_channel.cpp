@@ -1446,7 +1446,6 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     int mib_bits_interleaved[free5GRAN::BCH_PAYLOAD_SIZE];
     free5GRAN::phy::transport_channel::bch_payload_generation(mib_bits, mib_bits_interleaved);
 
-    //bool display_variable = true;
     if(free5GRAN::display_variables){
         free5GRAN::utils::common_utils::display_table(mib_bits_interleaved, free5GRAN::BCH_PAYLOAD_SIZE, "mib_bits_interleaved from transport_channel");}
 
@@ -1454,7 +1453,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     int bch_payload[free5GRAN::BCH_PAYLOAD_SIZE];
     int v = mib_bits[25] * 2 + mib_bits[26]; /** v depends on the SFN value (3rd LSB of SFN and 2nd LSB of SFN). */
     if (free5GRAN::display_variables){
-        std::cout <<"v (depends on SFN, 3rd and 2nd LSB "<<v<< std::endl;
+        std::cout <<"v (depends on SFN, 3rd and 2nd LSB) = "<<v<< std::endl;
     }
     free5GRAN::phy::transport_channel::scrambling_bch(v, pci, mib_bits_interleaved, bch_payload);
 

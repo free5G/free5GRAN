@@ -51,7 +51,7 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = true;
+    bool run_with_usrp = false;
 
     phy phy_variable;
     const char *config_file;
@@ -127,6 +127,8 @@ int main(int argc, char *argv[]) {
             int num_symbols_frame = Num_symbols_per_subframe * 10;
             free5GRAN::num_symbols_frame = num_symbols_frame; // To be optimize, we can reduce number of lines
             std::cout<<"num_symbols_frame = "<<num_symbols_frame<<std::endl;
+            std::cout<<"free5GRAN::num_symbols_frame = "<<free5GRAN::num_symbols_frame<<std::endl;
+
 
             /** Calculate cp_length */
             int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
@@ -146,6 +148,8 @@ int main(int argc, char *argv[]) {
 
         int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
         int sfn = 555;
+        std::cout<<"index_symbol_ssb = "<<index_symbol_ssb<<std::endl;
+        std::cout<<"sfn = "<<sfn<<std::endl;
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
         phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,

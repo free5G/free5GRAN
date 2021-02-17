@@ -854,7 +854,7 @@ void free5GRAN::phy::signal_processing::increase_size_ssb(vector<vector<complex<
 
 
 
-void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> input_ssb, free5GRAN::mib mib_object, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
+void free5GRAN::phy::signal_processing::IFFT(vector<vector<complex<float>>> input_ssb, int index_symbol_ssb, int *cp_lengths_one_frame, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, int pci, int i_b_ssb, vector<complex<float>> &ONEframe2_time_CP) {
 
 
     /** Version 01 Initialize the time/frequency grid vector : create variable at each loop

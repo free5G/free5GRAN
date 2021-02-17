@@ -282,9 +282,11 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
         std::cout<<"\nsymbol "<<symbol<<" = "<<std::ends;
         if (symbol % 7 == 0){
             size_symbol = 552;
+            //size_symbol = 2208;
         }
         if (symbol % 7 != 0){
             size_symbol = 548;
+            //size_symbol = 2192;
         }
         for (int sc = 0; sc<size_symbol; sc ++){
             if (sc % 10 == 0){

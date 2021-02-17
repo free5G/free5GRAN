@@ -349,7 +349,7 @@ int free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[] = {22};
 int free5GRAN::INTERVAL_SSB_PSS[] = {56, 182};
 int free5GRAN::INTERVAL_SSB_SSS[] = {56, 182};
 
-int free5GRAN::SIZE_IFFT_SSB = 2048;
+int free5GRAN::SIZE_IFFT_SSB = 512;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 
@@ -358,12 +358,12 @@ bool free5GRAN::display_variables = false;
 int free5GRAN::index_frame_sent = 0;
 int free5GRAN::index_frame_to_send = 0;
 
-int free5GRAN::num_symbols_frame = 140;
+extern int free5GRAN::num_symbols_frame = 140;
+//int free5GRAN::num_symbols_frame = 280;
 
 free5GRAN::gNodeB_config free5GRAN::gnodeB_config_globale = {"", "", false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, "", "", "","", 0.0, 0.0, 0.0, 0.0, 0.0, 0};
 
 /** Version 02 */
-std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_null(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0})); //140 must be replaced by a variable
 std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_SSB_freq(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
 std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_reversed(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
 std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_SSB_time(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));

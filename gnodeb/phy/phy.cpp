@@ -64,7 +64,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int nu
     BOOST_LOG_TRIVIAL(info) << "GENERATE SSB_signal_time_domain";
 
     /** IFFT -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
-    free5GRAN::phy::signal_processing::IFFT(SSB_signal_extended, mib_object, index_symbol_ssb, cp_lengths_one_frame, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
+    free5GRAN::phy::signal_processing::IFFT(SSB_signal_extended, index_symbol_ssb, cp_lengths_one_frame, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
     BOOST_LOG_TRIVIAL(info) << "IFFT from SSB_signal_extended to get one_frame_vector";
 }
 
