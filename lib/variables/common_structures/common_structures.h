@@ -88,13 +88,13 @@ namespace free5GRAN{
 
 
 /** Bellow, it's additions from Benoit. Be Carrful during merging */
-typedef struct usrp_info2_ {
+typedef struct usrp_info_ {
     float sampling_rate;
     std::string subdev, ant, ref2;
     std::string device_args;
     float sample_rate;
     float center_frequency, gain, bandwidth;
-} usrp_info2;
+} usrp_info;
 
 typedef struct gNodeB_config_ {
     std::string function;
@@ -121,7 +121,7 @@ typedef struct gNodeB_config_ {
     float sampling_rate;
     int scs;
     free5GRAN::mib mib_object;
-    free5GRAN::usrp_info2 usrp_info_object;
+    free5GRAN::usrp_info usrp_info_object;
 } gNodeB_config;
 
 }

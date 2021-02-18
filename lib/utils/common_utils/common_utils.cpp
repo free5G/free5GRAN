@@ -263,7 +263,7 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
 
 
 
-void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int vector_size,
+void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int size1,
                                                     char *vector_name){
     /**
     * \fn display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
@@ -276,18 +276,20 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
     int j = 0;
     int size_symbol;
     std::cout <<""<< std::endl;
-    std::cout<< vector_name << " (of size "<< vector_size<<") = "<<std::ends;
+    std::cout<< vector_name << " (of size "<< size1<< " symbols) = "<<std::ends;
 
-    for (int symbol = 0; symbol < 140; symbol++){
+    for (int symbol = 0; symbol < size1; symbol++){
         std::cout<<"\nsymbol "<<symbol<<" = "<<std::ends;
-        if (symbol % 7 == 0){
-            size_symbol = 276;
-            //size_symbol = 552;
+        if (symbol % 14 == 0){
+            //size_symbol = 278;
+            size_symbol = 552;
+            //size_symbol = 1112;
             //size_symbol = 2208;
         }
-        if (symbol % 7 != 0){
-            size_symbol = 274;
-            //size_symbol = 548;
+        if (symbol % 14 != 0){
+            //size_symbol = 274;
+            size_symbol = 548;
+            //size_symbol = 1096;
             //size_symbol = 2192;
         }
         for (int sc = 0; sc<size_symbol; sc ++){

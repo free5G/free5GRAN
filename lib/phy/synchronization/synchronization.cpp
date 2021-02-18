@@ -50,7 +50,7 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
 
 
     /*
-     * Generate complex arrays to store IFFT signals for the three different PSS sequence
+     * Generate complex arrays to store ifft signals for the three different PSS sequence
      */
     fftw_complex *pss_in_0 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
     fftw_complex *pss_out_0 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
@@ -60,7 +60,7 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
     fftw_complex *pss_out_2 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
 
     /*
-     * Generate IFFT plans for the three different PSS sequence
+     * Generate ifft plans for the three different PSS sequence
      */
     fftw_plan ifft_plan_0 = fftw_plan_dft_1d(fft_size, pss_in_0, pss_out_0, FFTW_BACKWARD, FFTW_MEASURE);
     fftw_plan ifft_plan_1 = fftw_plan_dft_1d(fft_size, pss_in_1, pss_out_1, FFTW_BACKWARD, FFTW_MEASURE);
@@ -118,7 +118,7 @@ void free5GRAN::phy::synchronization::search_pss(int &n_id_2, int &synchronisati
     }
 
     /*
-     * Execute the IFFT
+     * Execute the ifft
      */
     fftw_execute(ifft_plan_0);
     fftw_execute(ifft_plan_1);

@@ -214,13 +214,13 @@ namespace free5GRAN{
 
     extern free5GRAN::gNodeB_config gnodeB_config_globale;
 
-    extern std::vector<std::vector<std::complex<float>>> SSB_signal_extended; // Used in functino channel_MAPPER
+    extern std::vector<std::vector<std::complex<float>>> SSB_signal_extended; // Used in functino channel_mapper
 
     /** Version 02 */
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_null; //Used in function IFFT
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_freq; //Used in function IFFT
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_reversed; //Used in function IFFT
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_time; //Used in function IFFT
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_null; //Used in function ifft
+    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_freq; //Used in function ifft
+    extern std::vector<std::vector<std::complex<float>>> freq_domain_reversed_frame; //Used in function ifft
+    extern std::vector<std::vector<std::complex<float>>> time_domain_frame; //Used in function ifft
 }
 
 

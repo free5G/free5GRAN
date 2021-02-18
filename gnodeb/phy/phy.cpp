@@ -64,20 +64,33 @@ void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int nu
     vector<vector<complex<float>>> ONEframe_SSB_freq(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
 
-    free5GRAN::phy::signal_processing::generate_freq_domain_ssb(pbch_symbols, mib_object, pci, index_symbol_ssb, i_b_ssb, free5GRAN::SIZE_IFFT_SSB, ONEframe_SSB_freq);
+    free5GRAN::phy::signal_processing::generate_freq_domain_frame(pbch_symbols, mib_object, pci, index_symbol_ssb,
+                                                                  num_SSB_in_this_frame, i_b_ssb,
+                                                                  free5GRAN::SIZE_IFFT_SSB, ONEframe_SSB_freq);
     BOOST_LOG_TRIVIAL(info) << "GENERATE ONEframe_SSB_freq";
     //TO be deleted
     //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_SSB_freq, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "ONEframe_SSB_freq from phy");
 
-    vector<int> Symbol_not_nul(num_symbols_frame, 0);
+    vector<int> data_symbols(num_symbols_frame, 0);
     int count = index_symbol_ssb;
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
-        Symbol_not_nul[count] = 1;
+        data_symbols[count] = 1;
         count ++;
     }
-    /** IFFT -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
-    free5GRAN::phy::signal_processing::IFFT(ONEframe_SSB_freq, cp_lengths_one_frame, Symbol_not_nul, free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb, one_frame_vector);
-    BOOST_LOG_TRIVIAL(info) << "IFFT from SSB_signal_extended to get one_frame_vector";
+
+    if (num_SSB_in_this_frame == 2){
+        int count2 = index_symbol_ssb + (num_symbols_frame/2);
+        for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
+            data_symbols[count2] = 1;
+            count2++;
+        }
+    }
+
+    /** ifft -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
+    free5GRAN::phy::signal_processing::ifft(ONEframe_SSB_freq, cp_lengths_one_frame, data_symbols,
+                                            free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor, pci, i_b_ssb,
+                                            one_frame_vector);
+    BOOST_LOG_TRIVIAL(info) << "ifft from SSB_signal_extended to get one_frame_vector";
     //free5GRAN::utils::common_utils::display_vector(one_frame_vector, 7680000, "one_frame_vector from phy");
 }
 
