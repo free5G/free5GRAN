@@ -152,7 +152,8 @@ int main(int argc, char *argv[]) {
         std::cout<<"index_symbol_ssb = "<<index_symbol_ssb<<std::endl;
         std::cout<<"sfn = "<<sfn<<std::endl;
         std::vector<std::complex<float>> buff_main_10ms(Num_samples_in_frame);
-        phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
+
+        phy_variable.generate_frame(mib_object, index_symbol_ssb, 1, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, Num_samples_in_frame, "\n\nbuff_main_10ms from main");
@@ -229,20 +230,19 @@ int main(int argc, char *argv[]) {
                 std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
 
 
-        /** Initialize variables before loop 'while true' */
+
+        /** Determine number of SSB block in each frame */
         int ssb_period_symbol_int = 0;
-        int num_SSB_in_this_frame;
-        std::cout<<"gnodeB_config_globale.ssb_period"<<free5GRAN::gnodeB_config_globale.ssb_period<<std::endl;
-        if (free5GRAN::gnodeB_config_globale.ssb_period == 0.005){
+        int num_SSB_in_this_frame = 0;
+        std::cout<<"gnodeB_config_globale.ssb_period = "<<free5GRAN::gnodeB_config_globale.ssb_period<<std::endl;
+        if (free5GRAN::gnodeB_config_globale.ssb_period == float(0.005)){
             num_SSB_in_this_frame = 2;
         }else{
             float ssb_period_symbol = free5GRAN::gnodeB_config_globale.ssb_period / 0.01;
-            std::cout<<"ssb_period_symbol = "<<ssb_period_symbol<<std::endl;
             ssb_period_symbol_int = ssb_period_symbol;
-            std::cout<<"ssb_period_symbol_int = "<<ssb_period_symbol_int<<std::endl;
         }
 
-
+        /** Initialize variables before loop 'while true' */
         int sfn = 1, duration_sum = 0;
         auto start = chrono::high_resolution_clock::now();
         auto stop = chrono::high_resolution_clock::now();
@@ -253,23 +253,29 @@ int main(int argc, char *argv[]) {
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
         while (true) {
 
-            num_SSB_in_this_frame = 0;
             BOOST_LOG_TRIVIAL(warning) << "One Loop while true in MAIN done";
 
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
 
+                std::cout<<"sfn in while true = "<<sfn<<std::endl;
+                std::cout<<"num_SSB_in_this_frame"<<num_SSB_in_this_frame<<std::endl;
+
                 /** To be optimize */
-                if (sfn % ssb_period_symbol_int == 0) {
-                    num_SSB_in_this_frame = 1;
+                if (num_SSB_in_this_frame != 2) {
+                    if (sfn % ssb_period_symbol_int == 0) {
+                        num_SSB_in_this_frame = 1;
+                    } else {
+                        num_SSB_in_this_frame = 0;
+                    }
                 }
 
-                //std::cout<<"sfn in while true = "<<sfn<<std::endl;
-                //std::cout<<"num_SSB_in_this_frame"<<num_SSB_in_this_frame<<std::endl;
+
+                //std::cout<<" sfn / ssb_period_symbol_int = "<<sfn / ssb_period_symbol_int<<std::endl;
 
                 auto start = chrono::high_resolution_clock::now();
                 if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
-                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_symbols_frame, cp_lengths_one_frame,
+                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_SSB_in_this_frame, num_symbols_frame, cp_lengths_one_frame,
                                                 sfn, free5GRAN::gnodeB_config_globale.ssb_period,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
                                                 free5GRAN::gnodeB_config_globale.gscn,
