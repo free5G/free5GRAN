@@ -828,8 +828,8 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<flo
     * \param[in] input_channel. 2 dimensions vector of complexes. In our case, it is the SSB signal (4*240 symbols)
     * \param[out] &output_channel. 2 dimensions vector of complex. It's the resource grid generated including the SSB
     * \param[in] num_symbols_ssb. Number of symbols in the SSB. In our case, it is 4.
-    * \param[in] index_symbol_ssb. Position, in time_domain, of the SSB in the 10 ms resource grid. Is calculated in function of i_b_ssb
-    * \param[in] num_SSB_in_this_frame. Number of SSB that the resource grid will contain. Is calculated in function of ssb_period and sfn. Should be equel to 0, 1 or 2.
+    * \param[in] index_symbol_ssb. Position of the SSB in the 10 ms resource grid. Is calculated in function of i_b_ssb
+    * \param[in] num_SSB_in_this_frame. Number of SSB that the resource grid will contain. Is calculated in function of ssb_period and sfn. Should be equal to 0, 1 or 2.
     * \param[in] num_sc_input. Number of subcarrier in SSB. In our case, it's 240
     * \param[in] ifft_size. Size, in frequency, of the output resource grid
     */
@@ -871,23 +871,103 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<flo
 
 
 
+void free5GRAN::phy::signal_processing::generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame,
+                                                                   int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame) {
 
-void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq_domain_frame, int *cp_lengths_one_frame, vector<int> data_symbols, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, vector<complex<float>> &one_frame_vector) {
     /**
-      * \fn ifft(vector<vector<complex<float>>> freq_domain_frame, int *cp_lengths_one_frame, vector<int> data_symbols, int num_symbols_SSB, int num_symbols_frame, float scaling_factor, vector<complex<float>> &one_frame_vector)
+    * \fn generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame)
+    * \brief Generates from a pbch sequence a frequency domain frame (also called: resource grid) that includes the SSB (Synchronisation Signal Block).
+    * \details
+            * step 1: generate DMRS symbols, PSS symbols and SSS symbols
+            * step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB
+            * step 3: channel_mapper: construct time/domain reference grid and place the SSB in it.
+    * \standard !! Standard TO BE ADDED
+    * \param[in] pbch_symbols. In our case, it is a 432 symbols sequence.
+    * \param[in] pci. Physical Cell ID.
+    * \param[in] index_symbol_ssb : Position of the SSB in the resource grid. Is calculated in function of i_b_ssb
+    * \param[in] num_SSB_in_this_frame. Number of SSB that the resource grid will contain. Is calculated in function of ssb_period and sfn. Should be equal to 0, 1 or 2.
+    * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
+    * \param[out] &freq_domain_frame. 2 dimensions vector, containing a time/frequency resource grid with SSB placed in it.
+    */
+
+    /** Step 1: generate DMRS symbols, PSS symbols and SSS symbols */
+    /** DMRS -> Generate dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
+    std::complex<float> *dmrs_symbols;
+    dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
+
+    /** Convert PCI into n_id_1 and n_id_2 */
+    int n_id_1, n_id_2;
+    n_id_2 = pci % 3;
+    n_id_1 = (pci - n_id_2) / 3;
+
+    /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
+    int *pss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
+
+    /** CONVERTING PSS -> Convert PSS sequence element from int to complex<float> (Imaginary part = 0) */
+    std::complex<float> *pss_complex_symbols;
+    pss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
+        pss_complex_symbols[i] = {static_cast<float>(pss_sequence_symbols[i]), 0};
+    }
+
+    /** SSS -> Comput sss_sequence_symbols (127 symbols long in our case) from n_id_1 and n_id_2. TS38.211 V15.2.0 Section 7.4.2.3.1 */
+    int *sss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
+
+    /** CONVERTING SSS -> Convert SSS sequence element from int to complex<float> (Imaginary part = 0) */
+    std::complex<float> *sss_complex_symbols;
+    sss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
+        sss_complex_symbols[i] = {static_cast<float>(sss_sequence_symbols[i]), 0};
+    }
+
+    /** Step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB */
+    /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
+    int ***ref;
+    ref = new int **[4]; /** There are 4 channels */
+    for (int channel = 0; channel < 4; channel++) {
+        ref[channel] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
+    }
+    free5GRAN::phy::signal_processing::build_reference_grid(4, free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
+
+    /** Initialize ssb_signal_freq_domain (In our case, 4 * 240 symbols) */
+    vector<vector<complex<float>>> ssb_signal_freq_domain(free5GRAN::NUM_SYMBOLS_SSB,
+                                                          vector<complex<float>>(NUM_SC_SSB));
+
+
+    /** Execute function map_SSB */
+    free5GRAN::phy::signal_processing::map_ssb(
+            new std::complex<float> *[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref,
+            ssb_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
+
+
+    /** step 3: channel_mapper: construct time/domain reference grid and place the SSB in it */
+    free5GRAN::phy::signal_processing::channel_mapper(ssb_signal_freq_domain, freq_domain_frame,
+                                                      free5GRAN::NUM_SYMBOLS_SSB, index_symbol_ssb,
+                                                      num_SSB_in_this_frame, free5GRAN::NUM_SC_SSB,
+                                                      free5GRAN::SIZE_IFFT_SSB);
+}
+
+
+
+
+void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq_domain_frame, int *cp_lengths_one_frame, vector<int> data_symbols, int num_symbols_frame, float scaling_factor, vector<complex<float>> &one_frame_vector) {
+    /**
+      * \fn ifft(vector<vector<complex<float>>> freq_domain_frame, int *cp_lengths_one_frame, vector<int> data_symbols, int num_symbols_frame, float scaling_factor, vector<complex<float>> &one_frame_vector)
       * \brief performs ifft (Inverse Fast Fourier Transform) for each symbols of the input resource grid.
       * \details
-            * -step 1: Reverse symbols: Only for not null symbols, inversing first half with second half
+            * -step 1: Reverse symbols: Only for not null symbols, inverting first half with second half
             * -step 2: Scaling factor: Only for not null symbols, multiply each value by scaling_factor
             * -step 3: ifft: For each not null symbols, perform ifft
-            * -step 4: Adding CP: place each results on a single vector and adding Cyclic Prefix for each symbols.
+            * -step 4: Adding CP: place each results on a single vector and adding Cyclic Prefix before each symbols.
       * \standard !! TS to be added !!
       *
-      * \param[in] freq_domain_frame.
+      * \param[in] freq_domain_frame. Input 2 dimensions vector, containing a time/frequency resource grid with SSB placed in it.
       * \param[in] *cp_lengths_one_frame. Cyclic Prefix length for each symbol of a frame
       * \param[in] data_symbols. If a symbol is null, data_symbols[symbol] = 0. Otherwise, data_symbols[symbol] = 1
-      * \param[in] Number of symbols in a SSB. In our case, it is 4.
-      * \param[in] Number of symbols in a 10 ms resource grid (i.e. 140 or 280).
+      * \param[in] num_symbols_frame. Number of symbols in a 10 ms resource grid (eg 140 or 280).
       * \param[in] scaling_factor. multiplication factor applied to each values before performing ifft
       * \param[out] &one_frame_vector. One dimension vector containing, in time domain, 10 ms of signal with SSB included in it.
       */
@@ -901,13 +981,13 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
         if (data_symbols[symbol] == 1) {
             int sc_counter1 = free5GRAN::SIZE_IFFT_SSB / 2, sc_counter2 = 0;
             for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-                /** Fill second half of freq_domain_frame */
+                /** Fill first half of freq_domain_reversed_frame */
                 if (sc < free5GRAN::SIZE_IFFT_SSB / 2) {
                     free5GRAN::freq_domain_reversed_frame[symbol][sc] =
                             freq_domain_frame[symbol][sc_counter1] * scaling_factor;
                     sc_counter1++;
                 }
-                /** Fill first half of freq_domain_frame */
+                    /** Fill second half of freq_domain_reversed_frame */
                 else {
                     free5GRAN::freq_domain_reversed_frame[symbol][sc] =
                             freq_domain_frame[symbol][sc_counter2] * scaling_factor;
@@ -925,48 +1005,48 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
         /** Following scop is not done for the null symbols (when data_symbols[symbol] = 0) */
         if (data_symbols[symbol] == 1) {
-            //Generate complex arrays to store ifft signals
+            /** Generate complex arrays to store ifft signals */
             fftw_complex *signal_in = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
             fftw_complex *signal_out = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * free5GRAN::SIZE_IFFT_SSB);
 
-            //Generate plans
+            /** Generate plans */
             fftw_plan ifft_plan = fftw_plan_dft_1d(free5GRAN::SIZE_IFFT_SSB, signal_in, signal_out, FFTW_BACKWARD,
                                                    FFTW_MEASURE);
 
-            //Initialize arrays
+            /** Initialize arrays */
             for (int i = 0; i < free5GRAN::SIZE_IFFT_SSB; i++) {
                 signal_in[i][0] = 0;
                 signal_out[i][1] = 0;
             }
 
-            //Fill signal_in with the freq_domain_reversed_frame signal
+            /** Fill signal_in with the freq_domain_reversed_frame signal */
             for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
                 signal_in[sc][0] = free5GRAN::freq_domain_reversed_frame[symbol][sc].real();
                 signal_in[sc][1] = free5GRAN::freq_domain_reversed_frame[symbol][sc].imag();
             }
 
-            //Execute the ifft
+            /** Execute the ifft */
             fftw_execute(ifft_plan);
 
-            //Fill time_domain_frame with signal_out
+            /** Fill time_domain_frame with signal_out */
             for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
                 free5GRAN::time_domain_frame[symbol][sc] = {static_cast<float>(signal_out[sc][0]),
                                                             static_cast<float>(signal_out[sc][1])};
             }
         }
     }
-        /** Fill a txt file to check spectogram on Python or Matlab */
-        /** for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
-            file_gnodeb << ONEframe2_time_domain[symbol][sc];
-            file_gnodeb << "\n";
-        }
-         file_gnodeb.close();*/
+    /** Fill a txt file to check spectogram on Python or Matlab */
+    /** for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
+        file_gnodeb << ONEframe2_time_domain[symbol][sc];
+        file_gnodeb << "\n";
+    }
+     file_gnodeb.close();*/
 
 
 
     /** Step 4: ADDING CP & FILLING one_frame_vector */
     int sc_count_frame = 0;
-    /** Loop over all symbols of resource grid */
+    /** Loop over all symbols */
     for (int symbol = 0; symbol < num_symbols_frame; symbol++ ){
         int cp_count1 = 0;
         int cp_count2 = 0;
@@ -977,7 +1057,7 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
                 one_frame_vector[sc_count_frame] = free5GRAN::time_domain_frame[symbol][free5GRAN::SIZE_IFFT_SSB - cp_lengths_one_frame[symbol] + cp_count1];
                 cp_count1++;
             }
-            /** Adding ith symbol at one_frame_vector */
+                /** Adding ith symbol at one_frame_vector */
             else{
                 one_frame_vector[sc_count_frame] = free5GRAN::time_domain_frame[symbol][cp_count2];
                 cp_count2++;
@@ -987,129 +1067,3 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
     }
 }
 
-
-
-
-
-void free5GRAN::phy::signal_processing::generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame,
-                                                                   int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame) {
-
-    /**
-    * \fn generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame)
-    * \brief Generates from a pbch sequence a frequency domain frame (also called: resource grid) that includes the SSB (Synchronisation Signal Block).
-    * \details
-            * step 1: generate DMRS symbols
-            * step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB
-            * step 3: channel_mapper: construct time/domain reference grid and place the SSB in it.
-    * \standard !! Standard TO BE ADDED
-    * \param[in] pbch_symbols. In our case, it is a 432 symbols sequence.
-    * \param[in] pci. Physical Cell ID.
-    * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
-    * \param[in] scaling_factor Before ifft, to enhance the radio transmission
-    * \param[out] SSB_signal_time_domain. In our case, it is a signal composed of 4*256 elements.
-    */
-
-    /** DMRS -> Generate dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
-    std::complex<float> *dmrs_symbols;
-    dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
-    free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
-
-
-    if (free5GRAN::display_variables) {
-        free5GRAN::utils::common_utils::display_complex_float(dmrs_symbols, free5GRAN::SIZE_SSB_DMRS_SYMBOLS,
-                                                              "dmrs_symbols from libphy");
-    }
-
-    /** Convert PCI into n_id_1 and n_id_2 */
-    int n_id_1, n_id_2;
-    n_id_2 = pci % 3;
-    n_id_1 = (pci - n_id_2) / 3;
-    if (free5GRAN::display_variables) {
-        std::cout << "n_id_1 = " << n_id_1 << "; n_id_2 = " << n_id_2 << std::endl;
-    }
-
-    /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
-    int *pss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
-
-
-    if (free5GRAN::display_variables) {
-        free5GRAN::utils::common_utils::display_table(pss_sequence_symbols, free5GRAN::SIZE_PSS_SSS_SIGNAL,
-                                                      "pss_sequence_symbols from libphy");
-    }
-
-    /** CONVERTING PSS -> Convert PSS sequence element from int to complex<float> (Imaginary part = 0) */
-    std::complex<float> *pss_complex_symbols;
-    pss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
-        pss_complex_symbols[i] = {static_cast<float>(pss_sequence_symbols[i]), 0};
-    }
-
-    /** SSS -> Comput sss_sequence_symbols (127 symbols long in our case) from n_id_1. TS38.211 V15.2.0 Section 7.4.2.3.1 */
-    int *sss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
-
-    /** CONVERTING SSS -> Convert SSS sequence element from int to complex<float> (Imaginary part = 0) */
-    std::complex<float> *sss_complex_symbols;
-    sss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
-    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
-        sss_complex_symbols[i] = {static_cast<float>(sss_sequence_symbols[i]), 0};
-    }
-
-    /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
-    int ***ref;
-    ref = new int **[4]; /** There are 4 channels */
-    for (int channel = 0; channel < 4; channel++) {
-        ref[channel] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
-    }
-    free5GRAN::phy::signal_processing::build_reference_grid(4, free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci,
-                                                            ref);
-
-    /** DISPLAY ref */
-    if (free5GRAN::display_variables) {
-        for (int channel = 0; channel < 4; channel++) {
-            std::cout << "" << std::endl;
-            for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++) {
-                std::cout << "" << std::endl;
-                std::cout << "ref channel " << channel << " symbol " << symbol << " = " << std::ends;
-                for (int sc = 0; sc < free5GRAN::NUM_SC_SSB; sc++) {
-                    if (sc % 50 == 0) {
-                        std::cout << " ____ " << std::ends;
-                    }
-                    std::cout << ref[channel][symbol][sc] << " " << std::ends;
-                }
-            }
-        }
-    }
-
-
-    vector<vector<complex<float>>> ssb_signal_freq_domain(free5GRAN::NUM_SYMBOLS_SSB,
-                                                          vector<complex<float>>(NUM_SC_SSB));
-
-    vector<int> lenght_input(4);
-    lenght_input[0] = SIZE_PSS_SSS_SIGNAL;
-    lenght_input[1] = SIZE_PSS_SSS_SIGNAL;
-    lenght_input[2] = SIZE_SSB_PBCH_SYMBOLS;
-    lenght_input[3] = SIZE_SSB_DMRS_SYMBOLS;
-
-
-    free5GRAN::phy::signal_processing::map_ssb(
-            new std::complex<float> *[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref,
-            ssb_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
-
-    // To be deleted
-    //free5GRAN::utils::common_utils::display_vector_2D(ssb_signal_freq_domain, NUM_SYMBOLS_SSB, NUM_SC_SSB, "ssb_signal_freq_domain from libphy");
-    if (free5GRAN::display_variables) {
-        //free5GRAN::utils::common_utils::display_signal_float(ssb_signal_freq_domain, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB, "ssb_signal_freq_domain from libphy");
-    }
-
-
-    free5GRAN::phy::signal_processing::channel_mapper(ssb_signal_freq_domain, freq_domain_frame,
-                                                      free5GRAN::NUM_SYMBOLS_SSB, index_symbol_ssb,
-                                                      num_SSB_in_this_frame, free5GRAN::NUM_SC_SSB,
-                                                      free5GRAN::SIZE_IFFT_SSB);
-
-    if (free5GRAN::display_variables) {
-        //free5GRAN::utils::common_utils::display_signal_float(freq_domain_frame, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::SIZE_IFFT_SSB, "freq_domain_frame from libphy");
-    }
-}

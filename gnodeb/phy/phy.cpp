@@ -10,7 +10,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
- * \author Télécom Paris, P5G Lab ; Benoit Oehmicen & Aymeric de Javel
+ * \author Télécom Paris, P5G Lab ; Benoit Oehmichen & Aymeric de Javel
  * \version 0.2
  * \date February 2021
  */
@@ -34,32 +34,52 @@
 #include <boost/log/utility/setup/file.hpp>
 
 
-void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, int pci, int N, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+    /**
+    * \fn generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector)
+    * \brief From mib_object and many other parameters, generates a frame of 10 ms containing SSB.
+    * \details
+               * -step 1: MIB GENERATION. Generate mib_bits from mib_object
+               * -step 2: ENCODE BCH. Generate bch bits sequence.
+               * -step 3: ENCODE PBCH. Generate pbch symbols
+               * -step 4: GENERATE FREQUENCY DOMAIN FRAME. Generate a frequency domain frame with SSB placed in it
+               * -step 5: IFFT. Perform ifft for each symbols to get the final 10ms time_domain frame.
+    * \standard !! TS to be added !!
+    * \param[in] mib_object object MIB created in common_structures.h, including cell_barred, k_ssb, pddchc_config...
+    * \param[in] num_SSB_in_this_frame. Number of SSB that the frame will contain. Is calculated in function of ssb_period and sfn. Should be equal to 0, 1 or 2
+    * \param[in] num_symbols_frame. Number of symbols that the frame will contain (eg 140 or 280).
+    * \param[in] *cp_lengths_one_frame. Cyclic Prefix length for each symbol of a frame
+    * \param[in] sfn. Sequence Frame Number. Varies between 0 and 1023
+    * \param[in] pci. Physical Cell ID. Should be between 0 and 1007.
+    * \param[in] N. Length of BCH after polar encoding.
+    * \param[in] i_b_ssb. SSB index (between 0 and 7). Indicates the position of SSB in the frame.
+    * \param[in] scaling_factor. Multiplication factor applied to each values before performing ifft
+    * \param[out] &one_frame_vector. One dimension vector containing, in time domain, 10 ms of signal with SSB included in it.
+    */
+
 
     mib_object.sfn = sfn;
     BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
 
-    /** MIB GENERATION -> Generate mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
+    /** Step 1: MIB GENERATION -> Generate mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];
     free5GRAN::utils::common_utils::encode_mib(mib_object, mib_bits);
     BOOST_LOG_TRIVIAL(info) << "MIB GENERATION from generate_frame done";
 
-    /** ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
+    /** Step 2: ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
     int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
     free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch);
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH from generate_frame";
 
-    /** ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
+    /** Step 3: ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
     std::complex<float> *pbch_symbols;
     pbch_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];
-    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, gscn, i_b_ssb, pbch_symbols);
+    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, i_b_ssb, pbch_symbols);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH from generate_frame";
 
-    /** GENERATE SSB -> Generate SSB_signal_frequency_domain from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */
-
-    /** TO BE Deleted */
-    /**vector<vector<complex<float>>> SSB_signal_extended(free5GRAN::NUM_SYMBOLS_SSB,
-                                                       vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB)); */
+    /** Step 4: GENERATE FREQUENCY DOMAIN FRAME -> Generate freq_domain_frame from pbch_symbols. TS38.211 V15.2.0 Section 7.4
+    /** Calculate the position of ssb block in a frame */
+    int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
 
     vector<vector<complex<float>>> ONEframe_SSB_freq(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
@@ -86,12 +106,16 @@ void phy::generate_frame(free5GRAN::mib mib_object, int index_symbol_ssb, int nu
     }
 
     /** ifft -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
-    free5GRAN::phy::signal_processing::ifft(ONEframe_SSB_freq, cp_lengths_one_frame, data_symbols,
-                                            free5GRAN::NUM_SYMBOLS_SSB, num_symbols_frame, scaling_factor,
+    free5GRAN::phy::signal_processing::ifft(ONEframe_SSB_freq, cp_lengths_one_frame, data_symbols, num_symbols_frame, scaling_factor,
                                             one_frame_vector);
     BOOST_LOG_TRIVIAL(info) << "ifft from SSB_signal_extended to get one_frame_vector";
     //free5GRAN::utils::common_utils::display_vector(one_frame_vector, 7680000, "one_frame_vector from phy");
 }
+
+
+
+
+
 
 
 void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame) {

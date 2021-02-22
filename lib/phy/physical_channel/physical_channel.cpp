@@ -238,12 +238,12 @@ void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vecto
 
 
 
-void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int gscn, int i_b_ssb,
+void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb,
                                                      std::complex<float> *pbch_symbols) {
 
 
    /**
-   * \fn pbch_encoding (int * rate_matched_bch, int pci, int gscn, int i_b_ssb, std::complex<float> * pbch_symbols)
+   * \fn pbch_encoding (int * rate_matched_bch, int pci, int i_b_ssb, std::complex<float> * pbch_symbols)
    * \brief Transforms a rate_matched_bch bits sequence into a pbch symbols sequence.
    * \details The 2 main steps are ENCODING and MODULATION.
    * \standard TS38.211 V15.2.0 Section 7.3.3.1
@@ -251,7 +251,6 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
    *
    * \param[in] rate_matched_bch. In our case, it is a 864 long bits sequence.
    * \param[in] pci. Physical Cell ID.
-   * \param[in] gscn. Global Synchronization Channel Number.
    * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
    * \param[out] pbch_symbols. The output symbols sequence. 432 symbols long in our case.
    */
@@ -266,14 +265,6 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
     /** Scramble the 864 rate_matched_bch bits to get the 864 scrambled_pbch bits, using c_seq2 */
     free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_b_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 
-
-    if (free5GRAN::display_variables){
-        free5GRAN::utils::common_utils::display_table(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, "scrambled_pbch from physical_channel");
-    }
-
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from scrambled_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
     free5GRAN::phy::signal_processing::modulation(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols);
-    if (free5GRAN::display_variables){
-        free5GRAN::utils::common_utils::display_complex_float(pbch_symbols, free5GRAN::SIZE_SSB_PBCH_SYMBOLS, "pbch_symbols from physical_channel");
-    }
 }

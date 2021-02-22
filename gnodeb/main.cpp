@@ -51,7 +51,7 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 int main(int argc, char *argv[]) {
 
     /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = true;
+    bool run_with_usrp = false;
 
     phy phy_variable;
     const char *config_file;
@@ -170,8 +170,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /** Calculate the position of ssb block in a frame */
-    int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
 
     std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
 
@@ -179,11 +177,10 @@ int main(int argc, char *argv[]) {
     if (run_with_usrp == false) {
         /** Run generate_frame one time for testing */
 
-        int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
         int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
-        phy_variable.generate_frame(mib_object, index_symbol_ssb, 2, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.ssb_period, free5GRAN::gnodeB_config_globale.pci, N, free5GRAN::gnodeB_config_globale.gscn,
+        phy_variable.generate_frame(mib_object, 2, num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.pci, N,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         free5GRAN::utils::common_utils::display_vector(buff_main_10ms, num_symbols_frame, "\n\nbuff_main_10ms from main");
@@ -244,10 +241,9 @@ int main(int argc, char *argv[]) {
 
                 auto start = chrono::high_resolution_clock::now();
                 if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
-                    phy_variable.generate_frame(mib_object, index_symbol_ssb, num_SSB_in_this_frame, num_symbols_frame, cp_lengths_one_frame,
-                                                sfn, free5GRAN::gnodeB_config_globale.ssb_period,
+                    phy_variable.generate_frame(mib_object, num_SSB_in_this_frame, num_symbols_frame, cp_lengths_one_frame,
+                                                sfn,
                                                 free5GRAN::gnodeB_config_globale.pci, N,
-                                                free5GRAN::gnodeB_config_globale.gscn,
                                                 free5GRAN::gnodeB_config_globale.i_b_ssb,
                                                 free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
                     BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
