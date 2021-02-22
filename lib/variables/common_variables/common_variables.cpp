@@ -19,6 +19,7 @@
 #include <map>
 #include <complex.h>
 #include <vector>
+#include <mutex>
 
 
 int free5GRAN::G_CRC_24_C[] = {1,1,0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,1,0,1,1,1};
@@ -349,7 +350,7 @@ int free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[] = {22};
 int free5GRAN::INTERVAL_SSB_PSS[] = {56, 182};
 int free5GRAN::INTERVAL_SSB_SSS[] = {56, 182};
 
-int free5GRAN::SIZE_IFFT_SSB = 512;
+int free5GRAN::SIZE_IFFT_SSB = 256;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 
@@ -369,3 +370,6 @@ std::vector<std::vector<std::complex<float>>> free5GRAN::SSB_signal_extended(fre
 std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_SSB_freq(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
 std::vector<std::vector<std::complex<float>>> free5GRAN::freq_domain_reversed_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
 std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
+
+
+

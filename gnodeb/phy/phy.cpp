@@ -77,7 +77,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, i_b_ssb, pbch_symbols);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH from generate_frame";
 
-    /** Step 4: GENERATE FREQUENCY DOMAIN FRAME -> Generate freq_domain_frame from pbch_symbols. TS38.211 V15.2.0 Section 7.4
+    /** Step 4: GENERATE FREQUENCY DOMAIN FRAME -> Generate freq_domain_frame from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */
     /** Calculate the position of ssb block in a frame */
     int index_symbol_ssb = free5GRAN::BAND_N_78.ssb_symbols[free5GRAN::gnodeB_config_globale.i_b_ssb];
 
@@ -87,16 +87,23 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     free5GRAN::phy::signal_processing::generate_freq_domain_frame(pbch_symbols, pci, index_symbol_ssb,
                                                                   num_SSB_in_this_frame, i_b_ssb,ONEframe_SSB_freq);
     BOOST_LOG_TRIVIAL(info) << "GENERATE ONEframe_SSB_freq";
-    //TO be deleted
-    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_SSB_freq, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, "ONEframe_SSB_freq from phy");
 
+
+    /** Step 5: IFFT. Perform ifft for each symbols to get the final 10ms time_domain frame */
+
+    /** data_symbols will indicates which symbols of the frame is not nul.
+     * If data_symbols[symbol] = 1, a signal processing will be apply to this symbol (reverse, scaling factor and ifft)
+     * If data_symbols[symbol] = 0, nothing will be done for this symbol
+    */
     vector<int> data_symbols(num_symbols_frame, 0);
     int count = index_symbol_ssb;
     for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
+        /** for each  4 symbols containing SSB, data_symbols[symbol] = 1 */
         data_symbols[count] = 1;
         count ++;
     }
 
+    /** If frame contains a second SSB, 4 more data_symbols */
     if (num_SSB_in_this_frame == 2){
         int count2 = index_symbol_ssb + (num_symbols_frame/2);
         for (int symbol = 0; symbol < free5GRAN::NUM_SYMBOLS_SSB; symbol++){
@@ -108,8 +115,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     /** ifft -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
     free5GRAN::phy::signal_processing::ifft(ONEframe_SSB_freq, cp_lengths_one_frame, data_symbols, num_symbols_frame, scaling_factor,
                                             one_frame_vector);
-    BOOST_LOG_TRIVIAL(info) << "ifft from SSB_signal_extended to get one_frame_vector";
-    //free5GRAN::utils::common_utils::display_vector(one_frame_vector, 7680000, "one_frame_vector from phy");
+    BOOST_LOG_TRIVIAL(info) << "function ifft done";
 }
 
 
@@ -117,8 +123,15 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
 
 
 
-
 void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame) {
+
+    /**
+   * \fn compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame)
+   * \brief Calculates the number of samples (IQ) that a 10 ms radio-frame will contain.
+   * \standard !! TS TO BE ADDED !!
+   * \param[in] mib_object. parameter SCS will be used
+   * \param[out] &Num_samples_in_frame
+   */
 
     /** Calculate number of symbols per subframe */
     int Num_symbols_per_subframe;
@@ -130,13 +143,13 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
 
     int Num_symbols_per_frame = Num_symbols_per_subframe * 10;
 
-    /** Calculate cp_length */
+    /** Calculate cp_length for a subframe */
     int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
     free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
                                                           Num_symbols_per_subframe, &cp_lengths[0],
                                                           &cum_sum_cp_lengths[0]);
 
-    /** Initialize cp_length for each symbols of a frame */
+    /** Calculate cp_length for each symbols of a frame */
     int cp_lengths_one_frame[Num_symbols_per_frame];
     for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
         for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {

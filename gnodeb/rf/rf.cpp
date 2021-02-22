@@ -17,9 +17,7 @@
 
 #include "rf.h"
 #include "../phy/phy.h"
-//#include "wave_table_class.h"
 #include <uhd.h>
-//#include <../../src/rf/uhd/utils/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -33,6 +31,11 @@
 #include <boost/log/expressions.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include <mutex>
+
+
+std::mutex mtx;           // mutex for critical section
+
 
 /*
  * Initialize USRP device
@@ -163,16 +166,21 @@ void rf::buffer_transmition(
 
 
     std::cout << "Sending Frame indefinitely...."<<std::endl;
+    //mtx.lock();
+    //free5GRAN::mtx_extern.lock();
     while (true) {
 
-        if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) {
-            BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
-            BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
-            free5GRAN::index_frame_sent = (free5GRAN::index_frame_sent + 1) % 10000;
+        //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) { }
+            //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
+            //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
+            //free5GRAN::index_frame_sent = (free5GRAN::index_frame_sent + 1) % 10000;
+            //mtx.lock();
             tx_stream->send(&buff.front(), buff.size(), md);
+            std::cout<<"RF"<<std::endl;
+            //mtx.unlock();
             BOOST_LOG_TRIVIAL(warning) << "a SSB has been sent ";
         }
+    //mtx.unlock();
+    free5GRAN::mtx_extern.unlock();
         BOOST_LOG_TRIVIAL(warning) << "One Loop while true in RF done";
-    }
-
 }

@@ -179,7 +179,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
     int available_scs[2] = {15000, 30000}; /** In FR1, SCS = 15 kHz or 30 kHz. In FR2, SCS = 30 kHz or 60 kHz */
     for (int i = 0; i < 2; i++) {
-        /** Put SCS (Sub Carrier Spacing) bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
+        /** Put SCS (Sub Carrier Spacing) bits into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
         if (mib_object.scs == available_scs[i]) {
             mib_bits[free5GRAN::INDEX_AVAILABLE_SCS_IN_MIB[0]] = i;
         }
@@ -371,6 +371,11 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
 
 
 void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]) {
+   /**
+   * \fn read_config_gNodeB(const char config_file[])
+   * \brief Reads config file named "ssb_emission.cfg" and fills the variable free5GRAN::gnodeB_config_globale
+   * \param[in] config_file[]
+   */
 
 
     namespace logging = boost::log;
@@ -381,7 +386,7 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     try {
         cfg_gNodeB_Lib.readFile(config_file);
     }
-        /** Return an error if config file is not found */
+    /** Return an error if config file is not found */
     catch (libconfig::FileIOException &e) {
         std::cout << "FileIOException occurred. Could not find the config file ssb_emission.cfg!!\n";
         // return (EXIT_FAILURE);
@@ -396,7 +401,6 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     std::string log_level = cfg_gNodeB_Lib.lookup("logging");
     free5GRAN::gnodeB_config_globale.log_level = log_level;
     std::cout << "log level = " << log_level << std::endl;
-    //init_logging(log_level);
 
     /** Read 'display_variables' in config_file */
     free5GRAN::display_variables = cfg_gNodeB_Lib.lookup("display_variables");
@@ -408,9 +412,10 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     if (func_gNodeB == "SSB_EMISSION") {
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
 
+        /** Initialize the different scop contained in config file */
         const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
 
-
+        /** Fill usrp_info_object with values in config file */
         std::string device_args = usrp_info.lookup("device_args");
         free5GRAN::gnodeB_config_globale.usrp_info_object.device_args = device_args;
         std::string subdev = usrp_info.lookup("subdev");
@@ -424,7 +429,7 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
 
         free5GRAN::gnodeB_config_globale.scaling_factor = usrp_info.lookup("scaling_factor"); /** Multiplying factor (before ifft) to enhance the radio transmission */
 
-        /** Fill mib info with values in config file */
+        /** Fill mib_object with values in config file */
         free5GRAN::gnodeB_config_globale.mib_object.pdcch_config = mib_info.lookup("pddchc_config"); /** stored on MIB on 8 bits */
         free5GRAN::gnodeB_config_globale.mib_object.k_ssb = mib_info.lookup(
                 "k_ssb"); /** stored on MIB on 5 bits. Number of Ressource Blocks between point A and SSB */

@@ -17,6 +17,7 @@
 #include "../common_structures/common_structures.h"
 #include <complex>
 #include <vector>
+#include <mutex>
 
 #ifndef FREE5GRAN_COMMON_VARIABLES_H
 #define FREE5GRAN_COMMON_VARIABLES_H
@@ -221,6 +222,10 @@ namespace free5GRAN{
     extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_freq; //Used in function ifft
     extern std::vector<std::vector<std::complex<float>>> freq_domain_reversed_frame; //Used in function ifft
     extern std::vector<std::vector<std::complex<float>>> time_domain_frame; //Used in function ifft
+
+
+    extern std::mutex mtx_extern;
+
 }
 
 
