@@ -39,6 +39,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <chrono>
 #include <mutex>
+#include <unistd.h>
 
 namespace logging = boost::log;
 void init_logging(string warning);
@@ -60,17 +61,20 @@ void send_buffer_test_mutex(vector<complex<float>> * buff_to_send){
 
 int main(int argc, char *argv[]) {
 
-    /** put 'true' if running_platform is attached to an USRP */
-    bool run_with_usrp = true;
+
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_mutex_test = false; /** put 'true' for running WITHOUT usrp but with multithred */
 
     phy phy_variable;
     const char *config_file;
-    if (run_with_usrp) {
-        //config_file = argv[1];
-        config_file = ("../config/ssb_emission.cfg");
+    if (run_with_usrp == true) {
+        config_file = argv[1];
     }
     if (run_with_usrp == false)
     {
+        config_file = ("../config/ssb_emission.cfg");
+    }
+    if (run_mutex_test == true){
         config_file = ("../config/ssb_emission.cfg");
     }
 
@@ -134,7 +138,7 @@ int main(int argc, char *argv[]) {
     }
     free5GRAN::num_symbols_frame = Num_symbols_per_subframe * 10;
 
-    /** Display some useful information */
+    /** Display some useful information in consol */
     std::cout << "\n###### RADIO" << std::endl;
     std::cout << "num_samples_in_frame = " << num_samples_in_frame << std::endl;
     std::cout << "num_symbols_in_frame = " << free5GRAN::num_symbols_frame << std::endl;
@@ -195,28 +199,43 @@ int main(int argc, char *argv[]) {
         free5GRAN::utils::common_utils::display_vector(buff_main_10ms, free5GRAN::num_symbols_frame, "\n\nbuff_main_10ms from main");
     }
 
-    /** Sending buffer MULTITHREADING */
-    if(run_with_usrp) {
+    /** TRYING MUTEX */
+    if(run_mutex_test) {
 
+        std::vector<std::complex<float>> buffer_to_send(num_samples_in_frame, 0);
+
+        /** launch thread sending_mutex */
+        thread sending_mutex(send_buffer_test_mutex, &buffer_to_send);
+
+        unsigned int time_to_generate = 9000;
+        unsigned int time_to_copy = 95;
+        while (true) {
+            std::cout << "GENERATE (main)" << std::endl;
+            usleep(time_to_generate);
+            free5GRAN::mtx_common.lock();
+            std::cout << "COPY (main)" << std::endl;
+            usleep(time_to_copy);
+            free5GRAN::mtx_common.unlock();
+        }
+    }
+
+
+
+    /** Sending buffer MULTITHREADING */
+    if (run_with_usrp == true){
         /** Initialize the 2 buffers. One will be generated while the other will be send */
         std::vector<std::complex<float>> buffer_generated(num_samples_in_frame);
         std::vector<std::complex<float>> buffer_to_send(num_samples_in_frame);
         std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
 
-       /** Initialize the rf (USRP B210) parameters */
-       /** rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
-                        usrp_info_object.gain,usrp_info_object.bandwidth, usrp_info_object.subdev,
-                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args); */
-       BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters done";
+        /** Initialize the rf (USRP B210) parameters */
+        rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
+                         usrp_info_object.gain,usrp_info_object.bandwidth, usrp_info_object.subdev,
+                         usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
+        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters done";
 
-        /** launch thread sending
-        thread sending(send_buffer_multithread, rf_variable_2, &buffer_to_send); */
-
-        /** launch thread sending_mutex */
-        thread sending_mutex(send_buffer_test_mutex, &buffer_to_send);
-
-        //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
-        //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
+        /** launch thread sending */
+        thread sending(send_buffer_multithread, rf_variable_2, &buffer_to_send);
 
         /** Determine number of SSB block in each frame */
         int ssb_period_symbol_int = 0;
@@ -230,70 +249,94 @@ int main(int argc, char *argv[]) {
         }
 
         /** Initialize variables before loop 'while true' */
-        int sfn = 0, duration_sum = 0, i = 0;
-        auto start = chrono::high_resolution_clock::now(), stop = chrono::high_resolution_clock::now();
-        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-        int duration_int;
+        int sfn = 0, duration_sum = 0, duration_sum_num_SSB = 0, duration_sum_generate = 0, duration_sum_copy = 0, i = 0;
+        auto start_num_SSB = chrono::high_resolution_clock::now(), stop_num_SSB = chrono::high_resolution_clock::now();
+        auto start_generate = chrono::high_resolution_clock::now(), stop_generate = chrono::high_resolution_clock::now();
+        auto start_copy = chrono::high_resolution_clock::now(), stop_copy = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::microseconds>(stop_generate - start_generate);
+        auto duration_num_SSB = chrono::duration_cast<chrono::microseconds>(stop_generate - start_generate);
+        auto duration_generate = chrono::duration_cast<chrono::microseconds>(stop_generate - start_generate);
+        auto duration_copy = chrono::duration_cast<chrono::microseconds>(stop_generate - start_generate);
+        int duration_int, duration_num_SSB_int, duration_generate_int, duration_copy_int;
+        int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
 
         while (true) {
-            //free5GRAN::mtx_common.unlock();
-            if (free5GRAN::mtx_common.try_lock()) {
-                std::cout << "MAIN THREAD" << std::endl;
-                free5GRAN::mtx_common.unlock();
+
+
+            start_num_SSB = chrono::high_resolution_clock::now();
+
+            /** Calculate the number of ssb block that the next frame will contain. To be optimize */
+            if (num_SSB_in_this_frame != 2) {
+                if (sfn % ssb_period_symbol_int == 0) {
+                    num_SSB_in_this_frame = 1;
+                } else {
+                    num_SSB_in_this_frame = 0;
+                }
             }
-            std::cout << "MAIN THREAD 2" << std::endl;
+            //std::cout<<" num_SSB = "<<num_SSB_in_this_frame<<std::ends;
+            stop_num_SSB = chrono::high_resolution_clock::now();
 
-            /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
-            //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
+            if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
+                start_generate = chrono::high_resolution_clock::now();
+                //usleep(10000);
+                phy_variable.generate_frame(mib_object, num_SSB_in_this_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
+                                            sfn,
+                                            free5GRAN::gnodeB_config_globale.pci, N,
+                                            free5GRAN::gnodeB_config_globale.i_b_ssb,
+                                            free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
+                //std::cout<<"GENERATE ; "<<std::ends;
+                stop_generate = chrono::high_resolution_clock::now();
+                BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
 
-                /** Calculate the number of ssb block that the next frame will contain. To be optimize */
-                if (num_SSB_in_this_frame != 2) {
-                    if (sfn % ssb_period_symbol_int == 0) {
-                        num_SSB_in_this_frame = 1;
-                    } else {
-                        num_SSB_in_this_frame = 0;
-                    }
-                }
 
-                auto start = chrono::high_resolution_clock::now();
-                if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
-                    phy_variable.generate_frame(mib_object, num_SSB_in_this_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
-                                                sfn,
-                                                free5GRAN::gnodeB_config_globale.pci, N,
-                                                free5GRAN::gnodeB_config_globale.i_b_ssb,
-                                                free5GRAN::gnodeB_config_globale.scaling_factor, buffer_generated);
-                    BOOST_LOG_TRIVIAL(warning) << "function generate_frame done";
-                    //mtx_main.lock();
-                    buffer_to_send = buffer_generated;
-                    //mtx_main.unlock();
-                    BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
-                }else{
-                    buffer_to_send = buffer_null;
-                    BOOST_LOG_TRIVIAL(warning) << "Copy buffer_null to buffer_to_send done";
-                }
+                //usleep(10000);
+                free5GRAN::mtx_common.lock();
+                start_copy = chrono::high_resolution_clock::now();
+                buffer_to_send = buffer_generated;
+                stop_copy = chrono::high_resolution_clock::now();
+                //std::cout<<"COPY ; "<<std::ends;
+                free5GRAN::mtx_common.unlock();
 
-                //free5GRAN::index_frame_to_send = (free5GRAN::index_frame_to_send + 1) % 10000;
-                sfn = (sfn + 1) % 1024;
-                auto stop = chrono::high_resolution_clock::now();
-                i = (i + 1) % 10000;
+                BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
+            } else{
+                start_generate = chrono::high_resolution_clock::now();
+                stop_generate = chrono::high_resolution_clock::now();
 
-                /** Calculate the mean duration of the 300 first call of function 'generate_frame' */
-                if (i < 300) {
-                        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-                        duration_int = duration.count();
-                        duration_sum = duration_sum + duration_int;
-                }
-                /** Display the mean duration */
-                if (i == 301) {
-                    float mean_duration = (duration_sum) / 300;
-                    cout << "\n" << "duration of generate_frame (mean of 300 first) = " << mean_duration / 1000
-                    << " ms" << endl;
-                }
-            //}
+                start_copy = chrono::high_resolution_clock::now();
+                buffer_to_send = buffer_null;
+                stop_copy = chrono::high_resolution_clock::now();
+                BOOST_LOG_TRIVIAL(warning) << "Copy buffer_null to buffer_to_send done";
+            }
+
+
+
+            /** Calculate the mean duration of the number_calculate_mean first call */
+            if (i < number_calculate_mean) {
+                duration_num_SSB = chrono::duration_cast<chrono::microseconds>(stop_num_SSB - start_num_SSB);
+                duration_num_SSB_int = duration_num_SSB.count();
+                duration_sum_num_SSB = duration_sum_num_SSB + duration_num_SSB_int;
+
+                duration_generate = chrono::duration_cast<chrono::microseconds>(stop_generate - start_generate);
+                duration_generate_int = duration_generate.count();
+                duration_sum_generate = duration_sum_generate + duration_generate_int;
+
+                duration_copy = chrono::duration_cast<chrono::microseconds>(stop_copy - start_copy);
+                duration_copy_int = duration_copy.count();
+                duration_sum_copy = duration_sum_copy + duration_copy_int;
+            }
+            /** Display the mean duration */
+            if (i == number_calculate_mean + 1) {
+                float mean_duration_num_SSB = (duration_sum_num_SSB) / number_calculate_mean, mean_duration_generate = (duration_sum_generate) / number_calculate_mean, mean_duration_copy = (duration_sum_copy) / number_calculate_mean;
+                cout << "\n" << "duration of num_SSB_in_frame (mean of "<<number_calculate_mean<<" last) = " << mean_duration_num_SSB / 1000 << " ms" << endl;
+                cout << "duration of generate (mean of "<<number_calculate_mean<<" last) = " << mean_duration_generate / 1000 << " ms" << endl;
+                cout << "duration of copy (mean of "<<number_calculate_mean<<" last) = " << mean_duration_copy / 1000 << " ms" << endl;
+                duration_sum_num_SSB = 0, duration_sum_generate = 0, duration_sum_copy = 0;
+            }
+            i = (i + 1) % 3000;
+            sfn = (sfn + 1) % 1024;
         }
-        //mtx_main.unlock();
     }
 }
 

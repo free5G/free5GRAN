@@ -32,6 +32,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <mutex>
+#include <unistd.h>
 
 
 //std::mutex mtx;           // mutex for critical section
@@ -152,9 +153,7 @@ double rf::getGain() {
 
 //emplate<typename samp_type>
 
-void rf::buffer_transmition(
-        std::vector<std::complex<float>> &buff
-){
+void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
     uhd::stream_args_t stream_args("fc32", "sc16");
@@ -164,23 +163,15 @@ void rf::buffer_transmition(
     md.start_of_burst = false;
     md.end_of_burst = false;
 
-
     std::cout << "Sending Frame indefinitely...."<<std::endl;
-    //mtx.lock();
-    //free5GRAN::mtx_common.lock();
     while (true) {
-
-        //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) { }
-            //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
-            //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
-            //free5GRAN::index_frame_sent = (free5GRAN::index_frame_sent + 1) % 10000;
+            free5GRAN::mtx_common.lock();
             tx_stream->send(&buff.front(), buff.size(), md);
-            std::cout<<"SENDING THREAD"<<std::endl;
-            //mtx.unlock();
+            //std::cout<<"SENDING ; "<<std::ends;
+            free5GRAN::mtx_common.unlock();
             BOOST_LOG_TRIVIAL(warning) << "a SSB has been sent ";
+            usleep(1);
         }
-    //mtx.unlock();
-    //free5GRAN::mtx_extern.unlock();
         BOOST_LOG_TRIVIAL(warning) << "One Loop while true in RF done";
 }
 
@@ -188,13 +179,18 @@ void rf::buffer_transmition(
 
 void buffer_transm_test_mutex(std::vector<std::complex<float>> &buff) {
     std::cout<<"Function send_buffer_test_mutex begins "<<std::endl;
-
+    unsigned int time_to_send = 10000;
     //free5GRAN::mtx_common.lock();
     while (true) {
+        free5GRAN::mtx_common.lock();
 
-        std::cout<<"SENDING TEST THREAD"<<std::endl;
         BOOST_LOG_TRIVIAL(warning) << "One loop from buff_transm_test_mutex ";
-        //mtx.unlock();
+        std::cout<<"SENDING TEST THREAD"<<std::endl;
+        usleep(time_to_send);
+
+        free5GRAN::mtx_common.unlock();
+        usleep(1);
+
     }
     //mtx.unlock();
     //free5GRAN::mtx_extern.unlock();
