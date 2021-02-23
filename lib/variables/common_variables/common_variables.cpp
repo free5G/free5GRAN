@@ -373,3 +373,4 @@ std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5
 
 
 
+std::mutex free5GRAN::mtx_common;

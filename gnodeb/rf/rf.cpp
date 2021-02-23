@@ -34,7 +34,7 @@
 #include <mutex>
 
 
-std::mutex mtx;           // mutex for critical section
+//std::mutex mtx;           // mutex for critical section
 
 
 /*
@@ -167,20 +167,36 @@ void rf::buffer_transmition(
 
     std::cout << "Sending Frame indefinitely...."<<std::endl;
     //mtx.lock();
-    //free5GRAN::mtx_extern.lock();
+    //free5GRAN::mtx_common.lock();
     while (true) {
 
         //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent+1) { }
             //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send in rf = " + std::to_string(free5GRAN::index_frame_to_send);
             //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent in rf= " + std::to_string(free5GRAN::index_frame_sent);
             //free5GRAN::index_frame_sent = (free5GRAN::index_frame_sent + 1) % 10000;
-            //mtx.lock();
             tx_stream->send(&buff.front(), buff.size(), md);
-            std::cout<<"RF"<<std::endl;
+            std::cout<<"SENDING THREAD"<<std::endl;
             //mtx.unlock();
             BOOST_LOG_TRIVIAL(warning) << "a SSB has been sent ";
         }
     //mtx.unlock();
-    free5GRAN::mtx_extern.unlock();
+    //free5GRAN::mtx_extern.unlock();
         BOOST_LOG_TRIVIAL(warning) << "One Loop while true in RF done";
+}
+
+
+
+void buffer_transm_test_mutex(std::vector<std::complex<float>> &buff) {
+    std::cout<<"Function send_buffer_test_mutex begins "<<std::endl;
+
+    //free5GRAN::mtx_common.lock();
+    while (true) {
+
+        std::cout<<"SENDING TEST THREAD"<<std::endl;
+        BOOST_LOG_TRIVIAL(warning) << "One loop from buff_transm_test_mutex ";
+        //mtx.unlock();
+    }
+    //mtx.unlock();
+    //free5GRAN::mtx_extern.unlock();
+
 }

@@ -42,30 +42,19 @@
 
 namespace logging = boost::log;
 void init_logging(string warning);
-std::mutex mtx_main;           // mutex for critical section
+//inline std::mutex mtx_main = {};           // mutex for critical section
 uhd::usrp::multi_usrp::sptr usrp2;
 
 
-/** This function will run continuously to send frames
+/** This function will run continuously to send frames */
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send){
     BOOST_LOG_TRIVIAL(warning) << "Function send_buffer_multithread begins ";
     rf_variable_2.buffer_transmition(*buff_to_send);
-}*/
+}
 
-
-/** */
-void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send){
-    uhd::stream_args_t stream_args("fc32", "sc16");
-    uhd::tx_streamer::sptr tx_stream = usrp2->get_tx_stream(stream_args);
-
-    uhd::tx_metadata_t md;
-    //md.start_of_burst = false;
-    //md.end_of_burst = false;
-
-    while (true) {
-        tx_stream->send(&buff_to_send->front(), buff_to_send->size(), md);
-        std::cout<<"RF2"<<std::endl;
-    }
+void send_buffer_test_mutex(vector<complex<float>> * buff_to_send){
+    BOOST_LOG_TRIVIAL(warning) <<"Function send_buffer_test_mutex begins ";
+    buffer_transm_test_mutex(*buff_to_send);
 }
 
 
@@ -77,7 +66,8 @@ int main(int argc, char *argv[]) {
     phy phy_variable;
     const char *config_file;
     if (run_with_usrp) {
-        config_file = argv[1];
+        //config_file = argv[1];
+        config_file = ("../config/ssb_emission.cfg");
     }
     if (run_with_usrp == false)
     {
@@ -214,13 +204,16 @@ int main(int argc, char *argv[]) {
         std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
 
        /** Initialize the rf (USRP B210) parameters */
-       rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
+       /** rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
                         usrp_info_object.gain,usrp_info_object.bandwidth, usrp_info_object.subdev,
-                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args);
+                        usrp_info_object.ant, usrp_info_object.ref2, usrp_info_object.device_args); */
        BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters done";
 
-        /** launch thread sending */
-        thread sending(send_buffer_multithread, rf_variable_2, &buffer_to_send);
+        /** launch thread sending
+        thread sending(send_buffer_multithread, rf_variable_2, &buffer_to_send); */
+
+        /** launch thread sending_mutex */
+        thread sending_mutex(send_buffer_test_mutex, &buffer_to_send);
 
         //BOOST_LOG_TRIVIAL(warning) << "index_frame_to_send from main = " + std::to_string(free5GRAN::index_frame_to_send);
         //BOOST_LOG_TRIVIAL(warning) << "index_frame_sent from main = " + std::to_string(free5GRAN::index_frame_sent);
@@ -243,9 +236,15 @@ int main(int argc, char *argv[]) {
         int duration_int;
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
-        mtx_main.lock();
+
         while (true) {
-            std::cout<<"MAIN"<<std::endl;
+            //free5GRAN::mtx_common.unlock();
+            if (free5GRAN::mtx_common.try_lock()) {
+                std::cout << "MAIN THREAD" << std::endl;
+                free5GRAN::mtx_common.unlock();
+            }
+            std::cout << "MAIN THREAD 2" << std::endl;
+
             /** If the frame_sent has an index equal to the next frame_to_send, we generate the next frame_to_send */
             //if (free5GRAN::index_frame_to_send == free5GRAN::index_frame_sent) {
 
@@ -294,7 +293,7 @@ int main(int argc, char *argv[]) {
                 }
             //}
         }
-        mtx_main.unlock();
+        //mtx_main.unlock();
     }
 }
 

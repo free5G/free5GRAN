@@ -22,6 +22,7 @@
 #include <uhd.h>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <complex>
+#include <mutex>
 
 class rf {
     /*
@@ -72,6 +73,12 @@ public:
     void buffer_transmition(
             std::vector<std::complex<float>> &buff
     );
+
+
 };
+
+void buffer_transm_test_mutex(
+        std::vector<std::complex<float>> &buff
+);
 
 #endif //FREE5GRAN_RF_H
