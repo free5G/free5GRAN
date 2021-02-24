@@ -635,10 +635,14 @@ void free5GRAN::phy::signal_processing::get_candidates_frames_indexes(vector<vec
 
 /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
+
+/** To be deleted void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_length, int modulation_scheme,
+                                                   std::complex<float> *pbch_symbols) { */
+
 void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_length, int modulation_scheme,
-                                                   std::complex<float> *pbch_symbols) {
+                                                   vector<complex<float>> &pbch_symbols_vector) {
     /**
-    * \fn modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols)
+    * \fn modulation(int *bits, int bit_sequence_length, int modulation_scheme, vector<complex<float>> &pbch_symbols_vector)
     * \brief converts a bits sequence into IQ symbols, using BPSK (Binary Phase Shit Keying) or QPSK (Quadrature Phase Shift Keying)
     * \details
         * For the BPSK (if modulation_scheme == 0): for each bit, the corresponding symbol will be 1 or -1
@@ -647,7 +651,7 @@ void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_l
     * \param[in] *bits The input sequence of bits.
     * \param[in] bit_sequence_length number of bits.
     * \param[in] modulation_scheme. 0 if BPSK, 1 if QPSK.
-    * \param[out] pbch_symbols the output sequence of IQ symbols.
+    * \param[out] pbch_symbols_vector the output sequence of IQ symbols.
     */
 
 
@@ -655,7 +659,7 @@ void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_l
     * For BPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.2 */
     if (modulation_scheme == 0) {
         for (int i = 0; i < bit_sequence_length ; i++) {
-            pbch_symbols[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2) * (1 - 2*bits[2*i]))};
+            pbch_symbols_vector[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2) * (1 - 2*bits[2*i]))};
         }
     }
 
@@ -663,17 +667,20 @@ void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_l
     * For QPSK modulation pattern, see the TS38.211 V15.2.0 Section 5.1.3 */
     if(modulation_scheme == 1){
         for (int i=0; i < (bit_sequence_length/2); i++) {
-            pbch_symbols[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2)) * (1 - 2*bits[2*i + 1]) };
+            pbch_symbols_vector[i] = {(1/(float) sqrt(2)) * (1 - 2*bits[2*i]), (1/(float) sqrt(2)) * (1 - 2*bits[2*i + 1]) };
         }
     }
 }
 
+/** To be deleted
+void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci,
+                                                             int ***ref) { */
 
 void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci,
-                                                             int ***ref) {
+                                                             vector<vector<vector<int>>> &ref) {
     /**
-    * \fn build_reference_grid (int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, int ***ref)
-    * \brief Constructs a reference grid (called ref) to build the SSB signal.
+    * \fn build_reference_grid (int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, vector<vector<vector<int>>> &ref)
+    * \brief Constructs a reference grid (called ref) to build the SSB signal. Same principle as "Mask" in network
     * \details
      * In our case, there are 4 channels to build on the SSB signal:  PSS (127 symbols), SSS (127 symbols), PBCH (432 symbols) and DMRS (144 symbols).
      * In our case, the SSB contains 4 symbols of each 240 subcarriers (sc).
@@ -685,7 +692,7 @@ void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, i
     * \param[in] num_sc_ssb. Number of sub-carrier (sc) in the SSB. In our case, this value is 240.
     * \param[in] num_symbols_ssb. Number of symbols in the SSB. In our case, this value is 4.
      *\param[in] pci. Physical Cell Id. Used to calculate DMRS index.
-    * \param[out] ref. A 3 dimensions table of int (0 or 1). ref[channel][symbol][subcarrier].
+    * \param[out] ref. A 3 dimensions vector of int (0 or 1). ref[channel][symbol][subcarrier].
      *             In our case,     ref[0] -> index of PSS channel
      *                              ref[1] -> index of SSS channel
      *                              ref[2] -> index of PBCH channel
@@ -693,15 +700,15 @@ void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, i
      *
      */
 
-    /**Loop over the channels */
+    /** To be deleted Loop over the channels
     for (int channel = 0; channel < num_channels; channel++) {
         ref[channel] = new int *[num_symbols_ssb];
-        /** Loop over the symbols */
+        //Loop over the symbols
         for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
-            /**Initialize the 3 dimensions table ref */
+            //Initialize the 3 dimensions table ref
             ref[channel][symbol] = new int[num_sc_ssb];
         }
-    }
+    }*/
 
     /**Loop over the symbols */
     for (int symbol = 0; symbol < num_symbols_ssb; symbol++) {
@@ -772,8 +779,16 @@ void free5GRAN::phy::signal_processing::build_reference_grid(int num_channels, i
     }
 }
 
-
+/** To be deleted
 void free5GRAN::phy::signal_processing::map_ssb(std::complex<float> **input_channels, int ***ref,
+                                                vector<vector<complex<float>>> &output_channels, int num_channels,
+                                                int num_symbols, int num_sc) { */
+/** To be deleted
+void free5GRAN::phy::signal_processing::map_ssb(std::complex<float> **input_channels, vector<vector<vector<int>>> ref,
+                                                vector<vector<complex<float>>> &output_channels, int num_channels,
+                                                int num_symbols, int num_sc) { */
+
+void free5GRAN::phy::signal_processing::map_ssb(vector<vector<complex<float>>> input_channels, vector<vector<vector<int>>> ref,
                                                 vector<vector<complex<float>>> &output_channels, int num_channels,
                                                 int num_symbols, int num_sc) {
 
@@ -782,8 +797,8 @@ void free5GRAN::phy::signal_processing::map_ssb(std::complex<float> **input_chan
    * \brief Build a SSB signal with the 4 channels (PSS, SSS, PBCH and DMRS) using the ref table constructed before.
    * \standard TS38.211 V15.2.0 Section 7.4.3
    *
-   * \param[in] **input_channels. 2 dimensions table of complexes containing our input channels (in our case: PSS, SSS, PBCH and DMRS).
-   * \param[in] ***ref. 3 dimensions table of int (1 or 0) that indicates the indexes of our channels.
+   * \param[in] input_channels. 2 dimensions vector of complexes containing our input channels (in our case: PSS, SSS, PBCH and DMRS).
+   * \param[in] ref. 3 dimensions vector of int (1 or 0) that indicates the indexes of our channels.
    * \param[in] num_channels. Number of input channels. In our case, it is 4 (PSS, SSS, PBCH and DMRS).
    * \param[in] num_symbols. Number of symbols on the output_channel (SSB). In our case, it is 4.
    * \param[in] num_sc. Number of subcarrier (sc) on the output_channel (SSB). In our case, it is 240.
@@ -792,10 +807,13 @@ void free5GRAN::phy::signal_processing::map_ssb(std::complex<float> **input_chan
 
 
     /** Initialize channel_counter for each channel. channel_counter[channel] will vary from 0 to channel size */
-    int *channel_counter = new int[num_channels];
+
+    /** To be deleted int *channel_counter = new int[num_channels];
     for (int channel = 0; channel < num_channels; channel++) {
         channel_counter[channel] = 0;
-    }
+    }*/
+
+    vector<int> channel_counter(num_channels, 0);
 
     /** Loop over all channels (4 in our case) */
     for (int channel = 0; channel < num_channels; channel++) {
@@ -871,18 +889,18 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<flo
 
 
 
-void free5GRAN::phy::signal_processing::generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame,
+void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<complex<float>> pbch_symbols_vector, int pci, int index_symbol_ssb, int num_SSB_in_this_frame,
                                                                    int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame) {
 
     /**
-    * \fn generate_freq_domain_frame(std::complex<float> *pbch_symbols, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame)
+    * \fn generate_freq_domain_frame(vector<complex<float>> pbch_symbols_vector, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame)
     * \brief Generates from a pbch sequence a frequency domain frame (also called: resource grid) that includes the SSB (Synchronisation Signal Block).
     * \details
             * step 1: generate DMRS symbols, PSS symbols and SSS symbols
             * step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB
             * step 3: channel_mapper: construct time/domain reference grid and place the SSB in it.
     * \standard !! Standard TO BE ADDED
-    * \param[in] pbch_symbols. In our case, it is a 432 symbols sequence.
+    * \param[in] pbch_symbols_vector. In our case, it is a 432 symbols sequence.
     * \param[in] pci. Physical Cell ID.
     * \param[in] index_symbol_ssb : Position of the SSB in the resource grid. Is calculated in function of i_b_ssb
     * \param[in] num_SSB_in_this_frame. Number of SSB that the resource grid will contain. Is calculated in function of ssb_period and sfn. Should be equal to 0, 1 or 2.
@@ -925,21 +943,50 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(std::complex<
 
     /** Step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB */
     /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
+    /** To be deleted
     int ***ref;
-    ref = new int **[4]; /** There are 4 channels */
+    ref = new int **[4]; //There are 4 channels
     for (int channel = 0; channel < 4; channel++) {
         ref[channel] = new int *[free5GRAN::NUM_SYMBOLS_SSB];
-    }
+    } */
+
+    vector<vector<vector<int>>> ref(4, vector<vector<int>>(free5GRAN::NUM_SYMBOLS_SSB, vector<int>(free5GRAN::NUM_SC_SSB)));
+
     free5GRAN::phy::signal_processing::build_reference_grid(4, free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
+
+    /** Regroup 4 channels (PSS, SSS, PBCH and DMRS) in a vector */
+    vector<complex<float>> pss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    vector<complex<float>> sss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    vector<complex<float>> pbch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS, {0.0, 0.0});
+    vector<complex<float>> dmrs_vector(free5GRAN::SIZE_SSB_DMRS_SYMBOLS, {0.0, 0.0});
+
+    for (int sample = 0; sample < free5GRAN::SIZE_PSS_SSS_SIGNAL; sample ++) {
+        pss_vector[sample] = pss_complex_symbols[sample];
+    }
+    for (int sample = 0; sample < free5GRAN::SIZE_PSS_SSS_SIGNAL; sample ++) {
+        sss_vector[sample] = sss_complex_symbols[sample];
+    }
+    for (int sample = 0; sample < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; sample ++) {
+        pbch_vector[sample] = pbch_symbols_vector[sample];
+    }
+    for (int sample = 0; sample < free5GRAN::SIZE_SSB_DMRS_SYMBOLS; sample ++) {
+        dmrs_vector[sample] = dmrs_symbols[sample];
+    }
+    //vector<vector<complex<float>>> input_channels(4, vector<complex<float>>());
+    vector<vector<complex<float>>> input_channels{pss_vector, sss_vector, pbch_vector, dmrs_vector};
+
 
     /** Initialize ssb_signal_freq_domain (In our case, 4 * 240 symbols) */
     vector<vector<complex<float>>> ssb_signal_freq_domain(free5GRAN::NUM_SYMBOLS_SSB,
                                                           vector<complex<float>>(NUM_SC_SSB));
 
 
-    /** Execute function map_SSB */
+    /** TO be deleted Execute function map_SSB
     free5GRAN::phy::signal_processing::map_ssb(
             new std::complex<float> *[4]{pss_complex_symbols, sss_complex_symbols, pbch_symbols, dmrs_symbols}, ref,
+            ssb_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB); */
+
+    free5GRAN::phy::signal_processing::map_ssb(input_channels, ref,
             ssb_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
 
 

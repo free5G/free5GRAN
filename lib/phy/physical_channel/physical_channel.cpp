@@ -238,12 +238,11 @@ void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vecto
 
 
 
-void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb,
-                                                     std::complex<float> *pbch_symbols) {
-
+// to be deleted void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb, std::complex<float> *pbch_symbols) {
+void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector) {
 
    /**
-   * \fn pbch_encoding (int * rate_matched_bch, int pci, int i_b_ssb, std::complex<float> * pbch_symbols)
+   * \fn pbch_encoding (int * rate_matched_bch, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector)
    * \brief Transforms a rate_matched_bch bits sequence into a pbch symbols sequence.
    * \details The 2 main steps are ENCODING and MODULATION.
    * \standard TS38.211 V15.2.0 Section 7.3.3.1
@@ -252,7 +251,7 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
    * \param[in] rate_matched_bch. In our case, it is a 864 long bits sequence.
    * \param[in] pci. Physical Cell ID.
    * \param[in] i_b_ssb. SSB index. Should be between 0 and 7.
-   * \param[out] pbch_symbols. The output symbols sequence. 432 symbols long in our case.
+   * \param[out] pbch_symbols_vector. The output symbols sequence. 432 symbols long in our case.
    */
 
     /** ENCODING -> Generating scrambled_pbch (864 bits long in our case) from rate_matching_bch. TS38.211 V15.2.0 Section 7.3.3.1 */
@@ -266,5 +265,5 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
     free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_b_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from scrambled_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
-    free5GRAN::phy::signal_processing::modulation(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols);
+    free5GRAN::phy::signal_processing::modulation(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols_vector);
 }

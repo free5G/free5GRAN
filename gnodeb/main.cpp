@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
         int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
-        phy_variable.generate_frame(mib_object, 2, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.pci, N,
+        phy_variable.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.pci, N,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         free5GRAN::utils::common_utils::display_vector(buff_main_10ms, free5GRAN::num_symbols_frame, "\n\nbuff_main_10ms from main");
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
                     num_SSB_in_this_frame = 0;
                 }
             }
-            std::cout<<" num_SSB = "<<num_SSB_in_this_frame<<std::ends;
+            //std::cout<<" num_SSB = "<<num_SSB_in_this_frame<<std::ends;
             stop_num_SSB = chrono::high_resolution_clock::now();
 
             if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
             /** Display the mean duration */
             if (i == number_calculate_mean + 1) {
                 float mean_duration_num_SSB = (duration_sum_num_SSB) / number_calculate_mean, mean_duration_generate = (duration_sum_generate) / number_calculate_mean, mean_duration_copy = (duration_sum_copy) / number_calculate_mean;
-                cout << "\n" << "duration of num_SSB_in_frame (mean of "<<number_calculate_mean<<" last) = " << mean_duration_num_SSB / 1000 << " ms" << endl;
+                cout << "duration of num_SSB_in_frame (mean of "<<number_calculate_mean<<" last) = " << mean_duration_num_SSB / 1000 << " ms" << endl;
                 cout << "duration of generate (mean of "<<number_calculate_mean<<" last) = " << mean_duration_generate / 1000 << " ms" << endl;
                 cout << "duration of copy (mean of "<<number_calculate_mean<<" last) = " << mean_duration_copy / 1000 << " ms" << endl;
                 duration_sum_num_SSB = 0, duration_sum_generate = 0, duration_sum_copy = 0;

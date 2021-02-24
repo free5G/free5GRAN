@@ -164,14 +164,49 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
     md.end_of_burst = false;
 
     std::cout << "Sending Frame indefinitely...."<<std::endl;
+
+    /** Initialize variables to mesurate time to send */
+    auto start_send = chrono::high_resolution_clock::now(), stop_send = chrono::high_resolution_clock::now();
+    auto duration_send = chrono::duration_cast<chrono::microseconds>(stop_send - start_send);
+    auto duration_between_send = chrono::duration_cast<chrono::microseconds>(stop_send - start_send);
+    int duration_send_int, i = 0, duration_sum_send = 0, duration_between_send_int = 0, duration_sum_between_send = 0;
+    int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
+
     while (true) {
             free5GRAN::mtx_common.lock();
+            start_send = chrono::high_resolution_clock::now();
+
+            /** Calculate mean duration between 2 sends */
+            if (i < number_calculate_mean) {
+                duration_between_send = chrono::duration_cast<chrono::microseconds>(start_send- stop_send);
+                duration_between_send_int = duration_between_send.count();
+                duration_sum_between_send = duration_sum_between_send + duration_between_send_int;
+            }
+
+            /** Send frame */
             tx_stream->send(&buff.front(), buff.size(), md);
-            //std::cout<<"SENDING ; "<<std::ends;
+            stop_send = chrono::high_resolution_clock::now();
             free5GRAN::mtx_common.unlock();
             BOOST_LOG_TRIVIAL(warning) << "A frame has been sent ";
             usleep(1);
+
+        /** Calculate the mean duration of the number_calculate_mean first call */
+        if (i < number_calculate_mean) {
+                duration_send = chrono::duration_cast<chrono::microseconds>(stop_send- start_send);
+                duration_send_int = duration_send.count();
+                duration_sum_send = duration_sum_send + duration_send_int;
         }
+        /** Display the mean duration */
+        if (i == number_calculate_mean + 1) {
+            float mean_duration_send = (duration_sum_send / number_calculate_mean);
+            float mean_duration_between_send = (duration_sum_between_send / number_calculate_mean);
+            cout <<"\nduration of send (mean of "<<number_calculate_mean<<" last) = " << mean_duration_send / 1000 << " ms" << endl;
+            cout <<"duration between 2 send (mean of "<<number_calculate_mean<<" last) = " << mean_duration_between_send / 1000 << " ms" << endl;
+            duration_sum_send = 0;
+            duration_sum_between_send = 0;
+        }
+        i = (i + 1) % 3000;
+    }
 
 }
 
