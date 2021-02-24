@@ -59,7 +59,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
 
 
     mib_object.sfn = sfn;
-    BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
+    BOOST_LOG_TRIVIAL(warning) << "SFN (from generate_frame) = " + std::to_string(sfn);
 
     /** Step 1: MIB GENERATION -> Generate mib_bits sequence (32 bits long in our case) from mib_object. TS38.331 V15.11.0 Section 6.2.2*/
     int mib_bits[free5GRAN::BCH_PAYLOAD_SIZE];

@@ -240,13 +240,16 @@ int main(int argc, char *argv[]) {
         /** Determine number of SSB block in each frame */
         int ssb_period_symbol_int = 0;
         int num_SSB_in_this_frame = 0;
+        float ssb_period_symbol = 0.0;
         std::cout<<"gnodeB_config_globale.ssb_period = "<<free5GRAN::gnodeB_config_globale.ssb_period<<std::endl;
         if (free5GRAN::gnodeB_config_globale.ssb_period == float(0.005)){
             num_SSB_in_this_frame = 2;
+            ssb_period_symbol = 0.5;
         }else{
-            float ssb_period_symbol = free5GRAN::gnodeB_config_globale.ssb_period / 0.01;
+            ssb_period_symbol = free5GRAN::gnodeB_config_globale.ssb_period / 0.01;
             ssb_period_symbol_int = ssb_period_symbol;
         }
+        std::cout<<"ssb_period_symbol_int = "<<ssb_period_symbol_int<<std::endl;
 
         /** Initialize variables before loop 'while true' */
         int sfn = 0, duration_sum = 0, duration_sum_num_SSB = 0, duration_sum_generate = 0, duration_sum_copy = 0, i = 0;
@@ -261,11 +264,11 @@ int main(int argc, char *argv[]) {
         int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
-
+        std::cout<<" num_SSB_in_this_frame before calculation = "<<num_SSB_in_this_frame<<std::ends;
         while (true) {
-
-
+            BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
             start_num_SSB = chrono::high_resolution_clock::now();
+
 
             /** Calculate the number of ssb block that the next frame will contain. To be optimize */
             if (num_SSB_in_this_frame != 2) {
@@ -275,7 +278,7 @@ int main(int argc, char *argv[]) {
                     num_SSB_in_this_frame = 0;
                 }
             }
-            //std::cout<<" num_SSB = "<<num_SSB_in_this_frame<<std::ends;
+            std::cout<<" num_SSB = "<<num_SSB_in_this_frame<<std::ends;
             stop_num_SSB = chrono::high_resolution_clock::now();
 
             if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
@@ -300,13 +303,16 @@ int main(int argc, char *argv[]) {
                 free5GRAN::mtx_common.unlock();
 
                 BOOST_LOG_TRIVIAL(warning) << "Copy buffer_generated to buffer_to_send done";
-            } else{
+            }
+            if (num_SSB_in_this_frame == 0){
                 start_generate = chrono::high_resolution_clock::now();
                 stop_generate = chrono::high_resolution_clock::now();
 
+                free5GRAN::mtx_common.lock();
                 start_copy = chrono::high_resolution_clock::now();
                 buffer_to_send = buffer_null;
                 stop_copy = chrono::high_resolution_clock::now();
+                free5GRAN::mtx_common.unlock();
                 BOOST_LOG_TRIVIAL(warning) << "Copy buffer_null to buffer_to_send done";
             }
 

@@ -169,10 +169,10 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
             tx_stream->send(&buff.front(), buff.size(), md);
             //std::cout<<"SENDING ; "<<std::ends;
             free5GRAN::mtx_common.unlock();
-            BOOST_LOG_TRIVIAL(warning) << "a SSB has been sent ";
+            BOOST_LOG_TRIVIAL(warning) << "A frame has been sent ";
             usleep(1);
         }
-        BOOST_LOG_TRIVIAL(warning) << "One Loop while true in RF done";
+
 }
 
 
