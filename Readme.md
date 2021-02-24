@@ -1,3 +1,4 @@
+# DEVELOPMENT VERSION (NOT STABLE)
 # free5GRAN
 
 free5GRAN is an open-source 5G RAN stack. The current version includes a receiver which decodes MIB & SIB1 data. It also acts as a cell scanner. free5GRAN works in SA mode.
