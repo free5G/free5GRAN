@@ -910,8 +910,9 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
 
     /** Step 1: generate DMRS symbols, PSS symbols and SSS symbols */
     /** DMRS -> Generate dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
-    std::complex<float> *dmrs_symbols;
-    dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    // To be deleted, TEST LEAK std::complex<float> *dmrs_symbols;
+    //dmrs_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
+    std::complex<float> dmrs_symbols[free5GRAN::SIZE_SSB_DMRS_SYMBOLS];
     free5GRAN::utils::sequence_generator::generate_pbch_dmrs_sequence(pci, i_b_ssb, dmrs_symbols);
 
     /** Convert PCI into n_id_1 and n_id_2 */
@@ -920,7 +921,8 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
     n_id_1 = (pci - n_id_2) / 3;
 
     /** PSS -> Computing pss_sequence_symbols (127 symbols long in our case) from n_id_2. TS38.211 V15.2.0 Section 7.4.2.2.1 */
-    int *pss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    // To be deleted, TEST LEAK int *pss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    int pss_sequence_symbols[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
 
     /** CONVERTING PSS -> Convert PSS sequence element from table int to vector complex<float> (Imaginary part = 0) */
@@ -937,7 +939,8 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
 
 
     /** SSS -> Comput sss_sequence_symbols (127 symbols long in our case) from n_id_1 and n_id_2. TS38.211 V15.2.0 Section 7.4.2.3.1 */
-    int *sss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    // To be deleted, TEST LEAKint *sss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
+    int sss_sequence_symbols[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
 
     /** CONVERTING SSS -> Convert SSS sequence element from table int to vector complex<float> (Imaginary part = 0) */
