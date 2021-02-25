@@ -1061,7 +1061,9 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
 
     /** Step 3: IFFT */
     /** Loop over all symbols of resource grid */
+    //fftw_cleanup();
     for (int symbol = 0; symbol < num_symbols_frame; symbol++) {
+
         /** Following scop is not done for the null symbols (when data_symbols[symbol] = 0) */
         if (data_symbols[symbol] == 1) {
             /** Generate complex arrays to store ifft signals */
@@ -1092,8 +1094,12 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
                 free5GRAN::time_domain_frame[symbol][sc] = {static_cast<float>(signal_out[sc][0]),
                                                             static_cast<float>(signal_out[sc][1])};
             }
+            fftw_destroy_plan(ifft_plan);
+            fftw_free(signal_in); fftw_free(signal_out);
         }
+
     }
+
     /** Fill a txt file to check spectogram on Python or Matlab */
     /** for (int sc = 0; sc < free5GRAN::SIZE_IFFT_SSB; sc++) {
         file_gnodeb << ONEframe2_time_domain[symbol][sc];

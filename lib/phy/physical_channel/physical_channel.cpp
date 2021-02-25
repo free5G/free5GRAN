@@ -259,7 +259,9 @@ void free5GRAN::phy::physical_channel::pbch_encoding(vector<int> rate_matched_bc
     vector<int> scrambled_pbch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, 0);
 
     /** Generate a c_seq2 sequence in function of pci and i_ssb */
-    int * c_seq2 = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb)];
+    // To be deleted int * c_seq2 = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb)];
+    //int c_seq2(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb));
+    int c_seq2 [free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb)];
     free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb), c_seq2,0);
 
     /** Scramble the 864 rate_matched_bch bits to get the 864 scrambled_pbch bits, using c_seq2 */

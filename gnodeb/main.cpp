@@ -40,6 +40,8 @@
 #include <chrono>
 #include <mutex>
 #include <unistd.h>
+#include <malloc.h>
+
 
 namespace logging = boost::log;
 void init_logging(string warning);
@@ -62,7 +64,7 @@ void send_buffer_test_mutex(vector<complex<float>> * buff_to_send){
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
     bool run_mutex_test = false; /** put 'true' for running WITHOUT usrp but with multithred */
 
     phy phy_variable;
@@ -197,7 +199,7 @@ int main(int argc, char *argv[]) {
         phy_variable.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.pci, N,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
-        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, free5GRAN::num_symbols_frame, "\n\nbuff_main_10ms from main");
+        //free5GRAN::utils::common_utils::display_vector(buff_main_10ms, free5GRAN::num_symbols_frame, "\n\nbuff_main_10ms from main");
     }
 
     /** TRYING MUTEX */

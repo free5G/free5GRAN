@@ -1277,11 +1277,13 @@ void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_
     */
 
     /** Initialize some variables */
-    int *s_sequence, *c_seq;
+    // to be deleted int *s_sequence;
+    // To be deleted int *c_seq;
     int A = free5GRAN::BCH_PAYLOAD_SIZE; // =32
     int M = A - 3;
-    c_seq = new int[free5GRAN::BCH_PAYLOAD_SIZE + v * M];
-    s_sequence = new int[A];
+    // to be deleted c_seq = new int[free5GRAN::BCH_PAYLOAD_SIZE + v * M];
+    int c_seq [free5GRAN::BCH_PAYLOAD_SIZE + v * M];
+    int s_sequence [A]; // to be deleted= new int[A];
 
     /** Generate c_sequence, according to TS38.211 5.2.1 V15.2.0 with c_init = pci */
     free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::BCH_PAYLOAD_SIZE + v * M, c_seq, 0);
@@ -1325,12 +1327,19 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, v
     /** Initialize variables */
     int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K = free5GRAN::SIZE_PBCH_POLAR_DECODED, K_max = 164, count_seq = 0;
     bool found;
-    int *c_p = new int[56];
+    // To be deleted int *c_p = new int[56];
+    int c_p [56];
+    /** To be deleted
     int *q_0_n_1;
     q_0_n_1 = new int[N];
     int *q_i_n = new int[K + n_pc];
     int *u = new int[N];
-    int *pi_seq = new int[56];
+    int *pi_seq = new int[56]; */
+
+    int q_0_n_1 [N];
+    int q_i_n [K + n_pc];
+    int u [N];
+    int pi_seq [56];
 
     /** Generate pi sequence according to TS38.212 V15.2.0 Section 5.3.1.1 */
     for (int m = 0; m < K_max; m++) {
@@ -1407,7 +1416,8 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> p
     int N = pow(2, n);
     int E = free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2;
     int i, j_n;
-    int *b1 = new int[N];
+    // To be deleted int *b1 = new int[N];
+    int b1 [N];
 
     /** Interleaving applied to polar_encode_bch to get the b1 sequence */
     for (int n = 0; n < N; n++) {

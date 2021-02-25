@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10)
 project(free5GRAN)
 
 set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcx-limited-range")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
 
 file(GLOB nr_rrc_src
         "lib/asn1c/nr_rrc/*.h"
