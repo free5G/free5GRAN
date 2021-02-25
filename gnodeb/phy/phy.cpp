@@ -67,8 +67,9 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     BOOST_LOG_TRIVIAL(info) << "MIB GENERATION from generate_frame done";
 
     /** Step 2: ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
-    int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
-    free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch);
+    vector<int> rate_matched_bch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, 0);
+    // to be deleted int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
+    free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch_vector);
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH from generate_frame";
 
     /** Step 3: ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
@@ -78,7 +79,7 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     pbch_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];*/
 
     vector<complex<float>> pbch_symbols_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
-    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch, pci, i_b_ssb, pbch_symbols_vector);
+    free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch_vector, pci, i_b_ssb, pbch_symbols_vector);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH from generate_frame";
 
     /** Step 4: GENERATE FREQUENCY DOMAIN FRAME -> Generate freq_domain_frame from pbch_symbols. TS38.211 V15.2.0 Section 7.4 */

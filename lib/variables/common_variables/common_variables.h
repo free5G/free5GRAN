@@ -223,6 +223,8 @@ namespace free5GRAN{
     extern std::vector<std::vector<std::complex<float>>> freq_domain_reversed_frame; //Used in function ifft
     extern std::vector<std::vector<std::complex<float>>> time_domain_frame; //Used in function ifft
 
+    /** Version 04 */
+
 
     extern std::mutex mtx_common;
 

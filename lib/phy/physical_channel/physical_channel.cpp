@@ -239,7 +239,7 @@ void free5GRAN::phy::physical_channel::compute_pdsch_indexes(vector<vector<vecto
 
 
 // to be deleted void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb, std::complex<float> *pbch_symbols) {
-void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector) {
+void free5GRAN::phy::physical_channel::pbch_encoding(vector<int> rate_matched_bch_vector, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector) {
 
    /**
    * \fn pbch_encoding (int * rate_matched_bch, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector)
@@ -255,15 +255,18 @@ void free5GRAN::phy::physical_channel::pbch_encoding(int *rate_matched_bch, int 
    */
 
     /** ENCODING -> Generating scrambled_pbch (864 bits long in our case) from rate_matching_bch. TS38.211 V15.2.0 Section 7.3.3.1 */
-    int *scrambled_pbch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
+    // To be deleted int *scrambled_pbch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
+    vector<int> scrambled_pbch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, 0);
 
     /** Generate a c_seq2 sequence in function of pci and i_ssb */
     int * c_seq2 = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb)];
     free5GRAN::utils::sequence_generator::generate_c_sequence(pci, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2 * (1 + i_b_ssb), c_seq2,0);
 
     /** Scramble the 864 rate_matched_bch bits to get the 864 scrambled_pbch bits, using c_seq2 */
-    free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_b_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
+    // To be deleted free5GRAN::utils::common_utils::scramble(rate_matched_bch, c_seq2, scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_b_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
+    free5GRAN::utils::common_utils::scramble(rate_matched_bch_vector, c_seq2, scrambled_pbch_vector, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, i_b_ssb * free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2);
 
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from scrambled_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
-    free5GRAN::phy::signal_processing::modulation(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols_vector);
+    // To be deleted free5GRAN::phy::signal_processing::modulation(scrambled_pbch, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols_vector);
+    free5GRAN::phy::signal_processing::modulation(scrambled_pbch_vector, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols_vector);
 }

@@ -39,7 +39,7 @@ namespace free5GRAN {
 
             void encode_pbch(int gscn, int pci, int i_b_ssb, int* rate_matched_bch, int* encoded_pbch);
 
-            void pbch_encoding(int * rate_matched_bch, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector);
+            void pbch_encoding(vector<int> rate_matched_bch_vector, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector);
         }
     }
 }

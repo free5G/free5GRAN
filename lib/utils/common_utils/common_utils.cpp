@@ -129,6 +129,20 @@ void free5GRAN::utils::common_utils::scramble(double *input_bits, int *c_seq, do
 
 /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING ! */
 
+void free5GRAN::utils::common_utils::scramble(std::vector<int> input_bits, int *c_seq, std::vector<int> &output_bits, int length, int offset) {
+    /**
+     * \fn scramble
+     * \brief Hard bits scrambling
+     * \param[in] input_bits: Input bits sequence
+     * \param[in] c_seq: Scrambling sequence
+     * \param[out] output_bits: Output sequence
+     * \param[in] length: Input bits sequence length
+     * \param[in] offset: Scrambling offset
+     */
+    for (int i = 0; i < length; i ++){
+        output_bits[i] = (input_bits[i] + c_seq[i + offset]) % 2;
+    }
+}
 
 void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
     /**

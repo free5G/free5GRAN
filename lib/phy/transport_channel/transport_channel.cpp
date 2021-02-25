@@ -1303,9 +1303,10 @@ void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_
 }
 
 
-void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int *output_encoded_bits) {
+// To be deleted void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int *output_encoded_bits) {
+void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, vector<int> &output_encoded_bits) {
     /**
-    * \fn polar_encoding (int N, int* input_bits, int* output_encoded_bits)
+    * \fn polar_encoding (int N, int* input_bits, vector<int> &output_encoded_bits)
     * \brief This function aims to transform the 56 bits sequence input_bits into a 512 bits sequence output_encoded_bits.
     * \details
     * First, pi_sequence is generated (56 bits long in our case).
@@ -1388,16 +1389,17 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
 
 
 
-void free5GRAN::phy::transport_channel::rate_matching_polar_coding(int *polar_encode_bch, int *rate_matched_bch) {
+// To be deleted void free5GRAN::phy::transport_channel::rate_matching_polar_coding(int *polar_encode_bch, int *rate_matched_bch) {
+void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> polar_encode_bch_vector, vector <int> &rate_matched_bch_vector) {
     /**
-    * \fn rate_matching_polar_coding (int* polar_encode_bch, int* rate_matched_bch)
+    * \fn rate_matching_polar_coding (int* polar_encode_bch, vector <int> &rate_matched_bch_vector)
     * \brief Applies the rate matching to the 512 bits sequence polar_encoded_bch to get a 864 bits long rate_matched_bch.
     * \details
     * First, bits contained in polar_encoded_bch are interleaved (again).
     * Then, the 352 first bits of polar_encoded_bch are added at the end of this sequence, to get a 864 bits long sequence
     * \standard TS38.212 V15.2.0 Section 5.4.1
     * \param[in] polar_encode_bch polar_encode_bch, 512 bits long.
-    * \param[out] rate_matched_bch Final BCH 864 bits sequence.
+    * \param[out] &rate_matched_bch_vector Final BCH 864 bits sequence.
     */
 
     /** Initialize variables */
@@ -1411,24 +1413,25 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(int *polar_en
     for (int n = 0; n < N; n++) {
         i = floor(32 * (double) n / (double) N);
         j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
-        b1[n] = polar_encode_bch[j_n];
+        b1[n] = polar_encode_bch_vector[j_n];
     }
 
     /** Add 352 bits at the end of b1 to get rate_matched_bch */
     for (int n = 0; n < E; n++) {
         if (n < N) {
-            rate_matched_bch[n] = b1[n];
+            rate_matched_bch_vector[n] = b1[n];
         } else {
-            rate_matched_bch[n] = b1[n - N];
+            rate_matched_bch_vector[n] = b1[n - N];
         }
     }
     BOOST_LOG_TRIVIAL(info) << "function rate_matching_polar_coding done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
 }
 
 
-void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int N, int *rate_matched_bch) {
+// To be deleted void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int N, int *rate_matched_bch) {
+void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int N, vector<int> &rate_matched_bch_vector) {
     /**
-    * \fn bch_encoding(int * mib_bits, int pci, int N, int * rate_matched_bch)
+    * \fn bch_encoding(int * mib_bits, int pci, int N, vector<int> &rate_matched_bch_vector)
     * \brief Transforms the mib_bits into a rate_matched_bch bits sequence.
     * \details Steps of this function: INTERLEAVING, SCRAMBLING, ADDING CRC, POLAR ENCODING and RATE MATCHING.
     * \standard TS38.212 V15.2.0 Section 7.1
@@ -1437,7 +1440,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     * \param[in] mib_bits. In our case, it is a 32 long bits sequence.
     * \param[in] pci. Physical Cell ID.
     * \param[in] N. Length of the BCH payload after polar encode. It's a power of 2. In our case, it's 512.
-    * \param[out] rate_matched_bch. The output bits sequence. 864 bits long in our case.
+    * \param[out] &rate_matched_bch_vector. The output bits sequence. 864 bits long in our case.
     */
 
     /** INTERLEAVING -> Generate mib_bits_interleaved (32 bits long in our case) from mib_bits. TS38.212 V15.2.0 Section 7.1.1 */
@@ -1468,10 +1471,13 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     }
 
     /** POLAR ENCODING -> Generate polar encoded_bch (512 bits long in our case) from bch_payload_crc. TS38.212 V15.2.0 Section 5.3.1 */
-    int *polar_encoded_bch = new int[N];
-    free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, polar_encoded_bch);
+    // To be deleted int *polar_encoded_bch = new int[N];
+    vector<int> polar_encoded_bch_vector(N, 0);
+    // To be deleted free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, polar_encoded_bch);
+    free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, polar_encoded_bch_vector);
 
     /** RATE MATCHING -> Generate rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
-    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch);
+    // To be deleted free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch, rate_matched_bch_vector);
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, rate_matched_bch_vector);
 
 }

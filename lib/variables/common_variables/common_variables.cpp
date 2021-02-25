@@ -350,7 +350,7 @@ int free5GRAN::INDEX_INTRA_FREQ_RESELECTION_BITS_IN_MIB[] = {22};
 int free5GRAN::INTERVAL_SSB_PSS[] = {56, 182};
 int free5GRAN::INTERVAL_SSB_SSS[] = {56, 182};
 
-int free5GRAN::SIZE_IFFT_SSB = 512;
+int free5GRAN::SIZE_IFFT_SSB = 256;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 
@@ -367,9 +367,13 @@ free5GRAN::gNodeB_config free5GRAN::gnodeB_config_globale = {"", "", false, 0, 0
 std::vector<std::vector<std::complex<float>>> free5GRAN::SSB_signal_extended(free5GRAN::NUM_SYMBOLS_SSB, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}) );
 
 /** Version 02 */
-std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_SSB_freq(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
-std::vector<std::vector<std::complex<float>>> free5GRAN::freq_domain_reversed_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
-std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
+//std::vector<std::vector<std::complex<float>>> free5GRAN::ONEframe_SSB_freq(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
+std::vector<std::vector<std::complex<float>>> free5GRAN::freq_domain_reversed_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0})); //Used in function ifft
+std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0})); //Used in function ifft
+
+
+/** Version 04 */
+
 
 
 

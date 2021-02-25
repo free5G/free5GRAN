@@ -639,16 +639,16 @@ void free5GRAN::phy::signal_processing::get_candidates_frames_indexes(vector<vec
 /** To be deleted void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_length, int modulation_scheme,
                                                    std::complex<float> *pbch_symbols) { */
 
-void free5GRAN::phy::signal_processing::modulation(int *bits, int bit_sequence_length, int modulation_scheme,
+void free5GRAN::phy::signal_processing::modulation(vector<int> bits, int bit_sequence_length, int modulation_scheme,
                                                    vector<complex<float>> &pbch_symbols_vector) {
     /**
-    * \fn modulation(int *bits, int bit_sequence_length, int modulation_scheme, vector<complex<float>> &pbch_symbols_vector)
+    * \fn modulation(vector<int> bits, int bit_sequence_length, int modulation_scheme, vector<complex<float>> &pbch_symbols_vector)
     * \brief converts a bits sequence into IQ symbols, using BPSK (Binary Phase Shit Keying) or QPSK (Quadrature Phase Shift Keying)
     * \details
         * For the BPSK (if modulation_scheme == 0): for each bit, the corresponding symbol will be 1 or -1
         * For the QPSK (if modulation_scheme == 1): for each pair of bits, the corresponding symbols will be +/- 1/sqrt(2) +/- i 1/sqrt(2)
     * \standard TS38.211 V15.2.0 Section 5.1
-    * \param[in] *bits The input sequence of bits.
+    * \param[in] bits The input sequence of bits.
     * \param[in] bit_sequence_length number of bits.
     * \param[in] modulation_scheme. 0 if BPSK, 1 if QPSK.
     * \param[out] pbch_symbols_vector the output sequence of IQ symbols.
@@ -923,23 +923,34 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
     int *pss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_pss_sequence(n_id_2, pss_sequence_symbols);
 
-    /** CONVERTING PSS -> Convert PSS sequence element from int to complex<float> (Imaginary part = 0) */
-    std::complex<float> *pss_complex_symbols;
+    /** CONVERTING PSS -> Convert PSS sequence element from table int to vector complex<float> (Imaginary part = 0) */
+
+    /** To be deleted std::complex<float> *pss_complex_symbols;
     pss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
         pss_complex_symbols[i] = {static_cast<float>(pss_sequence_symbols[i]), 0};
+    } */
+    vector<complex<float>> pss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
+        pss_vector[i] = {static_cast<float>(pss_sequence_symbols[i]), 0};
     }
+
 
     /** SSS -> Comput sss_sequence_symbols (127 symbols long in our case) from n_id_1 and n_id_2. TS38.211 V15.2.0 Section 7.4.2.3.1 */
     int *sss_sequence_symbols = new int[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     free5GRAN::utils::sequence_generator::generate_sss_sequence(n_id_1, n_id_2, sss_sequence_symbols);
 
-    /** CONVERTING SSS -> Convert SSS sequence element from int to complex<float> (Imaginary part = 0) */
-    std::complex<float> *sss_complex_symbols;
+    /** CONVERTING SSS -> Convert SSS sequence element from table int to vector complex<float> (Imaginary part = 0) */
+    /** To be deletedstd::complex<float> *sss_complex_symbols;
     sss_complex_symbols = new std::complex<float>[free5GRAN::SIZE_PSS_SSS_SIGNAL];
     for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
         sss_complex_symbols[i] = {static_cast<float>(sss_sequence_symbols[i]), 0};
+    }*/
+    vector<complex<float>> sss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    for (int i = 0; i < free5GRAN::SIZE_PSS_SSS_SIGNAL; i++) {
+        sss_vector[i] = {static_cast<float>(sss_sequence_symbols[i]), 0};
     }
+
 
     /** Step 2: map_SSB: assemble pbch, dmrs, pss and sss to obtain a SSB */
     /** REFERENCE GRID -> Building reference grid ref to then fill the SSB correctly, according to TS38.211 V15.2.0 Section 7.4.3 */
@@ -955,11 +966,12 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
     free5GRAN::phy::signal_processing::build_reference_grid(4, free5GRAN::NUM_SC_SSB, free5GRAN::NUM_SYMBOLS_SSB, pci, ref);
 
     /** Regroup 4 channels (PSS, SSS, PBCH and DMRS) in a vector */
-    vector<complex<float>> pss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
-    vector<complex<float>> sss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
-    vector<complex<float>> pbch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS, {0.0, 0.0});
+    // To be deleted vector<complex<float>> pss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    // To be deleted vector<complex<float>> sss_vector(free5GRAN::SIZE_PSS_SSS_SIGNAL, {0.0, 0.0});
+    // To be deleted vector<complex<float>> pbch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS, {0.0, 0.0});
     vector<complex<float>> dmrs_vector(free5GRAN::SIZE_SSB_DMRS_SYMBOLS, {0.0, 0.0});
 
+    /** To be deleted
     for (int sample = 0; sample < free5GRAN::SIZE_PSS_SSS_SIGNAL; sample ++) {
         pss_vector[sample] = pss_complex_symbols[sample];
     }
@@ -968,12 +980,12 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
     }
     for (int sample = 0; sample < free5GRAN::SIZE_SSB_PBCH_SYMBOLS; sample ++) {
         pbch_vector[sample] = pbch_symbols_vector[sample];
-    }
+    }*/
     for (int sample = 0; sample < free5GRAN::SIZE_SSB_DMRS_SYMBOLS; sample ++) {
         dmrs_vector[sample] = dmrs_symbols[sample];
     }
-    //vector<vector<complex<float>>> input_channels(4, vector<complex<float>>());
-    vector<vector<complex<float>>> input_channels{pss_vector, sss_vector, pbch_vector, dmrs_vector};
+    // to be deleted vector<vector<complex<float>>> input_channels(4, vector<complex<float>>());
+    vector<vector<complex<float>>> input_channels{pss_vector, sss_vector, pbch_symbols_vector, dmrs_vector};
 
 
     /** Initialize ssb_signal_freq_domain (In our case, 4 * 240 symbols) */

@@ -36,6 +36,7 @@ namespace free5GRAN {
 
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
+            void scramble(std::vector<int> input_bits, int * c_seq, std::vector<int> &output_bits, int length, int offset);
             void encode_mib(free5GRAN::mib mib_object, int *mib_bits);
             void convert_decimal_to_binary(int size, int decimal, int* table_output);
             void display_signal_float(std::complex<float> ** signal_to_display, int num_symbols, int num_sc, char* signal_name);

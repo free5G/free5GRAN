@@ -62,7 +62,7 @@ void send_buffer_test_mutex(vector<complex<float>> * buff_to_send){
 int main(int argc, char *argv[]) {
 
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
     bool run_mutex_test = false; /** put 'true' for running WITHOUT usrp but with multithred */
 
     phy phy_variable;
@@ -165,7 +165,8 @@ int main(int argc, char *argv[]) {
 
 
     /** Initialize some vectors used in function ifft */
-    free5GRAN::ONEframe_SSB_freq.resize(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
+
+    //free5GRAN::ONEframe_SSB_freq.resize(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
     free5GRAN::freq_domain_reversed_frame.resize(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
     free5GRAN::time_domain_frame.resize(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
 
