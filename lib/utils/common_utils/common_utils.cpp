@@ -147,10 +147,9 @@ void free5GRAN::utils::common_utils::scramble(std::vector<int> input_bits, int *
 void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *mib_bits) {
     /**
     * \fn encode_mib (free5GRAN::mib mib_object, int* mib_bits)
-    * \brief Transforms the MIB informations (decimal) into the mib bits sequence.
+    * \brief Transforms the MIB information (decimal) into the mib bits sequence.
     * In our case, mib bits sequence is 32 bits long.
     * \standard TS38.331 V15.11.0 Section 6.2.2
-    *
     * \param[in] mib_object object MIB created in common_structures.h, including cell_barred, k_ssb, pddchc_config...
     * \param[out] mib_bits bit sequence returned by the function.
     */
@@ -198,7 +197,6 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
             mib_bits[free5GRAN::INDEX_AVAILABLE_SCS_IN_MIB[0]] = i;
         }
     }
-
 
     /** Put the cell_barred bit into mib_bits sequence, according to TS38.331 V15.11.0 Section 6.2.2 */
     mib_bits[free5GRAN::INDEX_CELL_BARRED_BITS_IN_MIB[0]] = mib_object.cell_barred;
@@ -391,7 +389,6 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
    * \param[in] config_file[]
    */
 
-
     namespace logging = boost::log;
 
     /** READING CONFIG FILE */
@@ -461,8 +458,4 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
         //return (EXIT_FAILURE);
     }
 }
-
-
-
-
 

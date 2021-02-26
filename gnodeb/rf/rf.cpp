@@ -24,18 +24,12 @@
 #include <iostream>
 #include <complex>
 #include <vector>
-#include <boost/program_options.hpp>
-#include <boost/format.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
 #include <mutex>
 #include <unistd.h>
-
-
-//std::mutex mtx;           // mutex for critical section
 
 
 /*
@@ -151,8 +145,6 @@ double rf::getGain() {
 
 
 
-//emplate<typename samp_type>
-
 void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
@@ -207,7 +199,6 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
         }
         i = (i + 1) % 3000;
     }
-
 }
 
 
@@ -215,10 +206,8 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
 void buffer_transm_test_mutex(std::vector<std::complex<float>> &buff) {
     std::cout<<"Function send_buffer_test_mutex begins "<<std::endl;
     unsigned int time_to_send = 10000;
-    //free5GRAN::mtx_common.lock();
     while (true) {
         free5GRAN::mtx_common.lock();
-
         BOOST_LOG_TRIVIAL(warning) << "One loop from buff_transm_test_mutex ";
         std::cout<<"SENDING TEST THREAD"<<std::endl;
         usleep(time_to_send);
@@ -227,7 +216,4 @@ void buffer_transm_test_mutex(std::vector<std::complex<float>> &buff) {
         usleep(1);
 
     }
-    //mtx.unlock();
-    //free5GRAN::mtx_extern.unlock();
-
 }

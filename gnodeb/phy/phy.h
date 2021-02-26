@@ -37,10 +37,9 @@ private:
 
 
 public:
-
     void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int N, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     void compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
-    void execute_IFFT();
+    void reduce_main();
 };
 
 

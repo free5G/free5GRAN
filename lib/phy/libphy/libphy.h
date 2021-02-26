@@ -59,11 +59,8 @@ namespace free5GRAN {
 
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
-            // To be deleted void modulation(int *bits, int bit_sequence_length, int modulation_scheme, std::complex<float> *pbch_symbols);
             void modulation(vector<int> bits, int bit_sequence_length, int modulation_scheme, vector<complex<float>> &pbch_symbols_vector);
             void build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, vector<vector<vector<int>>> &ref);
-            // To be deleted void map_ssb(std::complex<float> **input_channels, int ***ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
-            // To be deleted void map_ssb(std::complex<float> **input_channels, vector<vector<vector<int>>> ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
             void map_ssb(vector<vector<complex<float>>> input_channels, vector<vector<vector<int>>> ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
             void channel_mapper(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols_ssb, int index_symbol_ssb, int num_SSB_in_this_frame, int num_sc_input, int ifft_size);
             void generate_freq_domain_frame(vector<complex<float>> pbch_symbols_vector, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame);

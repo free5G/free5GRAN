@@ -68,15 +68,10 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
 
     /** Step 2: ENCODE BCH -> Generate rate_matched_bch (864 bits in our case) from mib_bits. TS38.212 V15.2.0 Section 5 */
     vector<int> rate_matched_bch_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, 0);
-    // to be deleted int *rate_matched_bch = new int[free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2];
     free5GRAN::phy::transport_channel::bch_encoding(mib_bits, pci, N, rate_matched_bch_vector);
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH from generate_frame";
 
     /** Step 3: ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
-
-    /** To be deleted
-    std::complex<float> *pbch_symbols;
-    pbch_symbols = new std::complex<float>[free5GRAN::SIZE_SSB_PBCH_SYMBOLS];*/
 
     vector<complex<float>> pbch_symbols_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
     free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch_vector, pci, i_b_ssb, pbch_symbols_vector);
@@ -88,9 +83,6 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
 
     vector<vector<complex<float>>> ONEframe_SSB_freq(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
 
-    /** To be deleted
-    free5GRAN::phy::signal_processing::generate_freq_domain_frame(pbch_symbols, pci, index_symbol_ssb,
-                                                                  num_SSB_in_this_frame, i_b_ssb,ONEframe_SSB_freq); */
 
     free5GRAN::phy::signal_processing::generate_freq_domain_frame(pbch_symbols_vector, pci, index_symbol_ssb,
                                                                   num_SSB_in_this_frame, i_b_ssb,ONEframe_SSB_freq);
@@ -176,6 +168,11 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
     for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
         Num_samples_in_frame = Num_samples_in_frame + symbols_size_one_frame[symbol];
     }
+}
+
+void phy::reduce_main(bool run_with_usrp, ) {
+
+
 }
 
 
