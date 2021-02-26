@@ -224,7 +224,7 @@ namespace free5GRAN{
     extern std::vector<std::vector<std::complex<float>>> time_domain_frame; //Used in function ifft
 
     /** Version 04 */
-
+    extern std::vector<std::complex<float>> buffer_to_send;
 
     extern std::mutex mtx_common;
 

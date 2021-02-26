@@ -413,9 +413,6 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
     free5GRAN::gnodeB_config_globale.log_level = log_level;
     std::cout << "log level = " << log_level << std::endl;
 
-    /** Read 'display_variables' in config_file */
-    free5GRAN::display_variables = cfg_gNodeB_Lib.lookup("display_variables");
-
     /** Look at function's name in config file */
     std::string func_gNodeB = cfg_gNodeB_Lib.lookup("function");
     const libconfig::Setting &root = cfg_gNodeB_Lib.getRoot();
