@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(free5GRAN)
 
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -funroll-loops")
 
 file(GLOB nr_rrc_src
         "lib/asn1c/nr_rrc/*.h"
@@ -35,24 +37,42 @@ ADD_LIBRARY( free5GRAN_lib STATIC
         lib/asn1c/nr_rrc/asn_internal.h
         lib/asn1c/nr_rrc/asn_application.h
         lib/phy/physical_channel/physical_channel.cpp
-        lib/phy/physical_channel/physical_channel.h)
+        lib/phy/physical_channel/physical_channel.h
+        lib/rf/rf.h
+        lib/rf/usrp_b200/usrp_b200.cpp
+        lib/rf/usrp_b200/usrp_b200.h
+        lib/rf/usrp_x300/usrp_x300.cpp
+        lib/rf/usrp_x300/usrp_x300.h
+)
 
-target_link_libraries(free5GRAN_lib asn1c_lib)
+target_link_libraries(free5GRAN_lib asn1c_lib ${GR_LIBRARIES})
 
-add_compile_options(-g)
+if (INCLUDE_N210)
+    message("INCLUDING N210")
+    add_definitions(-DINCLUDE_N210_OPT)
+    target_sources(free5GRAN_lib PRIVATE
+            lib/rf/usrp_usrp2/usrp_usrp2.cpp
+            lib/rf/usrp_usrp2/usrp_usrp2.h)
+    target_link_libraries(free5GRAN_lib liquid)
+endif()
+
+if (DEBUG_MODE)
+    message("DEBUGGING MODE")
+    add_compile_options(-g)
+endif()
 
 add_executable(free5GRAN
         src/main.cc
-        src/rf/rf.cpp
-        src/rf/rf.h
         src/phy/phy.cpp
-        src/phy/phy.h )
+        src/phy/phy.h)
 
 find_package(Boost)
 find_package (Threads)
 
+
+
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
-target_link_libraries(free5GRAN asn1c_lib free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
+target_link_libraries(free5GRAN asn1c_lib ${GR_LIBRARIES} free5GRAN_lib uhd ${Boost_LIBRARIES} boost_system m fftw3 ${CMAKE_THREAD_LIBS_INIT} config++ boost_log boost_thread boost_log_setup)
 
 install(TARGETS free5GRAN DESTINATION /usr/local/bin)
 install(DIRECTORY config DESTINATION /root/.config/free5GRAN)

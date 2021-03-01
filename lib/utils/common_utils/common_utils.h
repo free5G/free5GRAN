@@ -15,6 +15,10 @@
  */
 
 #include "../../variables/common_structures/common_structures.h"
+#include <vector>
+#include <uhd.h>
+#include <uhd/usrp/multi_usrp.hpp>
+using namespace std;
 
 namespace free5GRAN {
     namespace utils {
@@ -24,6 +28,10 @@ namespace free5GRAN {
             void scramble(int * input_bits, int * c_seq, int * output_bits, int length, int offset);
 
             void scramble(double * input_bits, int * c_seq, double * output_bits, int length, int offset);
+
+            void get_usrp_devices(vector<free5GRAN::rf_device> &rf_devices_list);
+
+            void select_rf_device(free5GRAN::rf_device &rf_device_obj, string identifier);
         }
     }
 }

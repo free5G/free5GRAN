@@ -19,6 +19,8 @@
 #ifndef FREE5GRAN_COMMON_STRUCTURES_H
 #define FREE5GRAN_COMMON_STRUCTURES_H
 
+using namespace std;
+
 
 
 namespace free5GRAN{
@@ -68,6 +70,10 @@ namespace free5GRAN{
     typedef struct ss_power_indicator_ {
         float ss_rsrp, ss_rssi, ss_rsrq, ss_sinr;
     } ss_power_indicator;
+
+    typedef struct rf_device_ {
+        string type,serial, subdev, ref;
+    } rf_device;
 
 
     /*

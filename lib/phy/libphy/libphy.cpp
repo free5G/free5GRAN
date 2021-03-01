@@ -542,18 +542,18 @@ int free5GRAN::phy::signal_processing::compute_nre(int num_symb_pdsch, int num_d
 
 void free5GRAN::phy::signal_processing::fft(vector<complex<float>> time_domain_signal, vector<vector<complex<float>>> &output_signal, int fft_size, int *cp_lengths, int *cum_sum_symb, int num_symbols, int num_sc_output, int first_symb_index, int offset){
     /**
- * \fn fft
- * \brief Perform FFT on time domain signal to recover frequency domain signal (= RE grid)
- * \param[in] time_domain_signal: Input time domain signal
- * \param[out] output_signal: Output RE grid
- * \param[in] fft_size: FFT size (Number of samples per symbol, excluding CP)
- * \param[in] cp_lengths: Array of CP lengths for 1 subframe (= 1ms)
- * \param[in] cum_sum_symb: Cumulative sum of symbols length in one subframe
- * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
- * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
- * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
- * \param[in] offset: Number of amples to be left before extracting. Can be used while extracting specific slots in a radio frame.
-*/
+     * \fn fft
+     * \brief Perform FFT on time domain signal to recover frequency domain signal (= RE grid)
+     * \param[in] time_domain_signal: Input time domain signal
+     * \param[out] output_signal: Output RE grid
+     * \param[in] fft_size: FFT size (Number of samples per symbol, excluding CP)
+     * \param[in] cp_lengths: Array of CP lengths for 1 subframe (= 1ms)
+     * \param[in] cum_sum_symb: Cumulative sum of symbols length in one subframe
+     * \param[in] num_symbols: Number of symbols in output RE grid (= Number of rows of output_signal)
+     * \param[in] num_sc_output: Number of subcarriers in output RE grid (= Number of columns of output_signal).
+     * \param[in] first_symb_index: Index of first symbol to be extracted in frame.
+     * \param[in] offset: Number of amples to be left before extracting. Can be used while extracting specific slots in a radio frame.
+    */
     // Initializing fft parameters
     fftw_complex *fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
     fftw_complex *fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);

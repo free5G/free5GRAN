@@ -16,7 +16,9 @@
 
 #include <cmath>
 #include "common_utils.h"
-
+#include <uhd.h>
+#include <uhd/utils/thread.hpp>
+using namespace std;
 
 void free5GRAN::utils::common_utils::parse_mib(int *mib_bits, free5GRAN::mib &mib_object) {
     /**
@@ -90,5 +92,47 @@ void free5GRAN::utils::common_utils::scramble(double *input_bits, int *c_seq, do
      */
     for (int i = 0; i < length; i ++){
         output_bits[i] = input_bits[i] * c_seq[i + offset];
+    }
+}
+
+void free5GRAN::utils::common_utils::get_usrp_devices(vector<free5GRAN::rf_device> &rf_devices_list){
+    /**
+     * \fn get_usrp_devices
+     * \brief List all available USRP devices
+     * \param[out] rf_devices_list: Output vector containing serial and type for connected devices
+     */
+    uhd::device_addrs_t device_addrs = uhd::device::find(string(""), uhd::device::USRP);
+    for (auto it = device_addrs.begin(); it != device_addrs.end(); ++it) {
+        rf_devices_list.push_back({
+                .type= (*it)["type"],
+                .serial= (*it)["serial"]
+        }
+        );
+    }
+}
+
+void free5GRAN::utils::common_utils::select_rf_device(free5GRAN::rf_device &rf_device_obj, string identifier){
+    /**
+     * \fn select_rf_device
+     * \brief List all available RF devices and select one
+     * \param[out] rf_device_obj: Output RF device object containing information about selected device
+     * \param[in] identifier: Preferred device identifier
+     */
+    vector<free5GRAN::rf_device> usrp_devices;
+    free5GRAN::utils::common_utils::get_usrp_devices(usrp_devices);
+    if (!identifier.empty()){
+        for (const auto& usrp_device: usrp_devices) {
+            if (usrp_device.serial == identifier){
+                rf_device_obj = usrp_device;
+                break;
+            }
+        }
+    }else{
+        for (const auto& usrp_device: usrp_devices) {
+            if (usrp_device.type == "x300" || usrp_device.type == "b200" || usrp_device.type == "usrp2"){
+                rf_device_obj = usrp_device;
+                break;
+            }
+        }
     }
 }

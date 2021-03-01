@@ -32,12 +32,17 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
-#include "rf/rf.h"
+#include "../lib/rf/rf.h"
+#include "../lib/rf/usrp_b200/usrp_b200.h"
+#include "../lib/rf/usrp_x300/usrp_x300.h"
+#ifdef INCLUDE_N210_OPT
+#include "../lib/rf/usrp_usrp2/usrp_usrp2.h"
+#endif
 #include "../lib/variables/common_variables/common_variables.h"
 #include "phy/phy.h"
 #include "../lib/phy/libphy/libphy.h"
 #include "../lib/asn1c/nr_rrc/SIB1.h"
-#include "../lib/variables/common_variables/common_variables.h"
+#include "../lib/utils/common_utils/common_utils.h"
 
 using namespace std;
 
@@ -59,10 +64,6 @@ void init_logging(const string &level);
 
 
 int main(int argc, char *argv[]) {
-
-    //ofstream out("out.txt");
-    //cout.rdbuf(out.rdbuf());
-
 
 
     libconfig::Config cfg;
@@ -102,9 +103,12 @@ int main(int argc, char *argv[]) {
         init_logging(level);
         BOOST_LOG_TRIVIAL(info) << "Initializing free5GRAN";
         string func = cfg.lookup("function");
-        string rf_address = cfg.lookup("rf_address");
-        int gain = cfg.lookup("gain");
+        string rf_address;
         const libconfig::Setting& root = cfg.getRoot();
+        if (!root.lookupValue("rf_address", rf_address)) {
+            rf_address = "";
+        }
+        int gain = cfg.lookup("gain");
         if (func == "CELL_SEARCH"){
             cout << "##  CELL SEARCH  ##" << endl;
             BOOST_LOG_TRIVIAL(info) << "CELL SEARCH";
@@ -179,13 +183,7 @@ int main(int argc, char *argv[]) {
 
 
 void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &rf_address, int input_gain){
-    /*
-     * USRP parameters
-     */
-    string device_args("serial="+rf_address);
-    string subdev("A:A");
-    string ant("TX/RX");
-    string ref("internal");
+
     /*
      * Cell default parameters
      */
@@ -194,11 +192,40 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &
     double gain(input_gain);
     double bw(3.84e6);
 
+    /*
+ * Find USRP device with input parameters parameters
+ */
+    free5GRAN::rf_device chosen_device;
+    free5GRAN::utils::common_utils::select_rf_device(chosen_device, rf_address);
+    if (chosen_device.type.empty()){
+        cout << "Cannot find USRP device ! Exiting..." << endl;
+        return;
+    }else {
+        cout << "Using USRP " << chosen_device.type << " device" << endl;
+    }
+    /*
+     * Create RF device depending on RF type.
+     */
+    free5GRAN::rf *rf_device;
+    if (chosen_device.type == "b200"){
+        rf_device = new free5GRAN::usrp_b200(rate, freq, gain, bw, chosen_device);
+    } else if (chosen_device.type == "x300"){
+        rf_device = new free5GRAN::usrp_x300(rate, freq, gain, bw, chosen_device);
+    }
+#ifdef INCLUDE_N210_OPT
+    else if (chosen_device.type == "usrp2"){
+        rf_device = new free5GRAN::usrp_usrp2(rate, freq, gain, bw, chosen_device);
+    }
+#endif
+    else {
+        cout << "Unsupported RF device" << endl;
+        return;
+    }
+
     free5GRAN::band current_band;
 
 
     // Search cell with 15kHz SCS
-    rf rf_device(rate, freq, gain, bw, subdev, ant, ref, device_args);
     vector<found_cell> found_cells;
     cout << "\n";
     auto start = chrono::high_resolution_clock::now();
@@ -230,10 +257,10 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &
             BOOST_LOG_TRIVIAL(trace) << "SCS: " + to_string(band_info.scs);
 
             int fft_size_pss = 128;
-            rf_device.setCenterFrequency(freq);
-            rf_device.setSampleRate(fft_size_pss * band_info.scs);
-            rf_device.setGain(100);
-            phy phy_layer(&rf_device, ssb_period, fft_size_pss, band_info.scs, current_band);
+            rf_device -> setCenterFrequency(freq);
+            rf_device -> setSampleRate(fft_size_pss * band_info.scs);
+            rf_device -> setGain(100);
+            phy phy_layer(rf_device, ssb_period, fft_size_pss, band_info.scs, current_band);
 
 
             cout << "\r## Searching in band n" + to_string(current_band.number) + " - " + to_string((((float) gscn - (float) current_band.min_gscn)/((float) current_band.max_gscn - (float) current_band.min_gscn)) * 100.0) + "% (found " + to_string(found_cells.size()) + " cells)";
@@ -245,17 +272,17 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &
                 /*
                  * Power down-ramping to avoid saturation
                  */
-                BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
-                while (received_power > -2 && rf_device.getGain() > 0){
-                    rf_device.setGain(rf_device.getGain()-10);
+                BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device -> getGain()) +" dB)";
+                while (received_power > -2 && rf_device -> getGain() > 0){
+                    rf_device -> setGain(rf_device -> getGain()-10);
                     phy_layer.cell_synchronization(received_power);
-                    BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
+                    BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device -> getGain()) +" dB)";
                 }
-                BOOST_LOG_TRIVIAL(trace) << "Final received power: " + to_string(received_power) + " dB (Final gain= "+ to_string(rf_device.getGain()) +" dB)";
+                BOOST_LOG_TRIVIAL(trace) << "Final received power: " + to_string(received_power) + " dB (Final gain= "+ to_string(rf_device -> getGain()) +" dB)";
                 /*
                  * If the re-computed PCI is equal to the initially computed one
                  */
-                rf_device.setSampleRate(30.72e6);
+                rf_device -> setSampleRate(30.72e6);
                 int new_fft_size;
                 new_fft_size = (int) (30.72e6/band_info.scs);
                 phy_layer.reconfigure(new_fft_size);
@@ -272,7 +299,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &
                     new_cell.scs = current_band.scs;
                     new_cell.gscn = gscn;
                     new_cell.phy_obj = phy_layer;
-                    new_cell.gain = rf_device.getGain();
+                    new_cell.gain = rf_device -> getGain();
                     new_cell.dci_found = dci_found;
                     found_cells.push_back(new_cell);
                 }
@@ -308,13 +335,7 @@ void scan_bands(vector<free5GRAN::band> BANDS, double ssb_period, const string &
 
 
 void search_cell_with_defined_params(double frequency, double ssb_period, const string &rf_address, free5GRAN::band band, int input_gain){
-    /*
-     * USRP parameters
-     */
-    string device_args("serial="+rf_address);
-    string subdev("A:A");
-    string ant("TX/RX");
-    string ref("internal");
+
     /*
      * Cell parameters
      */
@@ -331,11 +352,40 @@ void search_cell_with_defined_params(double frequency, double ssb_period, const 
      * Instanciate a rf layer instance to provide exchanges with USRP device
      */
     int fft_size_pss = 128;
-    rf rf_device(fft_size_pss * band_info.scs, frequency, gain, fft_size_pss * band_info.scs, subdev, ant, ref, device_args);
+
+    /*
+     * Find USRP device with input parameters parameters
+     */
+    free5GRAN::rf_device chosen_device;
+    free5GRAN::utils::common_utils::select_rf_device(chosen_device, rf_address);
+    if (chosen_device.type.empty()){
+        cout << "Cannot find USRP device ! Exiting..." << endl;
+        return;
+    }else {
+        cout << "Using USRP " << chosen_device.type << " device" << endl;
+    }
+    /*
+     * Create RF device depending on RF type.
+     */
+    free5GRAN::rf *rf_device;
+    if (chosen_device.type == "b200"){
+        rf_device = new free5GRAN::usrp_b200(fft_size_pss * band_info.scs, frequency, gain, fft_size_pss * band_info.scs, chosen_device);
+    } else if (chosen_device.type == "x300"){
+        rf_device = new free5GRAN::usrp_x300(fft_size_pss * band_info.scs, frequency, gain, fft_size_pss * band_info.scs, chosen_device);
+    }
+#ifdef INCLUDE_N210_OPT
+    else if (chosen_device.type == "usrp2"){
+        rf_device = new free5GRAN::usrp_usrp2(fft_size_pss * band_info.scs, frequency, gain, fft_size_pss * band_info.scs, chosen_device);
+    }
+#endif
+    else {
+        cout << "Unsupported RF device" << endl;
+        return;
+    }
 
     //FIX BAND SELECTION
 
-    phy phy_layer(&rf_device, ssb_period, fft_size_pss, band_info.scs, band);
+    phy phy_layer(rf_device, ssb_period, fft_size_pss, band_info.scs, band);
 
 
     cout << "\n";
@@ -355,20 +405,21 @@ void search_cell_with_defined_params(double frequency, double ssb_period, const 
          */
         cout << "###### Power ramping" << endl;
         cout << "Received power: "+ to_string(received_power) + " dB" << endl;
-        BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
+        BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device -> getGain()) +" dB)";
 
-        while (received_power > -2 && rf_device.getGain() > 0){
-            rf_device.setGain(rf_device.getGain()-10);
+        while (received_power > -2 && rf_device -> getGain() > 0){
+            rf_device -> setGain(rf_device -> getGain()-10);
             phy_layer.cell_synchronization(received_power);
-            cout << "New gain: "+ to_string(rf_device.getGain()) + " dB" << endl;
+            cout << "New gain: "+ to_string(rf_device -> getGain()) + " dB" << endl;
             cout << "Received power: "+ to_string(received_power) + " dB" << endl;
-            BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device.getGain()) +" dB)";
+            BOOST_LOG_TRIVIAL(trace) << "Received power: " + to_string(received_power) + " dB (Gain= "+ to_string(rf_device -> getGain()) +" dB)";
         }
         cout << "\n";
-        BOOST_LOG_TRIVIAL(trace) << "Final received power: " + to_string(received_power) + " dB (Final gain= "+ to_string(rf_device.getGain()) +" dB)";
-        rf_device.setSampleRate(30.72e6);
+        BOOST_LOG_TRIVIAL(trace) << "Final received power: " + to_string(received_power) + " dB (Final gain= "+ to_string(rf_device -> getGain()) +" dB)";
+        rf_device -> setSampleRate(30.72e6);
+
         int new_fft_size;
-        new_fft_size = (int) (30.72e6/band_info.scs);
+        new_fft_size = (int) (rf_device -> getSampleRate()/band_info.scs);
         phy_layer.reconfigure(new_fft_size);
 
         if(phy_layer.extract_pbch() == 0){

@@ -20,15 +20,15 @@
 
 #include <vector>
 #include <chrono>
-#include "../rf/rf.h"
 #include "../../lib/variables/common_structures/common_structures.h"
 #include "../../lib/asn1c/nr_rrc/BCCH-DL-SCH-Message.h"
+#include "../../lib/rf/rf.h"
 
 class phy {
 
 
 private:
-    rf *rf_device;
+    free5GRAN::rf *rf_device;
     int common_cp_length, pci, i_b_ssb, n_id_1, n_id_2, *mib_bits, scs, is_extended_cp, i_ssb, l_max, index_first_pss, n_size_bwp, num_slots_per_frame, mu, frame_size;
     double ssb_period;
     int fft_size;
@@ -45,7 +45,7 @@ private:
     free5GRAN::ss_power_indicator ss_pwr={};
 
 public:
-    phy(rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band band_obj);
+    phy(free5GRAN::rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band band_obj);
     void reconfigure(int fft_size);
     phy();
 

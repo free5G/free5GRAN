@@ -38,7 +38,7 @@
 
 using namespace std;
 
-phy::phy(rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band band_obj) {
+phy::phy(free5GRAN::rf *rf_dev, double ssb_period, int fft_size, int scs, free5GRAN::band band_obj) {
     /**
      * \fn phy
      * \param[in] rf_dev: RF device. (Only USRP B210 is currently supported)
@@ -86,7 +86,7 @@ int phy::cell_synchronization(float &received_power) {
     time_first_pss = chrono::high_resolution_clock::now();
     try {
         double time_first_sample;
-        rf_device->get_samples(&buff_2_ssb_periods, time_first_sample);
+        rf_device->get_samples(buff_2_ssb_periods, time_first_sample);
     }catch (const exception& e) {
         return 1;
     }
@@ -215,7 +215,7 @@ int phy::extract_pbch() {
     auto now = chrono::high_resolution_clock::now();
     try {
         double second_frame_time;
-        rf_device->get_samples(&buff, second_frame_time);
+        rf_device->get_samples(buff, second_frame_time);
     }catch (const exception& e) {
         return 1;
     }
@@ -247,31 +247,6 @@ int phy::extract_pbch() {
     common_cp_length = cp_lengths_pbch[1];
     int symbol_duration = fft_size + common_cp_length;
 
-    vector<complex<float>> pss_signal(48 * symbol_duration);
-
-    /*
-     * Isolate PSS signal around calculated new PSS occurence (based on timestamp of first synchronization step)
-     */
-    int begin_offset = 0;
-    int end_offset = 0;
-    if (pss_signal.size()/2 <= index_second_pss && pss_signal.size()/2  <= num_samples - index_second_pss){
-        begin_offset = pss_signal.size()/2;
-        end_offset = pss_signal.size()/2;
-    } else if (pss_signal.size()/2 > index_second_pss){
-        begin_offset = index_second_pss;
-        end_offset = pss_signal.size() - index_second_pss;
-    } else if (pss_signal.size()/2  > num_samples - index_second_pss) {
-        end_offset = num_samples - index_second_pss;
-        begin_offset = pss_signal.size() - (num_samples - index_second_pss);
-    }
-
-    // Extracting the signal around the PSS approximation
-    int count = 0;
-    for (int i = -begin_offset; i < end_offset; i ++){
-        pss_signal[count] = buff[(int) index_second_pss + i];
-        count ++;
-    }
-
     int synchronisation_index;
     float peak_value;
 
@@ -282,9 +257,10 @@ int phy::extract_pbch() {
     BOOST_LOG_TRIVIAL(trace) << "PSS synchronization downsampling factor: " << downsampling_factor;
     int symbol_duration_downsampled = symbol_duration / downsampling_factor;
 
-    vector<complex<float>> pss_signal_downsampled(48 * symbol_duration_downsampled);
-    for (int i = 0; i < 48 * symbol_duration_downsampled; i ++){
-        pss_signal_downsampled[i] = pss_signal[(size_t) downsampling_factor * i];
+    vector<complex<float>> pss_signal_downsampled(num_samples / downsampling_factor);
+
+    for (int i = 0; i < pss_signal_downsampled.size(); i ++){
+        pss_signal_downsampled[i] = buff[(size_t) downsampling_factor * i];
     }
 
     free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length / downsampling_factor, pss_signal_downsampled,fft_size / downsampling_factor);
@@ -295,15 +271,14 @@ int phy::extract_pbch() {
      * Once synchronization is made on downsampled signal, it can be performed on full signal for finer results
      */
     vector<complex<float>> fine_pss_signal(symbol_duration + (2 * downsampling_factor + 1));
-    count = 0;
+    int count = 0;
     for (int i = pss_start_index - downsampling_factor; i < pss_start_index + symbol_duration + (downsampling_factor + 1); i ++){
-        fine_pss_signal[count] = pss_signal[i];
+        fine_pss_signal[count] = buff[i];
         count ++;
     }
     free5GRAN::phy::synchronization::search_pss(this->n_id_2,synchronisation_index,peak_value, common_cp_length, fine_pss_signal,fft_size);
-
     pss_start_index = pss_start_index + (synchronisation_index - symbol_duration + 1  - downsampling_factor);
-    int buffer_pss_index = pss_start_index + index_second_pss - begin_offset;
+    int buffer_pss_index = pss_start_index;
     index_first_pss = buffer_pss_index;
     int sss_init_index = buffer_pss_index + 2 * symbol_duration + common_cp_length;
 
@@ -1067,10 +1042,12 @@ void phy::extract_pdsch() {
          * If DL-SCH CRC is validated, Phase decompensation is validated
          */
         if (validated){
+            /* DEBUG: Print bits sequence
             for (int i =0; i < desegmented.size(); i ++){
                 cout << desegmented[i];
             }
             cout << "\n";
+            */
             int bytes_size = (int) ceil(desegmented.size()/8.0);
             uint8_t dl_sch_bytes[bytes_size];
             for (int i = 0; i < desegmented.size(); i ++){
