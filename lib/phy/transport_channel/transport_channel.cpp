@@ -1302,7 +1302,7 @@ void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_
 
 
 
-void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, vector<int> &output_encoded_bits) {
+void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int input_size, vector<int> &output_encoded_bits) {
     /**
     * \fn polar_encoding (int N, int* input_bits, vector<int> &output_encoded_bits)
     * \brief Polar encodes the 56 bits sequence input_bits into a 512 bits sequence output_encoded_bits.
@@ -1321,10 +1321,17 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, v
     */
 
     /** Initialize variables */
-    int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K = free5GRAN::SIZE_PBCH_POLAR_DECODED, K_max = 164, count_seq = 0;
-    bool found;
-    int c_p [56], q_0_n_1 [N], q_i_n [K + n_pc], u [N], pi_seq [56];
+    int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K = input_size, K_max = 164, count_seq = 0;
+    //K = free5GRAN::SIZE_PBCH_POLAR_DECODED
 
+    std::cout<<"sizeof(input_bits) = "<<sizeof(input_bits)<<std::endl;
+    std::cout<<"sizeof(*input_bits) = "<<sizeof(*input_bits)<<std::endl;
+    std::cout<<"K = "<<K<<std::endl;
+    free5GRAN::utils::common_utils::display_table(input_bits, 40, "input_bits from polar_encode");
+
+    bool found;
+    //int c_p [56], q_0_n_1 [N], q_i_n [K + n_pc], u [N], pi_seq [56];
+    int c_p [input_size], q_0_n_1 [N], q_i_n [input_size + n_pc], u [N], pi_seq [input_size];
     /** Step 1: Generate pi sequence according to TS38.212 V15.2.0 Section 5.3.1.1 */
     for (int m = 0; m < K_max; m++) {
         if (free5GRAN::INTERLEAVING_PATTERN[m] >= K_max - K) {
@@ -1333,8 +1340,12 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, v
         }
     }
 
+    free5GRAN::utils::common_utils::display_table(pi_seq, input_size, "pi_seq from polar_encode" );
+
+
     /** Step 2: Generate c_p sequence from input_bits using pi_seq, according to TS38.212 V15.2.0 Section 5.3.1.1 */
-    for (int k = 0; k < 56; k++) {
+    //for (int k = 0; k < 56; k++) {
+    for (int k = 0; k < input_size; k++) {
         c_p[k] = input_bits[pi_seq[k]];
     }
 
@@ -1462,7 +1473,8 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
 
     /** POLAR ENCODING -> Generate polar encoded_bch (512 bits long in our case) from bch_payload_crc. TS38.212 V15.2.0 Section 5.3.1 */
     vector<int> polar_encoded_bch_vector(N, 0);
-    free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, polar_encoded_bch_vector);
+    int input_size = 56;
+    free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, input_size, polar_encoded_bch_vector);
 
     /** RATE MATCHING -> Generate rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
     free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, rate_matched_bch_vector);

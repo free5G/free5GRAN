@@ -315,6 +315,34 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
 }
 
 
+void free5GRAN::utils::common_utils::display_vector(std::vector<int> vector_to_display, int size1,
+                                                    char *vector_name){
+    /**
+    * \fn display_vector (std::vector<int> *vector_to_display, int vector_size, char* vector_name)
+    * \brief Displays a vector in the console.
+    *
+    * \param[in] vector_to_display
+    * \param[in] vector_size number of element in the vector
+    * \param[in] vector_name name to display
+    */
+
+    std::cout <<""<< std::endl;
+    std::cout<< vector_name << " (of size "<< size1<< " symbols) = "<<std::ends;
+
+    for (int bit = 0; bit < size1; bit++){
+        std::cout<<vector_to_display[bit]<<std::ends;
+        if (bit % 10 == 0){
+            std::cout<<" | "<<std::ends;
+        }
+        if (bit % 100 == 0){
+            std::cout<<""<<std::endl;
+        }
+
+    }
+}
+
+
+
 void free5GRAN::utils::common_utils::display_complex_double(std::complex<double> *vector_to_display, int vector_size,
                                                             char *vector_name){
     /**

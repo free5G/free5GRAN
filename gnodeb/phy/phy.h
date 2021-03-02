@@ -45,6 +45,8 @@ public:
     //----------- From here, DCI / PDCCH
 
     void encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size);
+    void adding_dci_crc(int *dci_bits, int *dci_bits_with_crc, int *crc_polynom, int length_input, int length_crc, int *rnti);
+    void UE_decode_polar_dci(std::vector<int> polar_encoded_dci, int K, int N, int E, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti dci_object);
 };
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send);
 

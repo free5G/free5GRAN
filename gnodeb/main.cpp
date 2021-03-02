@@ -68,7 +68,42 @@ int main(int argc, char *argv[]) {
         K = freq_domain_ra_size +4+1+5+2+1;
         int dci_bits[K];
         std::cout<<"freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
+        std::cout<<"K = "<<K<<std::endl;
         phy_variable_main.encode_dci(dci_object, dci_bits, freq_domain_ra_size);
         free5GRAN::utils::common_utils::display_table(dci_bits, K, "dci_bits");
+
+        int length_crc = 16;
+        int dci_bits_with_crc[K + length_crc];
+        phy_variable_main.adding_dci_crc(dci_bits, dci_bits_with_crc, free5GRAN::G_CRC_16, K, length_crc + 1, free5GRAN::SI_RNTI);
+
+        free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K+length_crc, "dci_bits_with_crc");
+
+        /** Polar encode */
+        int n = 9;
+        int N = pow(2, n);
+        std::vector<int> polar_encoded_dci(N, 0);
+        int input_size = K + length_crc;
+        free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, input_size, polar_encoded_dci);
+        free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polard_encoded_dci");
+
+
+        /** UE try to decode */
+        //int E = 9; // to be modified
+        int agg_level = pow(2, 1);
+        int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
+        bool validated;
+        free5GRAN::dci_1_0_si_rnti dci_object_UE;
+        phy_variable_main.UE_decode_polar_dci(polar_encoded_dci, K, N, E, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
+
+        /** print dci_object_UE to verify that it's well decoded */
+        std::cout<<"dci_object_UE.RIV = "<<dci_object_UE.RIV<<std::endl;
+        std::cout<<"dci_object_UE.TD_ra = "<<dci_object_UE.TD_ra<<std::endl;
+        std::cout<<"dci_object_UE.vrb_prb_interleaving = "<<dci_object_UE.vrb_prb_interleaving<<std::endl;
+        std::cout<<"dci_object_UE.mcs = "<<dci_object_UE.mcs<<std::endl;
+        std::cout<<"dci_object_UE.rv = "<<dci_object_UE.rv<<std::endl;
+        std::cout<<"dci_object_UE.si = "<<dci_object_UE.si<<std::endl;
+
     }
+
+
 }
