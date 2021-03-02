@@ -373,6 +373,9 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
         if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
+        if (i % 10 == 0 && i != 0){
+            std::cout<<" || "<<std::ends;
+        }
         if (i == 0){
             std::cout << +table_name << ": "<<std::ends;
         }

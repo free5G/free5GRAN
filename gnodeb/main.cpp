@@ -37,8 +37,38 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
+    bool run_test_dci = true;
 
     phy phy_variable_main;
-    phy_variable_main.reduce_main(run_with_usrp, argv);
+    phy_variable_main.reduce_main(run_with_usrp, run_one_time_ssb, argv);
+
+
+    /** Below is under construction (DCI - PDCCH) */
+
+    if (run_test_dci == true) {
+
+        free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
+        pdcch_ss_mon_occ.n_rb_coreset = 48;
+        int freq_domain_ra_size, K;
+        freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
+        std::cout<< "freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
+
+        free5GRAN::dci_1_0_si_rnti dci_object;
+
+        dci_object.RIV = 329;
+        dci_object.TD_ra = 0;
+        dci_object.vrb_prb_interleaving = 0;
+        dci_object.mcs = 6;
+        dci_object.rv = 3;
+        dci_object.si = 0;
+
+        //K = freq_domain_ra_size +4+1+5+2+1+15+24;
+        K = freq_domain_ra_size +4+1+5+2+1;
+        int dci_bits[K];
+        std::cout<<"freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
+        phy_variable_main.encode_dci(dci_object, dci_bits, freq_domain_ra_size);
+        free5GRAN::utils::common_utils::display_table(dci_bits, K, "dci_bits");
+    }
 }

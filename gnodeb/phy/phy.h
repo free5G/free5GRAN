@@ -39,9 +39,12 @@ private:
 public:
     void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int N, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     void compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
-    void reduce_main(bool run_with_usrp, char *argv[]);
-    //void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send);
+    void reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]);
     void init_logging(std::string level);
+
+    //----------- From here, DCI / PDCCH
+
+    void encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size);
 };
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send);
 

@@ -177,7 +177,7 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
 
 
 
-void phy::reduce_main(bool run_with_usrp, char *argv[]) {
+void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
 
     phy phy_variable;
     const char *config_file;
@@ -295,7 +295,7 @@ void phy::reduce_main(bool run_with_usrp, char *argv[]) {
     std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
 
 
-    if (run_with_usrp == false) {
+    if (run_with_usrp == false && run_one_time_ssb == true) {
         /** Run generate_frame one time for testing */
 
         int sfn = 555;
@@ -474,4 +474,53 @@ void phy::init_logging(std::string level)
                 );
     }
     boost::log::add_common_attributes();
+}
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------------------------
+/** ################################ DCI - PDCCH ################################ */
+
+void phy::encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
+    int index_bit_dci = 0;
+    int RIV_binary[freq_domain_ra_size];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(RIV_binary)/sizeof(*RIV_binary), dci_object.RIV, RIV_binary);
+    for (int bit = 0; bit < freq_domain_ra_size; bit++){
+        dci_bits[index_bit_dci] = RIV_binary[bit];
+        index_bit_dci ++;
+    }
+    std::cout<<"index_bit_dci = "<<index_bit_dci<<std::endl;
+
+    int TD_ra_binary[4];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(TD_ra_binary)/sizeof(*TD_ra_binary), dci_object.TD_ra, TD_ra_binary);
+    for (int bit = 0; bit < 4; bit++){
+        dci_bits[index_bit_dci] = TD_ra_binary[bit];
+        index_bit_dci ++;
+    }
+
+    dci_bits[index_bit_dci] = dci_object.vrb_prb_interleaving;
+    index_bit_dci ++;
+
+    int mcs_binary[5];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(mcs_binary)/sizeof(*mcs_binary), dci_object.mcs, mcs_binary);
+    for (int bit = 0; bit < 5; bit++){
+        dci_bits[index_bit_dci] = mcs_binary[bit];
+        index_bit_dci ++;
+    }
+
+    int rv_binary[2];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(rv_binary)/sizeof(*rv_binary), dci_object.rv, rv_binary);
+    for (int bit = 0; bit < 2; bit++){
+        dci_bits[index_bit_dci] = rv_binary[bit];
+        index_bit_dci ++;
+    }
+
+    dci_bits[index_bit_dci] = dci_object.si;
+
 }
