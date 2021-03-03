@@ -204,6 +204,7 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
         };
     }
 
+    free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_decode");
     count_seq = 0;
     vector<int> q_ftmp_n, q_itmp_n;
 
@@ -255,6 +256,7 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
     for (int n = 0; n < K + n_pc; n++){
         q_i_n[n] = q_itmp_n[q_itmp_n.size() - ( K + n_pc) + n];
     }
+    free5GRAN::utils::common_utils::display_table(q_i_n, K, "q_i_n from polar_decode");
     count_seq = 0;
     /*
      * Recovering c' from u_n (TS38.212 5.3.1.2)
@@ -288,8 +290,6 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
     for (int k = 0; k < K ; k ++){
         output_bits[pi_seq[k]] = c_p[k];
     }
-
-
 }
 
 
@@ -1321,21 +1321,21 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
     */
 
     /** Initialize variables */
-    int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K = input_size, K_max = 164, count_seq = 0;
-    //K = free5GRAN::SIZE_PBCH_POLAR_DECODED
+    int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K_polar = input_size, K_max = 164, count_seq = 0;
+    //K_polar = free5GRAN::SIZE_PBCH_POLAR_DECODED
 
     std::cout<<"sizeof(input_bits) = "<<sizeof(input_bits)<<std::endl;
     std::cout<<"sizeof(*input_bits) = "<<sizeof(*input_bits)<<std::endl;
-    std::cout<<"K = "<<K<<std::endl;
+    std::cout << "K_polar = " << K_polar << std::endl;
     free5GRAN::utils::common_utils::display_table(input_bits, 40, "input_bits from polar_encode");
 
     bool found;
-    //int c_p [56], q_0_n_1 [N], q_i_n [K + n_pc], u [N], pi_seq [56];
+    //int c_p [56], q_0_n_1 [N], q_i_n [K_polar + n_pc], u [N], pi_seq [56];
     int c_p [input_size], q_0_n_1 [N], q_i_n [input_size + n_pc], u [N], pi_seq [input_size];
     /** Step 1: Generate pi sequence according to TS38.212 V15.2.0 Section 5.3.1.1 */
     for (int m = 0; m < K_max; m++) {
-        if (free5GRAN::INTERLEAVING_PATTERN[m] >= K_max - K) {
-            pi_seq[count_seq] = free5GRAN::INTERLEAVING_PATTERN[m] - (K_max - K);
+        if (free5GRAN::INTERLEAVING_PATTERN[m] >= K_max - K_polar) {
+            pi_seq[count_seq] = free5GRAN::INTERLEAVING_PATTERN[m] - (K_max - K_polar);
             count_seq++;
         }
     }
@@ -1359,15 +1359,17 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
     }
 
     /** Step 4: Generate q_i_n sequence from q_0_n_1 according to TS38.212 V15.2.0 Section 5.3.1.2 */
-    for (int n = 0; n < K + n_pc; n++) {
-        q_i_n[n] = q_0_n_1[N - (K + n_pc) + n];
+    for (int n = 0; n < K_polar + n_pc; n++) {
+        q_i_n[n] = q_0_n_1[N - (K_polar + n_pc) + n];
     }
+
+    free5GRAN::utils::common_utils::display_table(q_i_n, K_polar, "q_i_n from polar_encode");
 
     /** Step 5: Polar coding apply to c_p to get u (using q_i_n) according to TS38.212 V15.2.0 Section 5.3.1.2 */
     count_seq = 0;
     for (int n = 0; n < N; n++) {
         found = false;
-        for (int p = 0; p < K + n_pc; p++) {
+        for (int p = 0; p < K_polar + n_pc; p++) {
             if (q_i_n[p] == n) {
                 found = true;
                 break;
@@ -1380,6 +1382,8 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
             u[n] = 0;
         }
     }
+
+    free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_encode");
 
     /** Step 6: polar coding apply to u to get output_encoded_bits using G9 matrix according to TS38.212 V15.2.0 Section 5.3.1.2 */
     for (int n = 0; n < N; n++) {

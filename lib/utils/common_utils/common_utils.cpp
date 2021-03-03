@@ -330,14 +330,14 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<int> vector_to_d
     std::cout<< vector_name << " (of size "<< size1<< " symbols) = "<<std::ends;
 
     for (int bit = 0; bit < size1; bit++){
-        std::cout<<vector_to_display[bit]<<std::ends;
+
         if (bit % 10 == 0){
             std::cout<<" | "<<std::ends;
         }
         if (bit % 100 == 0){
             std::cout<<""<<std::endl;
         }
-
+        std::cout<<vector_to_display[bit]<<std::ends;
     }
 }
 
@@ -407,7 +407,7 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
         if (i == 0){
             std::cout << +table_name << ": "<<std::ends;
         }
-        std::cout<<table_to_display[i] <<" "<< std::ends;
+        std::cout<<table_to_display[i]<<""<< std::ends;
     }
     std::cout <<""<< std::endl;
 }
