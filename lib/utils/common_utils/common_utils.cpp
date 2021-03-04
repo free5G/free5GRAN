@@ -407,7 +407,7 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
         if (i == 0){
             std::cout << +table_name << ": "<<std::ends;
         }
-        std::cout<<table_to_display[i]<<""<< std::ends;
+        std::cout<<table_to_display[i]<<" "<< std::ends;
     }
     std::cout <<""<< std::endl;
 }

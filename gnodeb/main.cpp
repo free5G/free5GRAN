@@ -74,32 +74,43 @@ int main(int argc, char *argv[]) {
         std::cout<<"freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
         std::cout<<"K = "<<K<<std::endl;
         phy_variable_main.encode_dci(dci_object, dci_bits, freq_domain_ra_size);
-        free5GRAN::utils::common_utils::display_table(dci_bits, freq_domain_ra_size +4+1+5+2+1+15, "dci_bits");
+        free5GRAN::utils::common_utils::display_table(dci_bits, freq_domain_ra_size +4+1+5+2+1+15, "dci_bits from main");
 
 
         int length_crc = 24;
-        int dci_bits_with_crc[K + length_crc];
+        int dci_bits_with_crc[K];
         phy_variable_main.adding_dci_crc(dci_bits, dci_bits_with_crc, free5GRAN::G_CRC_24_C, K, length_crc + 1, free5GRAN::SI_RNTI);
 
-        free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K+length_crc, "dci_bits_with_crc");
+        free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K, "dci_bits_with_crc");
 
         /** Polar encode */
         int n = 9;
         int N = pow(2, n);
         std::vector<int> polar_encoded_dci(N, 0);
-        int input_size = K + length_crc;
+        int input_size = K;
         free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, input_size, polar_encoded_dci);
         free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polar_encoded_dci");
 
 
+        /** Rate Matching */
+        int agg_level = pow(2, 3);
+        int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
+
+        std::vector<int> rate_matched_dci(E,0);
+            // BE CAREFUL: for now, E is not an entry for function rate_matched_polar_coding. It's fixed to 864.
+        free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci, rate_matched_dci);
+
+        free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
+
+
+
         /** UE try to decode */
         //int E = 9; // to be modified
-        int agg_level = pow(2, 1);
-        int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
+
         std::cout<<"\nE = "<<E<<std::endl;
         bool validated;
         free5GRAN::dci_1_0_si_rnti dci_object_UE;
-        phy_variable_main.UE_decode_polar_dci(polar_encoded_dci, input_size, N, E, input_size, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
+        phy_variable_main.UE_decode_polar_dci(rate_matched_dci, input_size, N, E, input_size, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
 
         /** print dci_object_UE to verify that it's well decoded */
         std::cout<<"\ndci_object_UE.RIV = "<<dci_object_UE.RIV<<std::endl;
