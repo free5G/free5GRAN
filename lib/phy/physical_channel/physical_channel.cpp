@@ -264,3 +264,92 @@ void free5GRAN::phy::physical_channel::pbch_encoding(vector<int> rate_matched_bc
     /** MODULATION -> Generating pbch_symbols (432 symbols long in our case) from scrambled_pbch, using BPSK or QPSK. TS38.211 V15.2.0 Section 5.1.3 */
     free5GRAN::phy::signal_processing::modulation(scrambled_pbch_vector, free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, 1, pbch_symbols_vector);
 }
+
+
+
+
+
+void free5GRAN::phy::physical_channel::pdcch_encoding(free5GRAN::dci_1_0_si_rnti dci_object, int freq_domain_ra_size, int n_rb_coreset, int length_crc, int *rnti, int agg_level, int n, vector<complex<float>> &pdcch_symbols){
+
+    /** Encode DCI from dci_object to dci_bits */
+    int dci_bits[freq_domain_ra_size +4+1+5+2+1+15];
+    free5GRAN::utils::common_utils::encode_dci(dci_object, dci_bits, freq_domain_ra_size);
+    free5GRAN::utils::common_utils::display_table(dci_bits, freq_domain_ra_size +4+1+5+2+1+15, "dci_bits from main");
+
+    int K = freq_domain_ra_size +4+1+5+2+1+15+24; // K is the length of dci_payload (crc included)
+
+    /** Generate CRC and masking with rnti */
+    int dci_bits_with_crc[K];
+
+    int dci_ready_for_crc[K];
+    for (int i = 0; i<K; i++){
+        if (i < length_crc) {
+            dci_ready_for_crc[i] = 1;
+        }else{
+            dci_ready_for_crc[i] = dci_bits[i-length_crc];
+        }
+    }
+    free5GRAN::utils::common_utils::display_table(dci_ready_for_crc, K, "dci_ready_for_crc");
+    int crc_dci_descrambled[length_crc];
+    int crc_dci_scrambled[length_crc];
+
+    free5GRAN::phy::transport_channel::compute_crc(dci_ready_for_crc, free5GRAN::G_CRC_24_C, crc_dci_descrambled,  K, length_crc+1);
+    free5GRAN::utils::common_utils::display_table(crc_dci_descrambled, length_crc+1, "crc_dci_descrambled");
+
+    int rnti_padded[24];
+    for (int i =0; i<24; i++){
+        if(i<8){
+            rnti_padded[i] = 0;
+        }else{
+            rnti_padded[i] = rnti[i-8];
+        }
+    }
+    free5GRAN::utils::common_utils::display_table(rnti_padded, 24, "rnti_padded");
+    free5GRAN::utils::common_utils::scramble(crc_dci_descrambled, rnti_padded, crc_dci_scrambled, length_crc, 0);
+    free5GRAN::utils::common_utils::display_table(crc_dci_scrambled, length_crc-1, "crc_dci_scrambled");
+
+    /** Adding crc to dci */
+    for (int bit = 0; bit < K; bit++) {
+        if (bit < 39){
+            dci_bits_with_crc[bit] = dci_bits[bit];
+        }else{
+            dci_bits_with_crc[bit] = crc_dci_scrambled[bit-39];
+        }
+    }
+
+    free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K, "dci_bits_with_crc from adding_dci_crc");
+
+    /** Polar encode */
+    int N = pow(2, n);
+    std::vector<int> polar_encoded_dci(N, 0);
+    free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, K, polar_encoded_dci);
+    free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polar_encoded_dci");
+
+
+    /** Rate Matching */
+    int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
+    std::vector<int> rate_matched_dci(E,0);
+    // BE CAREFUL: for now, E is not an entry of function rate_matched_polar_coding. It's fixed to 864.
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci, rate_matched_dci);
+
+    free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
+
+
+    /** Scrambling */
+
+    std::cout<<"\nfree5GRAN::gnodeB_config_globale.pci = "<<free5GRAN::gnodeB_config_globale.pci<<std::endl;
+    int c_seq_pdcch[agg_level * 6 * 9 * 2];
+    free5GRAN::utils::sequence_generator::generate_c_sequence((long) free5GRAN::gnodeB_config_globale.pci % (long)pow(2,31), agg_level * 6 * 9 * 2, c_seq_pdcch,0);
+    free5GRAN::utils::common_utils::display_table(c_seq_pdcch,agg_level * 6 * 9 * 2, "c_seq_pdcch from main");
+
+    std::vector<int> scrambled_pdcch(E, 0);
+    free5GRAN::utils::common_utils::scramble(rate_matched_dci, c_seq_pdcch, scrambled_pdcch, agg_level * 6 * 9 * 2, 0);
+
+    free5GRAN::utils::common_utils::display_vector(scrambled_pdcch, E, "scrambled_pdcch from main");
+
+
+    /** Modulation */
+
+    free5GRAN::phy::signal_processing::modulation(scrambled_pdcch, E, 1, pdcch_symbols);
+    free5GRAN::utils::common_utils::display_vector(pdcch_symbols, E / 2, "pdcch_symbols from main");
+}

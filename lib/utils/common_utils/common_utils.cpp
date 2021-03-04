@@ -212,6 +212,61 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
 
 
+
+
+void free5GRAN::utils::common_utils::encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
+
+
+    int index_bit_dci = 0;
+    int RIV_binary[freq_domain_ra_size];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(RIV_binary)/sizeof(*RIV_binary), dci_object.RIV, RIV_binary);
+
+    /** Put RIV bits into dci_bits sequence */
+    for (int bit = 0; bit < freq_domain_ra_size; bit++){
+        dci_bits[index_bit_dci] = RIV_binary[bit];
+        index_bit_dci ++;
+    }
+
+    int TD_ra_binary[4];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(TD_ra_binary)/sizeof(*TD_ra_binary), dci_object.TD_ra, TD_ra_binary);
+    /** Put TD_ra bits into dci_bits sequence */
+    for (int bit = 0; bit < 4; bit++){
+        dci_bits[index_bit_dci] = TD_ra_binary[bit];
+        index_bit_dci ++;
+    }
+
+    /** Put vrb_prb_interleaving bits into dci_bits sequence */
+    dci_bits[index_bit_dci] = dci_object.vrb_prb_interleaving;
+    index_bit_dci ++;
+
+
+    int mcs_binary[5];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(mcs_binary)/sizeof(*mcs_binary), dci_object.mcs, mcs_binary);
+    /** Put mcs bits into dci_bits sequence */
+    for (int bit = 0; bit < 5; bit++){
+        dci_bits[index_bit_dci] = mcs_binary[bit];
+        index_bit_dci ++;
+    }
+
+    int rv_binary[2];
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(rv_binary)/sizeof(*rv_binary), dci_object.rv, rv_binary);
+    /** Put rv bits into dci_bits sequence */
+    for (int bit = 0; bit < 2; bit++){
+        dci_bits[index_bit_dci] = rv_binary[bit];
+        index_bit_dci ++;
+    }
+
+    /** Put si bit into dci_bits sequence */
+    dci_bits[index_bit_dci] = dci_object.si;
+
+    /** Adding 15 '1' at the end of the dci_bits sequence */
+    for (int i = 0; i<15; i++){
+        dci_bits[freq_domain_ra_size +4+1+5+2+1+ i] = 1;
+    }
+}
+
+
+
 void free5GRAN::utils::common_utils::convert_decimal_to_binary(int size, int decimal, int *table_output) {
     /**
     * \fn convert_decimal_to_binary (int size, int decimal, int* table_output)
@@ -275,10 +330,10 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
 
 
 
-void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int size1,
-                                                    char *vector_name){
+void free5GRAN::utils::common_utils::display_vector_per_symbols(std::vector<std::complex<float>> vector_to_display, int size1,
+                                                                char *vector_name){
     /**
-    * \fn display_vector (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
+    * \fn display_vector_per_symbols (std::vector<std::complex<float>> *vector_to_display, int vector_size, char* vector_name)
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
@@ -315,10 +370,24 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
 }
 
 
+void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int size, char *vector_name){
+    std::cout<<"\n"<< vector_name << " (of size "<< size<< ") = "<<std::ends;
+    for (int i = 0; i < size; i++){
+        if (i % 10 == 0){
+            std::cout<<"|"<<std::ends;
+        }
+        if (i % 100 == 0){
+            std::cout<<""<<std::endl;
+        }
+        std::cout<<vector_to_display[i]<<" "<<std::ends;
+    }
+}
+
+
 void free5GRAN::utils::common_utils::display_vector(std::vector<int> vector_to_display, int size1,
                                                     char *vector_name){
     /**
-    * \fn display_vector (std::vector<int> *vector_to_display, int vector_size, char* vector_name)
+    * \fn display_vector_per_symbols (std::vector<int> *vector_to_display, int vector_size, char* vector_name)
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
@@ -452,7 +521,15 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
         BOOST_LOG_TRIVIAL(info) << "FUNCTION DETECTED IN CONFIG FILE: SSB EMISSION";
 
         /** Initialize the different scop contained in config file */
-        const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"];
+        const libconfig::Setting &mib_info = root["mib_info"], &cell_info = root["cell_info"], &usrp_info = root["usrp_info"], &dci_info = root["dci_info"];
+
+        /** Fill dci_object with values in config file */
+        free5GRAN::gnodeB_config_globale.dci_object.RIV = dci_info.lookup("RIV");
+        free5GRAN::gnodeB_config_globale.dci_object.TD_ra = dci_info.lookup("TD_ra");
+        free5GRAN::gnodeB_config_globale.dci_object.vrb_prb_interleaving = dci_info.lookup("vrb_prb_interleaving");
+        free5GRAN::gnodeB_config_globale.dci_object.mcs = dci_info.lookup("mcs");
+        free5GRAN::gnodeB_config_globale.dci_object.rv = dci_info.lookup("rv");
+        free5GRAN::gnodeB_config_globale.dci_object.si = dci_info.lookup("si");
 
         /** Fill usrp_info_object with values in config file */
         std::string device_args = usrp_info.lookup("device_args");

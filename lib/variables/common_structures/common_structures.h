@@ -122,6 +122,7 @@ typedef struct gNodeB_config_ {
     int scs;
     free5GRAN::mib mib_object;
     free5GRAN::usrp_info usrp_info_object;
+    free5GRAN::dci_1_0_si_rnti dci_object;
 } gNodeB_config;
 
 }

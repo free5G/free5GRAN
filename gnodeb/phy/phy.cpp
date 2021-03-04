@@ -304,7 +304,8 @@ void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
         phy_variable.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn, free5GRAN::gnodeB_config_globale.pci, N,
                                     free5GRAN::gnodeB_config_globale.i_b_ssb,
                                     free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
-        free5GRAN::utils::common_utils::display_vector(buff_main_10ms, free5GRAN::num_symbols_frame, "\n\nbuff_main_10ms from main");
+        free5GRAN::utils::common_utils::display_vector_per_symbols(buff_main_10ms, free5GRAN::num_symbols_frame,
+                                                                   "\n\nbuff_main_10ms from main");
     }
 
 
@@ -487,48 +488,7 @@ void phy::init_logging(std::string level)
 //------------------------------------------------------------------------------------------------------
 /** ################################ DCI - PDCCH ################################ */
 
-void phy::encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
 
-
-
-    int index_bit_dci = 0;
-    int RIV_binary[freq_domain_ra_size];
-    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(RIV_binary)/sizeof(*RIV_binary), dci_object.RIV, RIV_binary);
-    for (int bit = 0; bit < freq_domain_ra_size; bit++){
-        dci_bits[index_bit_dci] = RIV_binary[bit];
-        index_bit_dci ++;
-    }
-
-    int TD_ra_binary[4];
-    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(TD_ra_binary)/sizeof(*TD_ra_binary), dci_object.TD_ra, TD_ra_binary);
-    for (int bit = 0; bit < 4; bit++){
-        dci_bits[index_bit_dci] = TD_ra_binary[bit];
-        index_bit_dci ++;
-    }
-
-    dci_bits[index_bit_dci] = dci_object.vrb_prb_interleaving;
-    index_bit_dci ++;
-
-    int mcs_binary[5];
-    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(mcs_binary)/sizeof(*mcs_binary), dci_object.mcs, mcs_binary);
-    for (int bit = 0; bit < 5; bit++){
-        dci_bits[index_bit_dci] = mcs_binary[bit];
-        index_bit_dci ++;
-    }
-
-    int rv_binary[2];
-    free5GRAN::utils::common_utils::convert_decimal_to_binary(sizeof(rv_binary)/sizeof(*rv_binary), dci_object.rv, rv_binary);
-    for (int bit = 0; bit < 2; bit++){
-        dci_bits[index_bit_dci] = rv_binary[bit];
-        index_bit_dci ++;
-    }
-
-    dci_bits[index_bit_dci] = dci_object.si;
-
-    for (int i = 0; i<15; i++){
-        dci_bits[freq_domain_ra_size +4+1+5+2+1+ i] = 1;
-    }
-}
 
 
 void phy::adding_dci_crc(int *dci_bits, int *dci_bits_with_crc, int *crc_polynom, int length_input, int length_crc, int *rnti){
@@ -577,28 +537,50 @@ void phy::adding_dci_crc(int *dci_bits, int *dci_bits_with_crc, int *crc_polynom
 
 
 
-void phy::UE_decode_polar_dci(std::vector<int> rate_matched_dci, int K, int N, int E, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object){
+void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object){
+
+    /*
+     * Demodulate PBCH Signal
+     */
+
+    std::cout<<"agg_level from UE_decode = "<<agg_level<<std::endl;
+    int pdcch_bits[E];
+    free5GRAN::phy::signal_processing::hard_demodulation(pdcch_symbols,pdcch_bits,agg_level * 6 * 9,1);
+    free5GRAN::utils::common_utils::display_table(pdcch_bits, E, "UE_pdcch_bits (just after demodulation)");
+
+    /*
+        * De-scramble pbch_bits to scrambled_bits
+        */
+    int c_seq[agg_level * 6 * 9 * 2];
+    free5GRAN::utils::sequence_generator::generate_c_sequence((long) pci % (long)pow(2,31), agg_level * 6 * 9 * 2, c_seq,0);
+
+    int rate_matched_dci_table[E];
+    free5GRAN::utils::common_utils::scramble(pdcch_bits, c_seq, rate_matched_dci_table, agg_level * 6 * 9 * 2, 0);
+
+
+
 
     int rate_recovered[N], polar_decoded[K], remainder[25], descrambled[polar_decoded_size + 24];
     //int descrambled[K + 24];
 
     int A = K-24;
 
-    free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "UE_rate_matched_dci");
-    int rate_matched_dci_table[N];
-    for (int i = 0; i < E; i++){
-        rate_matched_dci_table[i] = rate_matched_dci[i];
-    }
 
+
+    /*
+     * rate recovering
+     */
+    free5GRAN::utils::common_utils::display_table(rate_matched_dci_table, E, "UE_rate_matched_dci_table");
+    free5GRAN::phy::transport_channel::rate_recover(rate_matched_dci_table, rate_recovered, 0, E, N, K);
+
+    free5GRAN::utils::common_utils::display_table(rate_recovered, N, "UE rate_recoverd");
 
     /*
      * Polar decoding
      */
 
-    free5GRAN::utils::common_utils::display_table(rate_matched_dci_table, E, "UE_rate_matched_dci_table");
-
     //free5GRAN::phy::transport_channel::polar_decode(rate_matched_dci_table,polar_decoded,N,K,9,1,0,0, E);
-    free5GRAN::phy::transport_channel::polar_decode(rate_matched_dci_table, polar_decoded, N, polar_decoded_size, 9, 1, 0, 0, E);
+    free5GRAN::phy::transport_channel::polar_decode(rate_recovered, polar_decoded, N, polar_decoded_size, 9, 1, 0, 0, E);
 
     free5GRAN::utils::common_utils::display_table(polar_decoded, K, "UE_polar_decoded");
     /*

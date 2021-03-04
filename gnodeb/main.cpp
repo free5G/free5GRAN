@@ -28,6 +28,7 @@
 #include "../lib/utils/common_utils/common_utils.h"
 #include "../lib/phy/physical_channel/physical_channel.h"
 #include "../lib/variables/common_variables/common_variables.h"
+#include "../lib/utils/sequence_generator/sequence_generator.h"
 
 /** This function will run continuously to send frames and is called by thread 'sending' */
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send){
@@ -37,9 +38,9 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = true;
+    bool run_test_dci = false;
 
     phy phy_variable_main;
     phy_variable_main.reduce_main(run_with_usrp, run_one_time_ssb, argv);
@@ -53,64 +54,40 @@ int main(int argc, char *argv[]) {
 
     if (run_test_dci == true) {
 
+        /** Read config file */
+        const char *config_file;
+        config_file = ("../config/ssb_emission.cfg");
+        free5GRAN::utils::common_utils::read_config_gNodeB(config_file);
+        free5GRAN::dci_1_0_si_rnti dci_object_main;
+        dci_object_main = free5GRAN::gnodeB_config_globale.dci_object;
+
+        /** Initialize some values needed for pdcch_encoding */
         free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
         pdcch_ss_mon_occ.n_rb_coreset = 48;
-        int freq_domain_ra_size, K;
+        int freq_domain_ra_size;
         freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
         std::cout<< "freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
-
-        free5GRAN::dci_1_0_si_rnti dci_object;
-
-        dci_object.RIV = 329;
-        dci_object.TD_ra = 0;
-        dci_object.vrb_prb_interleaving = 0;
-        dci_object.mcs = 6;
-        dci_object.rv = 3;
-        dci_object.si = 0;
-
-        K = freq_domain_ra_size +4+1+5+2+1+15+24;
-        //K = freq_domain_ra_size +4+1+5+2+1;
-        int dci_bits[freq_domain_ra_size +4+1+5+2+1+15];
-        std::cout<<"freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
-        std::cout<<"K = "<<K<<std::endl;
-        phy_variable_main.encode_dci(dci_object, dci_bits, freq_domain_ra_size);
-        free5GRAN::utils::common_utils::display_table(dci_bits, freq_domain_ra_size +4+1+5+2+1+15, "dci_bits from main");
-
-
-        int length_crc = 24;
-        int dci_bits_with_crc[K];
-        phy_variable_main.adding_dci_crc(dci_bits, dci_bits_with_crc, free5GRAN::G_CRC_24_C, K, length_crc + 1, free5GRAN::SI_RNTI);
-
-        free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K, "dci_bits_with_crc");
-
-        /** Polar encode */
-        int n = 9;
-        int N = pow(2, n);
-        std::vector<int> polar_encoded_dci(N, 0);
-        int input_size = K;
-        free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, input_size, polar_encoded_dci);
-        free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polar_encoded_dci");
-
-
-        /** Rate Matching */
         int agg_level = pow(2, 3);
+        int n =9;
         int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
 
-        std::vector<int> rate_matched_dci(E,0);
-            // BE CAREFUL: for now, E is not an entry for function rate_matched_polar_coding. It's fixed to 864.
-        free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci, rate_matched_dci);
+        /** Pdcch encoding */
+        vector<complex<float>> pdcch_symbols(E, {0,0});
+        free5GRAN::phy::physical_channel::pdcch_encoding(dci_object_main, freq_domain_ra_size, pdcch_ss_mon_occ.n_rb_coreset, 24, free5GRAN::SI_RNTI, agg_level, n, pdcch_symbols);
 
-        free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
+
 
 
 
         /** UE try to decode */
-        //int E = 9; // to be modified
+
+        int K = freq_domain_ra_size +4+1+5+2+1+15+24; // K is the length of dci_payload (crc included)
+        int N = pow(2, n);
 
         std::cout<<"\nE = "<<E<<std::endl;
         bool validated;
         free5GRAN::dci_1_0_si_rnti dci_object_UE;
-        phy_variable_main.UE_decode_polar_dci(rate_matched_dci, input_size, N, E, input_size, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
+        phy_variable_main.UE_decode_polar_dci(pdcch_symbols, K, N, E, free5GRAN::gnodeB_config_globale.pci, agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
 
         /** print dci_object_UE to verify that it's well decoded */
         std::cout<<"\ndci_object_UE.RIV = "<<dci_object_UE.RIV<<std::endl;
