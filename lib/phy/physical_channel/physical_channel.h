@@ -37,7 +37,7 @@ namespace free5GRAN {
 
             /** FROM HERE, IT'S ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
             void pbch_encoding(vector<int> rate_matched_bch_vector, int pci, int i_b_ssb, vector<complex<float>> &pbch_symbols_vector);
-            void pdcch_encoding(free5GRAN::dci_1_0_si_rnti dci_object, int freq_domain_ra_size, int n_rb_coreset, int length_crc, int *rnti, int agg_level, int n, vector<complex<float>> &pdcch_symbols);
+            void pdcch_encoding(vector<int> rate_matched_dci, int E, vector<complex<float>> &pdcch_symbols);
             }
     }
 }

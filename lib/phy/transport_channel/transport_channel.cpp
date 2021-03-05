@@ -1394,22 +1394,23 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
 
 
 
-void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> polar_encode_bch_vector, vector <int> &rate_matched_bch_vector) {
+void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> polar_encode_vector, int E, vector <int> &rate_matched_vector) {
     /**
-    * \fn rate_matching_polar_coding (vector<int> polar_encode_bch, vector <int> &rate_matched_bch_vector)
+    * \fn rate_matching_polar_coding (vector<int> polar_encode_bch, vector <int> &rate_matched_vector)
     * \brief Applies the rate matching to the 512 bits sequence polar_encoded_bch to get a 864 bits long rate_matched_bch.
     * \details
     * First, bits contained in polar_encoded_bch are interleaved (again).
     * Then, the 352 first bits of polar_encoded_bch are added at the end of this sequence, to get a 864 bits long sequence
     * \standard TS38.212 V15.2.0 Section 5.4.1
     * \param[in] polar_encode_bch_vector polar_encode_bch, 512 bits long.
+    * \param[in] E Size of the output.
     * \param[out] &rate_matched_bch_vector Final BCH 864 bits sequence.
     */
 
     /** Initialize variables */
     int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, free5GRAN::SIZE_PBCH_POLAR_DECODED, 9);
     int N = pow(2, n);
-    int E = free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2;
+    //int E = free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2;
     int i, j_n;
     int b1 [N];
 
@@ -1417,15 +1418,15 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> p
     for (int n = 0; n < N; n++) {
         i = floor(32 * (double) n / (double) N);
         j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
-        b1[n] = polar_encode_bch_vector[j_n];
+        b1[n] = polar_encode_vector[j_n];
     }
 
     /** Add 352 bits at the end of b1 to get rate_matched_bch */
     for (int n = 0; n < E; n++) {
         if (n < N) {
-            rate_matched_bch_vector[n] = b1[n];
+            rate_matched_vector[n] = b1[n];
         } else {
-            rate_matched_bch_vector[n] = b1[n - N];
+            rate_matched_vector[n] = b1[n - N];
         }
     }
     BOOST_LOG_TRIVIAL(info) << "function rate_matching_polar_coding done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
@@ -1478,5 +1479,94 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, input_size, polar_encoded_bch_vector);
 
     /** RATE MATCHING -> Generate rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
-    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, rate_matched_bch_vector);
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, rate_matched_bch_vector);
 }
+
+
+
+
+void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti dci_1_0_object, int freq_domain_ra_size, int length_crc, int *rnti, int agg_level, int n, vector<int> &rate_matched_dci){
+    /**
+     * \fn dci_encoding(free5GRAN::dci_1_0_si_rnti dci_1_0_object, int freq_domain_ra_size, int length_crc, int *rnti, int agg_level, int n, vector<int> &rate_matched_dci)
+     * \brief Transforms the dci_object into a rate_matched_dci bits sequence.
+     * \standard TS38.212 V15.2.0 Section 7.3
+     * \details
+     * Step 1: dci_generation: tranform dci_object into dci_bits, according to TS38.212 V15.2.0 Section 7.3.1.2.1
+     * Step 2: generate CRC and mask (scramble) it with RNTI sequence, according to TS38.212 V15.2.0 Section 7.3.2
+     * Step 3: adding CRC to dci_bits, according to TS38.212 V15.2.0 Section 7.3.2
+     * Step 4: Polar coding, according to TS38.212 V15.2.0 Section 7.3.3 and 5.3.1
+     * Step 5: Rate matching, according to TS38.212 V15.2.0 Section 7.3.4
+     * \param[in] dci_1_0_object. Downlink Control Information, Format 1_0
+     * \param[in] freq_domain_ra_size. Number of bits in dci_bits reserved to Frequency domain resource assignment.
+     * \param[in] length_crc. In our case, this number is set to 24.
+     * \param[in] *rnti. Radio Network Temporary Identifier. Used to scrambled the CRC.
+     * \param[in] agg_level. Aggregation level : number of CCE's in a CORESET to carry pdcch dci message.
+     * \param[in] n. Will indicates N (=2^n) which is the size of dci payload after polar encoding.
+     * \param[out] &rate_matched_dci. The output bits sequence
+     */
+
+
+    /** Step 1: dci_generation: tranform dci_object into dci_bits, according to TS38.212 V15.2.0 Section 7.3.1.2.1 */
+    int A = freq_domain_ra_size + 4+1+5+2+1+15;
+    int dci_bits[A];
+    free5GRAN::utils::common_utils::dci_generation(dci_1_0_object, dci_bits, freq_domain_ra_size);
+    free5GRAN::utils::common_utils::display_table(dci_bits, A, "dci_bits from main");
+
+
+    /** Step 2: generate CRC and mask (scramble) it with RNTI sequence, according to TS38.212 V15.2.0 Section 7.3.2 */
+    int K = A + length_crc; // K is the length of dci_payload (crc included)
+    int dci_ready_for_crc[K];
+    for (int i = 0; i<K; i++){
+        //dci is padded with '1' at the left to reach K size.
+        if (i < length_crc) {
+            dci_ready_for_crc[i] = 1;
+        }else{
+            dci_ready_for_crc[i] = dci_bits[i-length_crc];
+        }
+    }
+    free5GRAN::utils::common_utils::display_table(dci_ready_for_crc, K, "dci_ready_for_crc");
+    int crc_dci_descrambled[length_crc];
+
+    free5GRAN::phy::transport_channel::compute_crc(dci_ready_for_crc, free5GRAN::G_CRC_24_C, crc_dci_descrambled,  K, length_crc+1);
+    free5GRAN::utils::common_utils::display_table(crc_dci_descrambled, length_crc+1, "crc_dci_descrambled");
+
+    //rnti is padded with '0' at the left to reach length_crc size
+    int rnti_padded[24];
+    for (int i =0; i<24; i++){
+        if(i<8){
+            rnti_padded[i] = 0;
+        }else{
+            rnti_padded[i] = rnti[i-8];
+        }
+    }
+    free5GRAN::utils::common_utils::display_table(rnti_padded, 24, "rnti_padded");
+
+    int crc_dci_scrambled[length_crc];
+    free5GRAN::utils::common_utils::scramble(crc_dci_descrambled, rnti_padded, crc_dci_scrambled, length_crc, 0);
+    free5GRAN::utils::common_utils::display_table(crc_dci_scrambled, length_crc-1, "crc_dci_scrambled");
+
+
+    /** Step 3: adding CRC to dci_bits, according to TS38.212 V15.2.0 Section 7.3.2 */
+    int dci_bits_with_crc[K];
+    for (int bit = 0; bit < K; bit++) {
+        if (bit < A){
+            dci_bits_with_crc[bit] = dci_bits[bit];
+        }else{
+            dci_bits_with_crc[bit] = crc_dci_scrambled[bit-A];
+        }
+    }
+    free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K, "dci_bits_with_crc from adding_dci_crc");
+
+    /** Step 4: Polar coding, according to TS38.212 V15.2.0 Section 7.3.3 and 5.3.1 */
+    int N = pow(2, n);
+    std::vector<int> polar_encoded_dci(N, 0);
+    free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, K, polar_encoded_dci);
+    free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polar_encoded_dci");
+
+
+    /** Step 5: Rate matching, according to TS38.212 V15.2.0 Section 7.3.4 */
+    int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is the length of dci after rate_matching
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci, E, rate_matched_dci);
+    free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
+}
+

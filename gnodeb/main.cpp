@@ -54,12 +54,12 @@ int main(int argc, char *argv[]) {
 
     if (run_test_dci == true) {
 
-        /** Read config file to get dci_object*/
+        /** Read config file to get dci_object */
         const char *config_file;
         config_file = ("../config/ssb_emission.cfg");
         free5GRAN::utils::common_utils::read_config_gNodeB(config_file);
-        free5GRAN::dci_1_0_si_rnti dci_object_main;
-        dci_object_main = free5GRAN::gnodeB_config_globale.dci_object;
+        free5GRAN::dci_1_0_si_rnti dci_1_0_object;
+        dci_1_0_object = free5GRAN::gnodeB_config_globale.dci_object;
 
         /** Initialize some values needed for pdcch_encoding */
         free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
@@ -68,12 +68,17 @@ int main(int argc, char *argv[]) {
         freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
         std::cout<< "freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
         int agg_level = pow(2, 3);
-        int n =9;
+        int n = 9;
         int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is also calculated in function pdcch_encoding
+        int length_crc = 24;
 
-        /** Pdcch encoding */
+        /** dci_encoding */
+        vector<int> rate_matched_dci(E,0);
+        free5GRAN::phy::transport_channel::dci_encoding(dci_1_0_object, freq_domain_ra_size, length_crc, free5GRAN::SI_RNTI, agg_level, n, rate_matched_dci);
+
+        /** pdcch encoding */
         vector<complex<float>> pdcch_symbols(E/2, {0,0});
-        free5GRAN::phy::physical_channel::pdcch_encoding(dci_object_main, freq_domain_ra_size, pdcch_ss_mon_occ.n_rb_coreset, 24, free5GRAN::SI_RNTI, agg_level, n, pdcch_symbols);
+        free5GRAN::phy::physical_channel::pdcch_encoding(rate_matched_dci, E, pdcch_symbols);
 
 
 
@@ -81,13 +86,13 @@ int main(int argc, char *argv[]) {
 
         /** UE try to decode */
 
-        int K = freq_domain_ra_size +4+1+5+2+1+15+24; // K is the length of dci_payload (crc included)
+        int K = freq_domain_ra_size +4+1+5+2+1+15+length_crc; // K is the length of dci_payload (crc included)
         int N = pow(2, n);
 
         std::cout<<"\nE = "<<E<<std::endl;
         bool validated;
         free5GRAN::dci_1_0_si_rnti dci_object_UE;
-        phy_variable_main.UE_decode_polar_dci(pdcch_symbols, K, N, E, free5GRAN::gnodeB_config_globale.pci, agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
+        phy_variable_main.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci, agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, dci_object_UE);
 
         /** print dci_object_UE to verify that it's well decoded */
         std::cout<<"\ndci_object_UE.RIV = "<<dci_object_UE.RIV<<std::endl;

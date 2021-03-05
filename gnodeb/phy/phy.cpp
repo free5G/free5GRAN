@@ -491,53 +491,11 @@ void phy::init_logging(std::string level)
 
 
 
-void phy::adding_dci_crc(int *dci_bits, int *dci_bits_with_crc, int *crc_polynom, int length_input, int length_crc, int *rnti){
-    int dci_ready_for_crc[63];
-    for (int i = 0; i<63; i++){
-        if (i < 24) {
-            dci_ready_for_crc[i] = 1;
-        }else{
-            dci_ready_for_crc[i] = dci_bits[i-24];
-        }
-    }
-    free5GRAN::utils::common_utils::display_table(dci_ready_for_crc, 63, "dci_ready_for_crc");
-    int crc_dci_descrambled[length_crc];
-    int crc_dci_scrambled[length_crc];
-    //free5GRAN::phy::transport_channel::compute_crc(dci_bits, crc_polynom, crc_dci_descrambled,  length_input, length_crc);
-    free5GRAN::phy::transport_channel::compute_crc(dci_ready_for_crc, crc_polynom, crc_dci_descrambled,  63, length_crc);
-    free5GRAN::utils::common_utils::display_table(crc_dci_descrambled, length_crc-1, "crc_dci_descrambled");
-
-    int rnti_padded[24];
-    for (int i =0; i<24; i++){
-        if(i<8){
-            rnti_padded[i] = 0;
-        }else{
-            rnti_padded[i] = rnti[i-8];
-        }
-    }
-    free5GRAN::utils::common_utils::display_table(rnti_padded, 24, "rnti_padded");
-    free5GRAN::utils::common_utils::scramble(crc_dci_descrambled, rnti_padded, crc_dci_scrambled, length_crc, 0);
-    free5GRAN::utils::common_utils::display_table(crc_dci_scrambled, length_crc-1, "crc_dci_scrambled");
-
-    /** Adding crc to dci */
-    std::cout<<"length_input from adding_dci_crc = "<<length_input<<std::endl;
-    for (int bit = 0; bit < length_input; bit++) {
-        if (bit < 39){
-            dci_bits_with_crc[bit] = dci_bits[bit];
-        }else{
-            dci_bits_with_crc[bit] = crc_dci_scrambled[bit-39];
-        }
-    }
-
-    free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, length_input, "dci_bits_with_crc from adding_dci_crc");
-}
 
 
 
 
-
-
-void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object){
+void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int length_crc, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object){
 
     /*
      * Demodulate PBCH Signal
@@ -560,10 +518,10 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
 
 
 
-    int rate_recovered[N], polar_decoded[K], remainder[25], descrambled[polar_decoded_size + 24];
+    int rate_recovered[N], polar_decoded[K], remainder[length_crc +1], descrambled[polar_decoded_size + length_crc];
     //int descrambled[K + 24];
 
-    int A = K-24;
+    int A = K-length_crc;
 
 
 
@@ -583,30 +541,31 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
     free5GRAN::phy::transport_channel::polar_decode(rate_recovered, polar_decoded, N, polar_decoded_size, 9, 1, 0, 0, E);
 
     free5GRAN::utils::common_utils::display_table(polar_decoded, K, "UE_polar_decoded");
+
     /*
      * RNTI de-masking and CRC validation
      */
 
-    for (int i = 0; i < 24; i ++){
+    for (int i = 0; i < length_crc; i ++){
         descrambled[i] = 1;
     }
     std::cout<<"FROM EU, A = "<<A<<" & K = "<<K<<std::endl;
     for (int i = 0; i < K; i ++){
         if (i < A+8){
-            descrambled[i + 24] = polar_decoded[i];
+            descrambled[i + length_crc] = polar_decoded[i];
         }
         else {
-            descrambled[i + 24] = (polar_decoded[i] + rnti[i - A - 8]) % 2;
+            descrambled[i + length_crc] = (polar_decoded[i] + rnti[i - A - 8]) % 2;
         }
     }
 
-    free5GRAN::utils::common_utils::display_table(descrambled, K + 24, "UE_descrambled");
+    free5GRAN::utils::common_utils::display_table(descrambled, K + length_crc, "UE_descrambled");
 
     //free5GRAN::phy::transport_channel::crc_validate(polar_decoded, free5GRAN::G_CRC_24_C, remainder, K, 25);
-    free5GRAN::phy::transport_channel::crc_validate(descrambled, free5GRAN::G_CRC_24_C, remainder, K+24, 25);
+    free5GRAN::phy::transport_channel::crc_validate(descrambled, free5GRAN::G_CRC_24_C, remainder, K+length_crc, length_crc+1);
     validated = true;
-    free5GRAN::utils::common_utils::display_table(remainder, 24, "remainder from UE decode");
-    for (int i = 0; i < 25; i ++){
+    free5GRAN::utils::common_utils::display_table(remainder, length_crc, "remainder from UE decode");
+    for (int i = 0; i < length_crc+1; i ++){
         if (remainder[i] ==1){
             validated = false;
             break;

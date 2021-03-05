@@ -214,7 +214,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
 
 
-void free5GRAN::utils::common_utils::encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
+void free5GRAN::utils::common_utils::dci_generation(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
 
 
     int index_bit_dci = 0;
