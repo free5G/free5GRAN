@@ -38,9 +38,9 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = false;
+    bool run_test_dci = true;
 
     phy phy_variable_main;
     phy_variable_main.reduce_main(run_with_usrp, run_one_time_ssb, argv);
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
     if (run_test_dci == true) {
 
-        /** Read config file */
+        /** Read config file to get dci_object*/
         const char *config_file;
         config_file = ("../config/ssb_emission.cfg");
         free5GRAN::utils::common_utils::read_config_gNodeB(config_file);
@@ -69,10 +69,10 @@ int main(int argc, char *argv[]) {
         std::cout<< "freq_domain_ra_size = "<<freq_domain_ra_size<<std::endl;
         int agg_level = pow(2, 3);
         int n =9;
-        int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2;
+        int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is also calculated in function pdcch_encoding
 
         /** Pdcch encoding */
-        vector<complex<float>> pdcch_symbols(E, {0,0});
+        vector<complex<float>> pdcch_symbols(E/2, {0,0});
         free5GRAN::phy::physical_channel::pdcch_encoding(dci_object_main, freq_domain_ra_size, pdcch_ss_mon_occ.n_rb_coreset, 24, free5GRAN::SI_RNTI, agg_level, n, pdcch_symbols);
 
 

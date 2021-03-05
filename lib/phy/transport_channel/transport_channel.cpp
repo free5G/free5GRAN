@@ -1324,10 +1324,7 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
     int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K_polar = input_size, K_max = 164, count_seq = 0;
     //K_polar = free5GRAN::SIZE_PBCH_POLAR_DECODED
 
-    std::cout<<"sizeof(input_bits) = "<<sizeof(input_bits)<<std::endl;
-    std::cout<<"sizeof(*input_bits) = "<<sizeof(*input_bits)<<std::endl;
-    std::cout << "K_polar = " << K_polar << std::endl;
-    free5GRAN::utils::common_utils::display_table(input_bits, 40, "input_bits from polar_encode");
+    //free5GRAN::utils::common_utils::display_table(input_bits, 40, "input_bits from polar_encode");
 
     bool found;
     //int c_p [56], q_0_n_1 [N], q_i_n [K_polar + n_pc], u [N], pi_seq [56];
@@ -1340,7 +1337,7 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
         }
     }
 
-    free5GRAN::utils::common_utils::display_table(pi_seq, input_size, "pi_seq from polar_encode" );
+    //free5GRAN::utils::common_utils::display_table(pi_seq, input_size, "pi_seq from polar_encode" );
 
 
     /** Step 2: Generate c_p sequence from input_bits using pi_seq, according to TS38.212 V15.2.0 Section 5.3.1.1 */
@@ -1363,7 +1360,7 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
         q_i_n[n] = q_0_n_1[N - (K_polar + n_pc) + n];
     }
 
-    free5GRAN::utils::common_utils::display_table(q_i_n, K_polar, "q_i_n from polar_encode");
+    //free5GRAN::utils::common_utils::display_table(q_i_n, K_polar, "q_i_n from polar_encode");
 
     /** Step 5: Polar coding apply to c_p to get u (using q_i_n) according to TS38.212 V15.2.0 Section 5.3.1.2 */
     count_seq = 0;
@@ -1383,7 +1380,7 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
         }
     }
 
-    free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_encode");
+    //free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_encode");
 
     /** Step 6: polar coding apply to u to get output_encoded_bits using G9 matrix according to TS38.212 V15.2.0 Section 5.3.1.2 */
     for (int n = 0; n < N; n++) {
