@@ -36,15 +36,15 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_
     rf_variable_2.buffer_transmition(*buff_to_send);
 }
 
+
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = true;
+    bool run_test_dci = false;
 
     phy phy_variable_main;
     phy_variable_main.reduce_main(run_with_usrp, run_one_time_ssb, argv);
-
 
 
 

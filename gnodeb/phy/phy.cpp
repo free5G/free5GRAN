@@ -34,6 +34,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <thread>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include <semaphore.h>
 
 
 
@@ -352,6 +353,11 @@ void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
 
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
+
+        /** Initialize Semaphore */
+        sem_init(free5GRAN::semaphore, 0, 1);
+        //std::cout<<"sem_inti"<<sem_init<<std::endl;
+
         while (true) {
             BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
 

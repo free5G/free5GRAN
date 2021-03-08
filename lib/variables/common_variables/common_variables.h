@@ -18,6 +18,7 @@
 #include <complex>
 #include <vector>
 #include <mutex>
+#include <semaphore.h>
 
 #ifndef FREE5GRAN_COMMON_VARIABLES_H
 #define FREE5GRAN_COMMON_VARIABLES_H
@@ -206,11 +207,6 @@ namespace free5GRAN{
 
     extern int MIB_BITS_SIZE;
 
-    extern bool display_variables;
-
-    extern int index_frame_sent;
-    extern int index_frame_to_send;
-
     extern int num_symbols_frame;
 
     extern free5GRAN::gNodeB_config gnodeB_config_globale;
@@ -227,6 +223,7 @@ namespace free5GRAN{
     extern std::vector<std::complex<float>> buffer_to_send;
 
     extern std::mutex mtx_common;
+    extern sem_t semaphore;
 
 }
 

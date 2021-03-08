@@ -20,7 +20,7 @@
 #include <complex.h>
 #include <vector>
 #include <mutex>
-
+#include <semaphore.h>
 
 int free5GRAN::G_CRC_24_C[] = {1,1,0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,1,0,1,1,1};
 
@@ -353,7 +353,6 @@ int free5GRAN::SIZE_IFFT_SSB = 1024;
 
 int free5GRAN::MIB_BITS_SIZE = 32;
 
-bool free5GRAN::display_variables = false;
 
 extern int free5GRAN::num_symbols_frame = 0;
 free5GRAN::gNodeB_config free5GRAN::gnodeB_config_globale = {"", "", false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, "", "", "","", 0.0, 0.0, 0.0, 0.0, 0.0, 0};
@@ -365,6 +364,7 @@ std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5
 std::vector<std::complex<float>> free5GRAN::buffer_to_send(0,0);
 
 std::mutex free5GRAN::mtx_common;
+sem_t free5GRAN::semaphore;
 
 
 //--------- DCI - PDCCH ---------
