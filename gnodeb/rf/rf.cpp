@@ -145,7 +145,7 @@ double rf::getGain() {
 
 
 
-void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
+void rf::buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector<std::complex<float>> &buff2) {
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
     uhd::stream_args_t stream_args("fc32", "sc16");
@@ -165,7 +165,10 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
     int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
 
     while (true) {
-            free5GRAN::mtx_common.lock();
+
+        //sem_wait(&free5GRAN::semaphore_common1);
+        std::cout<<"HELLO FROM RF"<<std::endl;
+            //free5GRAN::mtx_common.lock();
             start_send = chrono::high_resolution_clock::now();
 
             /** Calculate mean duration between 2 sends */
@@ -176,11 +179,17 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff) {
             }
 
             /** Send frame */
-            tx_stream->send(&buff.front(), buff.size(), md);
+            sem_post(&free5GRAN::semaphore_common2);
+            tx_stream->send(&buff1.front(), buff1.size(), md);
             stop_send = chrono::high_resolution_clock::now();
-            free5GRAN::mtx_common.unlock();
-            BOOST_LOG_TRIVIAL(warning) << "A frame has been sent ";
-            usleep(1);
+            //free5GRAN::mtx_common.unlock();
+            sem_post(&free5GRAN::semaphore_common1);
+            BOOST_LOG_TRIVIAL(warning) << "A frame 1 has been sent ";
+
+            tx_stream->send(&buff2.front(), buff2.size(), md);
+
+            BOOST_LOG_TRIVIAL(warning) << "A frame 2 has been sent ";
+            //usleep(1);
 
         /** Calculate the mean duration of the number_calculate_mean first call */
         if (i < number_calculate_mean) {

@@ -362,9 +362,12 @@ std::vector<std::vector<std::complex<float>>> free5GRAN::SSB_signal_extended(fre
 std::vector<std::vector<std::complex<float>>> free5GRAN::freq_domain_reversed_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0})); //Used in function ifft
 std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0})); //Used in function ifft
 std::vector<std::complex<float>> free5GRAN::buffer_to_send(0,0);
+std::vector<std::complex<float>> free5GRAN::buffer_generated1(0,0);
+std::vector<std::complex<float>> free5GRAN::buffer_generated2(0,0);
 
 std::mutex free5GRAN::mtx_common;
-sem_t free5GRAN::semaphore;
+sem_t free5GRAN::semaphore_common1;
+sem_t free5GRAN::semaphore_common2;
 
 
 //--------- DCI - PDCCH ---------

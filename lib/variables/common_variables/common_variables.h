@@ -221,9 +221,12 @@ namespace free5GRAN{
 
     /** Version 04 */
     extern std::vector<std::complex<float>> buffer_to_send;
+    extern std::vector<std::complex<float>> buffer_generated1;
+    extern std::vector<std::complex<float>> buffer_generated2;
 
     extern std::mutex mtx_common;
-    extern sem_t semaphore;
+    extern sem_t semaphore_common1;
+    extern sem_t semaphore_common2;
 
 }
 

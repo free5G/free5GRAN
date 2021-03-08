@@ -31,9 +31,9 @@
 #include "../lib/utils/sequence_generator/sequence_generator.h"
 
 /** This function will run continuously to send frames and is called by thread 'sending' */
-void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_to_send){
-    BOOST_LOG_TRIVIAL(warning) << "Function send_buffer_multithread begins ";
-    rf_variable_2.buffer_transmition(*buff_to_send);
+void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_generated1, vector<complex<float>> * buff_generated2){
+    BOOST_LOG_TRIVIAL(warning) << "MAIN Function send_buffer_multithread begins ";
+    rf_variable_2.buffer_transmition(*buff_generated1, *buff_generated2);
 }
 
 

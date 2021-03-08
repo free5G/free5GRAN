@@ -71,7 +71,9 @@ public:
     double getGain();
 
     void buffer_transmition(
-            std::vector<std::complex<float>> &buff
+            std::vector<std::complex<float>> &buff1,
+            std::vector<std::complex<float>> &buff2
+
     );
 
 
