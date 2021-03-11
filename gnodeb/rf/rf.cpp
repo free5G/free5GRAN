@@ -18,9 +18,7 @@
 #include "rf.h"
 #include "../phy/phy.h"
 #include <uhd.h>
-#include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <complex>
 #include <vector>
@@ -49,9 +47,6 @@ rf::rf(double sample_rate, double center_frequency, double gain, double bandwidt
     this->antenna_mode = antenna_mode;
     this->ref = ref;
 
-
-    //On envoie des infos à l'USRP
-    // usrp est un objet de type usrp... qui est un attribu de rf (pk dfin dasn rf.h).
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(device_args);
     this->usrp = usrp;
     this->usrp->set_clock_source(this->ref);
@@ -63,8 +58,6 @@ rf::rf(double sample_rate, double center_frequency, double gain, double bandwidt
     this->usrp->set_rx_bandwidth(this->bandwidth);
     this->usrp->set_rx_antenna(this->antenna_mode);
 
-
-    //configure Tx
     this->usrp->set_tx_subdev_spec(this->subdev );
     this->usrp->set_tx_rate(this->sample_rate);
     this->usrp->set_tx_freq(tune_request);
@@ -157,72 +150,58 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector
 
     std::cout << "Sending Frame indefinitely...."<<std::endl;
 
-    /** Initialize variables to mesurate time to send */
-    auto start_send = chrono::high_resolution_clock::now(), stop_send = chrono::high_resolution_clock::now();
-    auto duration_send = chrono::duration_cast<chrono::microseconds>(stop_send - start_send);
-    auto duration_between_send = chrono::duration_cast<chrono::microseconds>(stop_send - start_send);
-    int duration_send_int, i = 0, duration_sum_send = 0, duration_between_send_int = 0, duration_sum_between_send = 0;
+    /** Initialize variables to measure time to send */
+    auto start_send1 = chrono::high_resolution_clock::now(), stop_send1 = chrono::high_resolution_clock::now();
+    auto start_send2 = chrono::high_resolution_clock::now(), stop_send2 = chrono::high_resolution_clock::now();
+    auto duration_send1 = chrono::duration_cast<chrono::microseconds>(stop_send1 - start_send1);
+    auto duration_send2 = chrono::duration_cast<chrono::microseconds>(stop_send2 - start_send2);
+    auto duration_between_send1and2 = chrono::duration_cast<chrono::microseconds>(start_send2 - stop_send1);
+    int duration_send1_int, i = 0, duration_sum_send = 0, duration_send2_int = 0, duration_sum_send2 = 0, duration_between_send1and2_int = 0, duration_sum_between_send1and2 = 0;
     int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
 
     while (true) {
 
-        //sem_wait(&free5GRAN::semaphore_common1);
-        std::cout<<"HELLO FROM RF"<<std::endl;
-            //free5GRAN::mtx_common.lock();
-            start_send = chrono::high_resolution_clock::now();
 
-            /** Calculate mean duration between 2 sends */
-            if (i < number_calculate_mean) {
-                duration_between_send = chrono::duration_cast<chrono::microseconds>(start_send- stop_send);
-                duration_between_send_int = duration_between_send.count();
-                duration_sum_between_send = duration_sum_between_send + duration_between_send_int;
-            }
 
-            /** Send frame */
-            sem_post(&free5GRAN::semaphore_common2);
+
+
+            /** Send buffer 1*/
+            start_send1 = chrono::high_resolution_clock::now();
             tx_stream->send(&buff1.front(), buff1.size(), md);
-            stop_send = chrono::high_resolution_clock::now();
-            //free5GRAN::mtx_common.unlock();
-            sem_post(&free5GRAN::semaphore_common1);
-            BOOST_LOG_TRIVIAL(warning) << "A frame 1 has been sent ";
+            stop_send1 = chrono::high_resolution_clock::now();
+            sem_post(&free5GRAN::semaphore_common1); // release semaphore_common1 to let the main thread generate the next buffer1
+            BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been sent ";
 
+            /** Send buffer 2*/
+            start_send2 = chrono::high_resolution_clock::now();
             tx_stream->send(&buff2.front(), buff2.size(), md);
+            stop_send2 = chrono::high_resolution_clock::now();
+            sem_post(&free5GRAN::semaphore_common2); // release semaphore_common2 to let the main thread generate the next buffer2
+            BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been sent ";
 
-            BOOST_LOG_TRIVIAL(warning) << "A frame 2 has been sent ";
-            //usleep(1);
+
 
         /** Calculate the mean duration of the number_calculate_mean first call */
         if (i < number_calculate_mean) {
-                duration_send = chrono::duration_cast<chrono::microseconds>(stop_send- start_send);
-                duration_send_int = duration_send.count();
-                duration_sum_send = duration_sum_send + duration_send_int;
+                duration_send1 = chrono::duration_cast<chrono::microseconds>(stop_send1- start_send1);
+                duration_send2 = chrono::duration_cast<chrono::microseconds>(stop_send2- start_send2);
+                duration_send1_int = duration_send1.count(), duration_send2_int = duration_send2.count();
+                duration_sum_send = duration_sum_send + duration_send1_int + duration_send2_int;
+                duration_between_send1and2 = chrono::duration_cast<chrono::microseconds>(start_send2- stop_send1);
+                duration_between_send1and2_int = duration_between_send1and2.count();
+                duration_sum_between_send1and2 += duration_between_send1and2_int;
+
         }
+
         /** Display the mean duration */
         if (i == number_calculate_mean + 1) {
-            float mean_duration_send = (duration_sum_send / number_calculate_mean);
-            float mean_duration_between_send = (duration_sum_between_send / number_calculate_mean);
+            float mean_duration_send = (duration_sum_send / (2*number_calculate_mean));
+            float mean_duration_between_send1and2 = (duration_sum_between_send1and2 / number_calculate_mean);
             cout <<"\nduration of send (mean of "<<number_calculate_mean<<" last) = " << mean_duration_send / 1000 << " ms" << endl;
-            cout <<"duration between 2 send (mean of "<<number_calculate_mean<<" last) = " << mean_duration_between_send / 1000 << " ms" << endl;
+            cout <<"duration between send 1 and 2 (mean of "<<number_calculate_mean<<" last) = " << mean_duration_between_send1and2 / 1000 << " ms" << endl;
             duration_sum_send = 0;
-            duration_sum_between_send = 0;
+            duration_sum_between_send1and2 = 0;
         }
         i = (i + 1) % 3000;
-    }
-}
-
-
-
-void buffer_transm_test_mutex(std::vector<std::complex<float>> &buff) {
-    std::cout<<"Function send_buffer_test_mutex begins "<<std::endl;
-    unsigned int time_to_send = 10000;
-    while (true) {
-        free5GRAN::mtx_common.lock();
-        BOOST_LOG_TRIVIAL(warning) << "One loop from buff_transm_test_mutex ";
-        std::cout<<"SENDING TEST THREAD"<<std::endl;
-        usleep(time_to_send);
-
-        free5GRAN::mtx_common.unlock();
-        usleep(1);
-
     }
 }

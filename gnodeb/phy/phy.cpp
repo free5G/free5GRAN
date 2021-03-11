@@ -174,6 +174,28 @@ void phy::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_sampl
 }
 
 
+void phy::compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame){
+    /**
+   * \fn compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame)
+   * \brief Calculates the number of SSB (0, 1 or 2) that a radioframe will contain in function of ssb_period and sfn
+   * \param[in] ssb_period. ssb period in second. Should be between 0.005 and 0.160
+   * \param[in] sfn. Sequence Frame Number. Varies from 0 to 1023
+   * \param[out] &num_SSB_in_frame. Indicates the number of SSB block that the next frame should contain (0, 1 or 2).
+   */
+
+    if (ssb_period == float(0.005)){
+        num_SSB_in_frame = 2;
+    }else{
+        float ssb_period_symbol = ssb_period / 0.01;
+        int ssb_period_symbol_int = ssb_period_symbol;
+        if (sfn % ssb_period_symbol_int == 0){
+            num_SSB_in_frame = 1;
+        }else{
+            num_SSB_in_frame = 0;
+        }
+    }
+}
+
 
 
 
@@ -312,22 +334,10 @@ void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
     /** Sending buffer MULTITHREADING */
     if (run_with_usrp == true){
         /** Initialize the 2 buffers. One will be generated while the other will be send */
-        std::vector<std::complex<float>> buffer_generated1(num_samples_in_frame);
-        std::vector<std::complex<float>> buffer_generated2(num_samples_in_frame);
         std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
         free5GRAN::buffer_generated1.resize(num_samples_in_frame);
         free5GRAN::buffer_generated2.resize(num_samples_in_frame);
 
-        /** Determine number of SSB block in each frame */
-        int ssb_period_symbol_int = 0, num_SSB_in_this_frame = 0;
-        float ssb_period_symbol = 0.0;
-        if (free5GRAN::gnodeB_config_globale.ssb_period == float(0.005)){
-            num_SSB_in_this_frame = 2;
-            ssb_period_symbol = 0.5;
-        }else{
-            ssb_period_symbol = free5GRAN::gnodeB_config_globale.ssb_period / 0.01;
-            ssb_period_symbol_int = ssb_period_symbol;
-        }
 
         /** Initialize variables to measure time in loop 'while true' */
         int sfn = 0, duration_sum_generate = 0, i = 0;
@@ -346,92 +356,79 @@ void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
         BOOST_LOG_TRIVIAL(info) << "Initialize the rf parameters done";
 
 
-
-        /** Initialize Semaphore */
+        /** Initialize Semaphore to manage multithread */
         sem_init (&free5GRAN::semaphore_common1, 1, 0);
         sem_init (&free5GRAN::semaphore_common2, 1, 0);
 
 
-        /** launch thread sending which will run continuously */
+        /** launch thread 'sending' which will run continuously */
         thread sending(send_buffer_multithread, rf_variable_2, &free5GRAN::buffer_generated1, &free5GRAN::buffer_generated2);
 
         std::cout << "\nGenerating Frame indefinitely..."<<std::endl;
 
+        int num_SSB_in_next_frame = 333;
         while (true) {
 
-            /** GENERATE BUFF 1
-            /** Calculate the number of ssb block that the next frame will contain. To be optimize */
-            start_generate1 = chrono::high_resolution_clock::now();
-            if (num_SSB_in_this_frame != 2) {
-                if (sfn % ssb_period_symbol_int == 0) {
-                    num_SSB_in_this_frame = 1;
-                } else {
-                    num_SSB_in_this_frame = 0;
-                }
-            }
-            BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
-            BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_this_frame);
 
+            /** GENERATE BUFFER 1 */
+
+
+            /** Calculate the number of ssb block that the next frame will contain. To be optimize */
+            compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
+
+            BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
+            BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_next_frame);
+
+            sem_wait(&free5GRAN::semaphore_common1); // Waiting until buffer_generated1 finish to be sent
 
             /** If the frame has to contain 1 or more SSB, we generate it */
-            if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
-
-
+            start_generate1 = chrono::high_resolution_clock::now();
+            if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated1 */
-                phy_variable.generate_frame(mib_object, num_SSB_in_this_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
+                phy_variable.generate_frame(mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci, N,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated1);
-
+                BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been generated";
             }else{
-                buffer_generated1 = buffer_null;
+                free5GRAN::buffer_generated1 = buffer_null;
+                BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been fill with buffer_null";
             }
-            BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been generated";
-            stop_generate1 = chrono::high_resolution_clock::now();
-            sem_wait(&free5GRAN::semaphore_common2); // Waiting until buffer_generated2 finish to be sent
+
             sfn = (sfn + 1) % 1024;
+            stop_generate1 = chrono::high_resolution_clock::now();
 
 
+            /** GENERATE BUFFER 2 */
 
-
-            /** GENERATE BUFF 2 */
-            start_generate2 = chrono::high_resolution_clock::now();
-            /** Calculate the number of ssb block that the next frame will contain. To be optimize */
-            if (num_SSB_in_this_frame != 2) {
-                if (sfn % ssb_period_symbol_int == 0) {
-                    num_SSB_in_this_frame = 1;
-                } else {
-                    num_SSB_in_this_frame = 0;
-                }
-            }
+            /** Calculate the number of ssb block that the next frame will contain */
+            compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
             BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
-            BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_this_frame);
+            BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_next_frame);
+
+            sem_wait(&free5GRAN::semaphore_common2); // Waiting until buffer_generated2 finish to be sent
+
+            start_generate2 = chrono::high_resolution_clock::now();
             /** If the frame has to contain 1 or more SSB, we generate it */
-            if (num_SSB_in_this_frame == 1 || num_SSB_in_this_frame == 2) {
-
-
+            if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated2 */
-                phy_variable.generate_frame(mib_object, num_SSB_in_this_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
+                phy_variable.generate_frame(mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, cp_lengths_one_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci, N,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated2);
+                BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been generated";
             }else{
-                buffer_generated2 = buffer_null;
+                free5GRAN::buffer_generated2 = buffer_null;
+                BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been fill with buffer_null";
             }
-            BOOST_LOG_TRIVIAL(warning) << "Frame 2 has been generated";
-            stop_generate2 = chrono::high_resolution_clock::now();
-            sem_wait(&free5GRAN::semaphore_common1); // Waiting until buffer_generated1 finish to be sent
+
             sfn = (sfn + 1) % 1024;
-
-
-
-
+            stop_generate2 = chrono::high_resolution_clock::now();
 
             /** Calculate the mean duration of the number_calculate_mean first call */
             if (i < number_calculate_mean) {
-
                 duration_generate1 = chrono::duration_cast<chrono::microseconds>(stop_generate1 - start_generate1);
                 duration_generate_int1 = duration_generate1.count();
                 duration_generate2 = chrono::duration_cast<chrono::microseconds>(stop_generate2 - start_generate2);
@@ -445,7 +442,6 @@ void phy::reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]) {
                 duration_sum_generate = 0;
             }
             i = (i + 1) % 3000;
-            //sfn = (sfn + 1) % 1024; /** sfn (Sequence Frame Number) varies cyclically between 0 and 1023 */
         }
     }
 }
@@ -506,9 +502,6 @@ void phy::init_logging(std::string level)
 
 
 
-
-
-//------------------------------------------------------------------------------------------------------
 /** ################################ DCI - PDCCH ################################ */
 
 
@@ -629,5 +622,7 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
         dci_object.si = decoded_dci_bits[freq_domain_ra_size + 4 + 1 + 5 + 2];
     }/***/
 }
+
+
 
 
