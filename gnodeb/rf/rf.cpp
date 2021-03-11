@@ -162,9 +162,6 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector
     while (true) {
 
 
-
-
-
             /** Send buffer 1*/
             start_send1 = chrono::high_resolution_clock::now();
             tx_stream->send(&buff1.front(), buff1.size(), md);

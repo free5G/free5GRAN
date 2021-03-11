@@ -1434,7 +1434,7 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> p
 
 
 
-void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int N, vector<int> &rate_matched_bch_vector) {
+void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, vector<int> &rate_matched_bch_vector) {
     /**
     * \fn bch_encoding(int * mib_bits, int pci, int N, vector<int> &rate_matched_bch_vector)
     * \brief Transforms the mib_bits into a rate_matched_bch bits sequence.
@@ -1443,7 +1443,6 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
     * \standard TS38.212 V15.2.0 Section 5
     * \param[in] mib_bits. In our case, it is a 32 long bits sequence.
     * \param[in] pci. Physical Cell ID.
-    * \param[in] N. Length of the BCH payload after polar encode. It's a power of 2. In our case, it's 512.
     * \param[out] &rate_matched_bch_vector. The output bits sequence. 864 bits long in our case.
     */
 
@@ -1473,7 +1472,15 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, int
         bch_payload_crc[free5GRAN::BCH_PAYLOAD_SIZE + i] = bch_crc[i];
     }
 
+
     /** POLAR ENCODING -> Generate polar encoded_bch (512 bits long in our case) from bch_payload_crc. TS38.212 V15.2.0 Section 5.3.1 */
+    /** Generate N which is the length of BCH payload after polar encode */
+    int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2,
+                                                                    free5GRAN::SIZE_PBCH_POLAR_DECODED, 9);
+    int N = pow(2, n);
+    BOOST_LOG_TRIVIAL(info) << "n = " + std::to_string(n);
+    BOOST_LOG_TRIVIAL(info) << "N (length of BCH payload after polar encode) = " + std::to_string(N);
+
     vector<int> polar_encoded_bch_vector(N, 0);
     int input_size = 56;
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, input_size, polar_encoded_bch_vector);
@@ -1491,7 +1498,7 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
      * \brief Transforms the dci_object into a rate_matched_dci bits sequence.
      * \standard TS38.212 V15.2.0 Section 7.3
      * \details
-     * Step 1: dci_generation: tranform dci_object into dci_bits, according to TS38.212 V15.2.0 Section 7.3.1.2.1
+     * Step 1: dci_generation: transform dci_object into dci_bits, according to TS38.212 V15.2.0 Section 7.3.1.2.1
      * Step 2: generate CRC and mask (scramble) it with RNTI sequence, according to TS38.212 V15.2.0 Section 7.3.2
      * Step 3: adding CRC to dci_bits, according to TS38.212 V15.2.0 Section 7.3.2
      * Step 4: Polar coding, according to TS38.212 V15.2.0 Section 7.3.3 and 5.3.1

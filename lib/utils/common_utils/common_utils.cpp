@@ -22,24 +22,19 @@
 /** THE INCLUDE BELOW ARE ADDITION FROM BENOIT. BE CAREFUL WHEN MERGING */
 
 #include "../../utils/sequence_generator/sequence_generator.h"
-#include "../../variables/common_matrices/common_matrices.h"
 #include "../../phy/libphy/libphy.h"
-
-#include <fftw3.h>
 #include <complex>
 #include <vector>
 #include "../../utils/sequence_generator/sequence_generator.h"
 #include "../../variables/common_variables/common_variables.h"
 #include "../../utils/common_utils/common_utils.h"
 #include "../../phy/libphy/libphy.h"
-
-#include_next <math.h>
-#include <fstream>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <libconfig.h++>
+#include <boost/log/utility/setup/common_attributes.hpp>
 
 
 void free5GRAN::utils::common_utils::parse_mib(int *mib_bits, free5GRAN::mib &mib_object) {
@@ -561,6 +556,101 @@ void free5GRAN::utils::common_utils::read_config_gNodeB(const char config_file[]
         std::cout << "Please enter a function name in config file" << std::endl;
         BOOST_LOG_TRIVIAL(error) << "couldn't recognize function's name in config file";
         //return (EXIT_FAILURE);
+    }
+}
+
+
+
+void free5GRAN::utils::common_utils::init_logging(std::string level)
+{
+    /** Initialize a logging file */
+    boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
+    boost::log::add_file_log
+            (
+                    boost::log::keywords::file_name = "free5GRAN_gNodeB.log",
+                    boost::log::keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%] %Message%"
+            );
+
+    if (level == "trace"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::trace
+                );
+    }else if (level == "debug"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::debug
+                );
+    }else if (level == "info"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::info
+                );
+    }else if (level == "warning"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::warning
+                );
+    }else if (level == "error"){
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::error
+                );
+    }else {
+        boost::log::core::get()->set_filter
+                (
+                        boost::log::trivial::severity >= boost::log::trivial::fatal
+                );
+    }
+    boost::log::add_common_attributes();
+}
+
+
+
+void free5GRAN::utils::common_utils::compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame) {
+
+    /**
+   * \fn compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame)
+   * \brief Calculates the number of samples (IQ) that a 10 ms radio-frame will contain.
+   * \standard !! TS TO BE ADDED !!
+   * \param[in] mib_object. parameter SCS will be used
+   * \param[out] &Num_samples_in_frame
+   */
+
+    /** Calculate number of symbols per subframe */
+    int Num_symbols_per_subframe;
+    if (mib_object.scs == 15000) {
+        Num_symbols_per_subframe = 14;
+    } else if (mib_object.scs == 30000) {
+        Num_symbols_per_subframe = 28;
+    }
+
+    int Num_symbols_per_frame = Num_symbols_per_subframe * 10;
+
+    /** Calculate cp_length for a subframe */
+    int cp_lengths[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                          Num_symbols_per_subframe, &cp_lengths[0],
+                                                          &cum_sum_cp_lengths[0]);
+
+    /** Calculate cp_length for each symbols of a frame */
+    int cp_lengths_one_frame[Num_symbols_per_frame];
+    for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+        for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+            cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths[symbol];
+        }
+    }
+
+    /** Calculate size of each symbol in a frame */
+    int symbols_size_one_frame[Num_symbols_per_frame];
+    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+        symbols_size_one_frame[symbol] = free5GRAN::SIZE_IFFT_SSB + cp_lengths_one_frame[symbol];
+    }
+
+    /** Calculate Num_samples_in_frame */
+    Num_samples_in_frame = 0;
+    for (int symbol = 0; symbol < Num_symbols_per_frame; symbol++) {
+        Num_samples_in_frame = Num_samples_in_frame + symbols_size_one_frame[symbol];
     }
 }
 

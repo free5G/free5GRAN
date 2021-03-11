@@ -31,21 +31,26 @@
 class phy {
 
 private:
-    bool crc_validated;
-    int i_ssb;
-    int l_max;
+    static free5GRAN::mib mib_object;
+    static int *cp_lengths_one_frame;
+    int *cum_sum_cp_lengths;
+    int ifft_size;
+    int num_samples_in_frame;
+    static std::vector<std::complex<float>> buffer_null;
+    std::vector<std::complex<float>> buffer_generated1_private;
+    std::vector<std::complex<float>> buffer_generated2_private;
+
+
 
 
 public:
-    void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int N, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
-    void compute_num_sample_per_frame(free5GRAN::mib mib_object, int &Num_samples_in_frame);
-    void compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame);
-    void reduce_main(bool run_with_usrp, bool run_one_time_ssb, char *argv[]);
-    void init_logging(std::string level);
+    phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame);
+    static void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
+    static void compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame);
+    static void continuous_buffer_generation();
 
     //----------- From here, DCI / PDCCH
 
-    void encode_dci(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size);
     void UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int length_crc, int pci,int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object);
 
 };
