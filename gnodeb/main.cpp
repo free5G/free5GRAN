@@ -40,15 +40,15 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_gen
 /** This function will run continuously to generate frames and is called by thread 'generate' */
 void generate_buffer_multithread(phy phy_object){
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function generate_buffer_multithread begins ";
-    phy::continuous_buffer_generation(phy_object);
+    phy_object.continuous_buffer_generation();
 }
 
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
+    bool run_test_dci = true; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
     /** Depending on the running platform, select the right config file */
     const char *config_file;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     std::cout << "# Frequency: " << usrp_info_object.center_frequency / 1e6 << " MHz" << std::endl;
     std::cout << "# ifft Size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
     std::cout << "# ssb_period: " << free5GRAN::gnodeB_config_globale.ssb_period << " second" << std::endl;
-    std::cout << "num_samples_in_frame = " << num_samples_in_frame << std::endl;
+    std::cout << "# num_samples_in_frame = " << num_samples_in_frame << std::endl;
     std::cout << "\n###### CELL" << std::endl;
     std::cout << "# PCI: " << free5GRAN::gnodeB_config_globale.pci << std::endl;
     std::cout << "# I_B_SSB: " << free5GRAN::gnodeB_config_globale.i_b_ssb << std::endl;
@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
     std::cout << "\n###### USRP" << std::endl;
     std::cout << "# Sampling rate: " << usrp_info_object.sampling_rate / 1e6 << " MHz" << std::endl;
     std::cout << "# Bandwidth: " << usrp_info_object.bandwidth / 1e6 << " MHz" << std::endl;
-    std::cout << "# Emission Gain: " << usrp_info_object.gain << " dB\n" << std::endl;
-    std::cout << "# Scaling factor = " << free5GRAN::gnodeB_config_globale.scaling_factor << std::endl;
+    std::cout << "# Emission Gain: " << usrp_info_object.gain << " dB" << std::endl;
+    std::cout << "# Scaling factor = " << free5GRAN::gnodeB_config_globale.scaling_factor <<"\n"<< std::endl;
 
 
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
               int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
-        phy_object.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn,
+        phy_object.generate_frame(1, free5GRAN::num_symbols_frame, sfn,
                                   free5GRAN::gnodeB_config_globale.pci,
                                   free5GRAN::gnodeB_config_globale.i_b_ssb,
                                   free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 
         sending.join();
         generate.join();
-
+    }
 
 
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
             int freq_domain_ra_size;
             freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
             std::cout << "freq_domain_ra_size = " << freq_domain_ra_size << std::endl;
-            int agg_level = pow(2, 3);
+            int agg_level = pow(2, 2);
             int n = 9;
             int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 *
                     2; // E is also calculated in function pdcch_encoding
@@ -238,6 +238,16 @@ int main(int argc, char *argv[]) {
             /** pdcch encoding */
             vector<complex<float>> pdcch_symbols(E / 2, {0, 0});
             free5GRAN::phy::physical_channel::pdcch_encoding(rate_matched_dci, E, pdcch_symbols);
+
+            /** pdcch mapping */
+            int number_symbol_in_coreset = 1;
+            int number_re_in_coreset = pdcch_ss_mon_occ.n_rb_coreset * 12;
+            int R = 2;
+            int slot_number = 6;
+            int symbol_number = 0;
+            vector<vector<complex<float>>> interleaved_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
+            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
+
 
 
 
@@ -266,5 +276,4 @@ int main(int argc, char *argv[]) {
 
         }
 
-    }
 }

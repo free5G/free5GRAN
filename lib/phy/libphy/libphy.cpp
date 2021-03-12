@@ -1062,3 +1062,14 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
     }
 }
 
+
+
+
+
+void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &interleaved_coreset_grid){
+
+    vector<complex<float>> pdcch_dmrs (CORESET_size*3, {0,0});
+    free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, slot_number, symbol_number, pdcch_dmrs, CORESET_size*3);
+    free5GRAN::utils::common_utils::display_vector(pdcch_dmrs, CORESET_size*3, "pdcch_dmrs from libphy");
+}
+

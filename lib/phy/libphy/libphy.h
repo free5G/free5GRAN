@@ -65,6 +65,7 @@ namespace free5GRAN {
             void channel_mapper(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols_ssb, int index_symbol_ssb, int num_SSB_in_this_frame, int num_sc_input, int ifft_size);
             void generate_freq_domain_frame(vector<complex<float>> pbch_symbols_vector, int pci, int index_symbol_ssb, int num_SSB_in_this_frame, int i_b_ssb, vector<vector<complex<float>>> &freq_domain_frame);
             void ifft(vector<vector<complex<float>>> freq_domain_frame, int *cp_lengths_one_frame, vector<int> data_symbols, int num_symbols_frame, float scaling_factor, vector<complex<float>> &one_frame_vector);
+            void map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &interleaved_coreset_grid);
             }
         }
 }

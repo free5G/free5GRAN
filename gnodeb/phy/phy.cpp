@@ -45,9 +45,6 @@ phy::phy(free5GRAN::mib mib_object3, int *cp_lengths_one_frame3, int *cum_sum_cp
     this->ifft_size = ifft_size;
     this->num_samples_in_frame = num_samples_in_frame;
 
-    //std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
-    //std::vector<std::complex<float>> buffer_generated1_private(num_samples_in_frame, 0);
-    //std::vector<std::complex<float>> buffer_generated2_private(num_samples_in_frame, 0);
 
     /** Resize the 3 buffers */
     free5GRAN::buffer_generated1.resize(num_samples_in_frame,  {0.0, 0.0});
@@ -60,7 +57,7 @@ phy::phy(free5GRAN::mib mib_object3, int *cp_lengths_one_frame3, int *cum_sum_cp
 }
 
 
-void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
+void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int sfn, int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector) {
     /**
     * \fn generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn, double ssb_period,int pci, int N, int gscn, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame_vector)
     * \brief From mib_object and many other parameters, generates a frame of 10 ms containing SSB.
@@ -71,10 +68,8 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
                * -step 4: GENERATE FREQUENCY DOMAIN FRAME. Generate a frequency domain frame with SSB placed in it
                * -step 5: IFFT. Perform ifft for each symbols to get the final 10ms time_domain frame.
     * \standard !! TS to be added !!
-    * \param[in] mib_object object MIB created in common_structures.h, including cell_barred, k_ssb, pddchc_config...
     * \param[in] num_SSB_in_this_frame. Number of SSB that the frame will contain. Is calculated in function of ssb_period and sfn. Should be equal to 0, 1 or 2
     * \param[in] num_symbols_frame. Number of symbols that the frame will contain (eg 140 or 280).
-    * \param[in] *cp_lengths_one_frame. Cyclic Prefix length for each symbol of a frame
     * \param[in] sfn. Sequence Frame Number. Varies between 0 and 1023
     * \param[in] pci. Physical Cell ID. Should be between 0 and 1007.
     * \param[in] i_b_ssb. SSB index (between 0 and 7). Indicates the position of SSB in the frame.
@@ -96,7 +91,6 @@ void phy::generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, i
     BOOST_LOG_TRIVIAL(info) << "ENCODE BCH from generate_frame";
 
     /** Step 3: ENCODE PBCH -> Generate pbch_symbols (432 symbols in our case) from rate_matched_bch. TS38.212 V15.2.0 Section 7.3.3.1 and 5.1.3 */
-
     vector<complex<float>> pbch_symbols_vector(free5GRAN::SIZE_SSB_PBCH_SYMBOLS);
     free5GRAN::phy::physical_channel::pbch_encoding(rate_matched_bch_vector, pci, i_b_ssb, pbch_symbols_vector);
     BOOST_LOG_TRIVIAL(info) << "ENCODE PBCH from generate_frame";
@@ -173,11 +167,9 @@ void phy::compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_fr
 
 
 
-void phy::continuous_buffer_generation(phy phy_object) {
+void phy::continuous_buffer_generation() {
 
-
-
-/** Initialize variables to measure time in loop 'while true' */
+    /** Initialize variables to measure time in loop 'while true' */
     int sfn = 0, duration_sum_generate = 0, i = 0;
     auto start_generate1 = chrono::high_resolution_clock::now(), stop_generate1 = chrono::high_resolution_clock::now();
     auto start_generate2 = chrono::high_resolution_clock::now(), stop_generate2 = chrono::high_resolution_clock::now();
@@ -185,13 +177,12 @@ void phy::continuous_buffer_generation(phy phy_object) {
     auto duration_generate2 = chrono::duration_cast<chrono::microseconds>(stop_generate2 - start_generate2);
     int duration_generate_int1, duration_generate_int2;
     int number_calculate_mean = 400; /** indicates the number of iterations of 'while true' before display the mean durations */
-    int num_SSB_in_next_frame = 333;
+    int num_SSB_in_next_frame;
 
 
         while (true) {
+
             /** GENERATE BUFFER 1 */
-
-
             /** Calculate the number of ssb block that the next frame will contain. To be optimize */
             compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
 
@@ -204,14 +195,16 @@ void phy::continuous_buffer_generation(phy phy_object) {
             start_generate1 = chrono::high_resolution_clock::now();
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated1 */
-                generate_frame(phy_object.mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy_object.cp_lengths_one_frame,
+                //this->mib_object
+                phy::generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated1);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been generated";
             }else{
-                free5GRAN::buffer_generated1 = phy_object.buffer_null;
+                //free5GRAN::buffer_generated1 = phy_object.buffer_null;
+                free5GRAN::buffer_generated1 = free5GRAN::buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been fill with buffer_null";
             }
 
@@ -220,7 +213,6 @@ void phy::continuous_buffer_generation(phy phy_object) {
 
 
             /** GENERATE BUFFER 2 */
-
             /** Calculate the number of ssb block that the next frame will contain */
             compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
             BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
@@ -232,14 +224,15 @@ void phy::continuous_buffer_generation(phy phy_object) {
             /** If the frame has to contain 1 or more SSB, we generate it */
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated2 */
-                generate_frame(phy_object.mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy_object.cp_lengths_one_frame,
+                phy::generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated2);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been generated";
             }else{
-                free5GRAN::buffer_generated2 = phy_object.buffer_null;
+                //free5GRAN::buffer_generated2 = phy_object.buffer_null;
+                free5GRAN::buffer_generated2 = free5GRAN::buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been fill with buffer_null";
             }
 
