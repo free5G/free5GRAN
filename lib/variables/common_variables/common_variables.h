@@ -214,8 +214,6 @@ namespace free5GRAN{
     extern std::vector<std::vector<std::complex<float>>> SSB_signal_extended; // Used in functino channel_mapper
 
     /** Version 02 */
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_null; //Used in function ifft
-    extern std::vector<std::vector<std::complex<float>>> ONEframe_SSB_freq; //Used in function ifft
     extern std::vector<std::vector<std::complex<float>>> freq_domain_reversed_frame; //Used in function ifft
     extern std::vector<std::vector<std::complex<float>>> time_domain_frame; //Used in function ifft
 
@@ -223,8 +221,8 @@ namespace free5GRAN{
     extern std::vector<std::complex<float>> buffer_to_send;
     extern std::vector<std::complex<float>> buffer_generated1;
     extern std::vector<std::complex<float>> buffer_generated2;
+    extern std::vector<std::complex<float>> buffer_null;
 
-    extern std::mutex mtx_common;
     extern sem_t semaphore_common1;
     extern sem_t semaphore_common2;
 

@@ -39,15 +39,20 @@
 
 phy::phy(free5GRAN::mib mib_object3, int *cp_lengths_one_frame3, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame) {
 
-    this->mib_object = mib_object;
-    this->cp_lengths_one_frame = cp_lengths_one_frame;
+    this->mib_object = mib_object3;
+    this->cp_lengths_one_frame = cp_lengths_one_frame3;
     this->cum_sum_cp_lengths = cum_sum_cp_lengths;
     this->ifft_size = ifft_size;
     this->num_samples_in_frame = num_samples_in_frame;
 
-    std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
-    std::vector<std::complex<float>> buffer_generated1_private(num_samples_in_frame, 0);
-    std::vector<std::complex<float>> buffer_generated2_private(num_samples_in_frame, 0);
+    //std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
+    //std::vector<std::complex<float>> buffer_generated1_private(num_samples_in_frame, 0);
+    //std::vector<std::complex<float>> buffer_generated2_private(num_samples_in_frame, 0);
+
+    /** Resize the 3 buffers */
+    free5GRAN::buffer_generated1.resize(num_samples_in_frame,  {0.0, 0.0});
+    free5GRAN::buffer_generated2.resize(num_samples_in_frame,  {0.0, 0.0});
+    free5GRAN::buffer_null.resize(num_samples_in_frame,  {0.0, 0.0});
 
     /** Resize some vectors used in function ifft */
     free5GRAN::freq_domain_reversed_frame.resize(free5GRAN::num_symbols_frame, std::vector<std::complex<float>>(free5GRAN::SIZE_IFFT_SSB, {0.0, 0.0}));
@@ -168,7 +173,7 @@ void phy::compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_fr
 
 
 
-void phy::continuous_buffer_generation() {
+void phy::continuous_buffer_generation(phy phy_object) {
 
 
 
@@ -199,14 +204,14 @@ void phy::continuous_buffer_generation() {
             start_generate1 = chrono::high_resolution_clock::now();
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated1 */
-                generate_frame(phy::mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy::cp_lengths_one_frame,
+                generate_frame(phy_object.mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy_object.cp_lengths_one_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated1);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been generated";
             }else{
-                free5GRAN::buffer_generated1 = phy::buffer_null;
+                free5GRAN::buffer_generated1 = phy_object.buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been fill with buffer_null";
             }
 
@@ -227,14 +232,14 @@ void phy::continuous_buffer_generation() {
             /** If the frame has to contain 1 or more SSB, we generate it */
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated2 */
-                generate_frame(phy::mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy::cp_lengths_one_frame,
+                generate_frame(phy_object.mib_object, num_SSB_in_next_frame, free5GRAN::num_symbols_frame, phy_object.cp_lengths_one_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci,
                                             free5GRAN::gnodeB_config_globale.i_b_ssb,
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated2);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been generated";
             }else{
-                free5GRAN::buffer_generated2 = phy::buffer_null;
+                free5GRAN::buffer_generated2 = phy_object.buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been fill with buffer_null";
             }
 

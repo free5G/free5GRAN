@@ -364,8 +364,8 @@ std::vector<std::vector<std::complex<float>>> free5GRAN::time_domain_frame(free5
 std::vector<std::complex<float>> free5GRAN::buffer_to_send(0,0);
 std::vector<std::complex<float>> free5GRAN::buffer_generated1(0,0);
 std::vector<std::complex<float>> free5GRAN::buffer_generated2(0,0);
+std::vector<std::complex<float>> free5GRAN::buffer_null(0,0);
 
-std::mutex free5GRAN::mtx_common;
 sem_t free5GRAN::semaphore_common1;
 sem_t free5GRAN::semaphore_common2;
 

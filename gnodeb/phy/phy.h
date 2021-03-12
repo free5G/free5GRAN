@@ -31,12 +31,12 @@
 class phy {
 
 private:
-    static free5GRAN::mib mib_object;
-    static int *cp_lengths_one_frame;
+    free5GRAN::mib mib_object{};
+    int *cp_lengths_one_frame;
     int *cum_sum_cp_lengths;
     int ifft_size;
     int num_samples_in_frame;
-    static std::vector<std::complex<float>> buffer_null;
+    std::vector<std::complex<float>> buffer_null;
     std::vector<std::complex<float>> buffer_generated1_private;
     std::vector<std::complex<float>> buffer_generated2_private;
 
@@ -47,7 +47,7 @@ public:
     phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame);
     static void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     static void compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame);
-    static void continuous_buffer_generation();
+    static void continuous_buffer_generation(phy phy_object);
 
     //----------- From here, DCI / PDCCH
 

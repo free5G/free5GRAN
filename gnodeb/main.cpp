@@ -38,9 +38,9 @@ void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_gen
 }
 
 /** This function will run continuously to generate frames and is called by thread 'generate' */
-void generate_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_generated1, vector<complex<float>> * buff_generated2){
+void generate_buffer_multithread(phy phy_object){
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function generate_buffer_multithread begins ";
-    phy::continuous_buffer_generation();
+    phy::continuous_buffer_generation(phy_object);
 }
 
 
@@ -48,13 +48,12 @@ int main(int argc, char *argv[]) {
 
     bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = false;
+    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
-
-
+    /** Depending on the running platform, select the right config file */
     const char *config_file;
     if (run_with_usrp == true) {
-        config_file = argv[1];
+        config_file = argv[1]; // To launch on Linux CLI, run: sudo ./free5GRAN-gNodeB ../config/ssb_emission.cfg
     }
     if (run_with_usrp == false) {
         config_file = ("../config/ssb_emission.cfg");
@@ -65,6 +64,7 @@ int main(int argc, char *argv[]) {
 
     /** Initialize log file with log_level */
     free5GRAN::utils::common_utils::init_logging(free5GRAN::gnodeB_config_globale.log_level);
+    BOOST_LOG_TRIVIAL(warning) << "Log file should have been initialized";
 
     /** Initialize mib_object and usrp_info_object */
     free5GRAN::mib mib_object = free5GRAN::gnodeB_config_globale.mib_object;
@@ -78,9 +78,40 @@ int main(int argc, char *argv[]) {
         mib_object.scs = 30e3; /** in Hz */
     }
 
-    /** Calculate sampling_rate */
+    /** Calculate sampling_rate & bandwidth */
     usrp_info_object.sampling_rate = free5GRAN::SIZE_IFFT_SSB * mib_object.scs;
     usrp_info_object.bandwidth = usrp_info_object.sampling_rate;
+
+    /** Calculate number of sample that a frame (10 ms) will contain (= sampling_rate / 100) */
+    int num_samples_in_frame;
+    free5GRAN::utils::common_utils::compute_num_sample_per_frame(mib_object, num_samples_in_frame);
+
+    /** Calculate number of symbols that a frame (10 ms) will contain */
+    int Num_symbols_per_subframe;
+    if (mib_object.scs == 15000) {
+        Num_symbols_per_subframe = 14;
+    } else if (mib_object.scs == 30000) {
+        Num_symbols_per_subframe = 28;
+    }
+    free5GRAN::num_symbols_frame = Num_symbols_per_subframe * 10;
+
+    /** Calculate cp_length */
+    int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
+    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
+                                                          Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
+                                                          &cum_sum_cp_lengths[0]);
+
+    /** Initialize cp_length for each symbols of a frame */
+    int cp_lengths_one_frame[free5GRAN::num_symbols_frame];
+    for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
+        for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
+            cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
+        }
+    }
+    std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
+
+    /** instantiate a phy object */
+    phy phy_object(mib_object, cp_lengths_one_frame, cum_sum_cp_lengths, free5GRAN::SIZE_IFFT_SSB, num_samples_in_frame);
 
 
     BOOST_LOG_TRIVIAL(info) << "pddchc_config = " + std::to_string(mib_object.pdcch_config);
@@ -97,27 +128,16 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "USRP subdev = " + usrp_info_object.subdev;
     BOOST_LOG_TRIVIAL(info) << "USRP ant = " + usrp_info_object.ant;
     BOOST_LOG_TRIVIAL(info) << "USRP ref2 = " + usrp_info_object.ref2;
-    BOOST_LOG_TRIVIAL(info) << "usrp_info_object.sampling_rate = " + std::to_string(usrp_info_object.sampling_rate);
+    BOOST_LOG_TRIVIAL(info) << "USRP bandwidth = " + std::to_string(usrp_info_object.bandwidth);
+    BOOST_LOG_TRIVIAL(info) << "num_samples_in_frame = " + std::to_string(num_samples_in_frame);
+    BOOST_LOG_TRIVIAL(info) << "free5GRAN::num_symbols_frame = " + std::to_string(free5GRAN::num_symbols_frame);
 
-    /** Calculate number of sample that a frame (10 ms) will contain (= sampling_rate / 100) */
-    int num_samples_in_frame;
-    free5GRAN::utils::common_utils::compute_num_sample_per_frame(mib_object, num_samples_in_frame);
-
-    /** Calculate number of symbols that a frame (10 ms) will contain */
-    int Num_symbols_per_subframe;
-    if (mib_object.scs == 15000) {
-        Num_symbols_per_subframe = 14;
-    } else if (mib_object.scs == 30000) {
-        Num_symbols_per_subframe = 28;
-    }
-    free5GRAN::num_symbols_frame = Num_symbols_per_subframe * 10;
-
-    /** Display some useful information in console */
+    /** Display some useful informations in console */
     std::cout << "\n###### RADIO" << std::endl;
-    std::cout << "num_samples_in_frame = " << num_samples_in_frame << std::endl;
-    std::cout << "num_symbols_in_frame = " << free5GRAN::num_symbols_frame << std::endl;
+    std::cout << "# num_samples_in_frame = " << num_samples_in_frame << std::endl;
+    std::cout << "# num_symbols_in_frame = " << free5GRAN::num_symbols_frame << std::endl;
     std::cout << "# Frequency: " << usrp_info_object.center_frequency / 1e6 << " MHz" << std::endl;
-    std::cout << "###################### Ifft Size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
+    std::cout << "# ifft Size: " << free5GRAN::SIZE_IFFT_SSB << std::endl;
     std::cout << "# ssb_period: " << free5GRAN::gnodeB_config_globale.ssb_period << " second" << std::endl;
     std::cout << "num_samples_in_frame = " << num_samples_in_frame << std::endl;
     std::cout << "\n###### CELL" << std::endl;
@@ -126,7 +146,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\n###### MIB" << std::endl;
     std::cout << "# Frame number: varies cyclically between 0 and 1023" << std::endl;
     std::cout << "# PDCCH configuration: " << mib_object.pdcch_config << std::endl;
-    std::cout << "###################### SCS: " << mib_object.scs / 1e3 << " kHz" << std::endl;
+    std::cout << "# SCS: " << mib_object.scs / 1e3 << " kHz" << std::endl;
     std::cout << "# cell_barred: " << mib_object.cell_barred << std::endl;
     std::cout << "# DMRS type A position: " << mib_object.dmrs_type_a_position << std::endl;
     std::cout << "# k SSB: " << mib_object.k_ssb << std::endl;
@@ -139,50 +159,24 @@ int main(int argc, char *argv[]) {
 
 
 
-
-    /** Calculate cp_length */
-    int cp_lengths_one_subframe[Num_symbols_per_subframe], cum_sum_cp_lengths[Num_symbols_per_subframe];
-    free5GRAN::phy::signal_processing::compute_cp_lengths(mib_object.scs / 1000, free5GRAN::SIZE_IFFT_SSB, 0,
-                                                          Num_symbols_per_subframe, &cp_lengths_one_subframe[0],
-                                                          &cum_sum_cp_lengths[0]);
-
-    /** Initialize cp_length for each symbols of a frame */
-    int cp_lengths_one_frame[free5GRAN::num_symbols_frame];
-    for (int sub_frame = 0; sub_frame < 10; sub_frame++) {
-        for (int symbol = 0; symbol < Num_symbols_per_subframe; symbol++) {
-            cp_lengths_one_frame[Num_symbols_per_subframe * sub_frame + symbol] = cp_lengths_one_subframe[symbol];
-        }
-    }
-
-    std::cout<<"Size of symbol normal CP = "<<cp_lengths_one_subframe[1] + free5GRAN::SIZE_IFFT_SSB<<"  && Size of symbol long CP = "<<cp_lengths_one_subframe[0] + free5GRAN::SIZE_IFFT_SSB<<std::endl;
-
-    /** instantiate a phy object */
-
-    phy phy_variable3(mib_object, cp_lengths_one_frame, cum_sum_cp_lengths, free5GRAN::SIZE_IFFT_SSB, num_samples_in_frame);
-
-
+    /** Run generate_frame one time just for testing */
     if (run_with_usrp == false && run_one_time_ssb == true) {
-        /** Run generate_frame one time for testing */
+
 
               int sfn = 555;
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
-        phy_variable3.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn,
-                                    free5GRAN::gnodeB_config_globale.pci,
-                                    free5GRAN::gnodeB_config_globale.i_b_ssb,
-                                    free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
+        phy_object.generate_frame(mib_object, 1, free5GRAN::num_symbols_frame, cp_lengths_one_frame, sfn,
+                                  free5GRAN::gnodeB_config_globale.pci,
+                                  free5GRAN::gnodeB_config_globale.i_b_ssb,
+                                  free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
         free5GRAN::utils::common_utils::display_vector_per_symbols(buff_main_10ms, free5GRAN::num_symbols_frame,
                                                                    "\n\nbuff_main_10ms from main");
     }
 
 
-    /** Sending buffer MULTITHREADING */
+    /** Sending and generate buffers MULTITHREADING */
     if (run_with_usrp == true) {
-        /** Initialize the 2 buffers. One will be generated while the other will be send */
-        std::vector<std::complex<float>> buffer_null(num_samples_in_frame, 0);
-        free5GRAN::buffer_generated1.resize(num_samples_in_frame);
-        free5GRAN::buffer_generated2.resize(num_samples_in_frame);
-
 
         /** Initialize the rf (USRP B210) parameters */
         rf rf_variable_2(usrp_info_object.sampling_rate, usrp_info_object.center_frequency,
@@ -197,27 +191,18 @@ int main(int argc, char *argv[]) {
 
 
         /** launch thread 'sending' which will run continuously */
+        std::cout << "\nSending Frame indefinitely..." << std::endl;
         thread sending(send_buffer_multithread, rf_variable_2, &free5GRAN::buffer_generated1,
                        &free5GRAN::buffer_generated2);
 
-        std::cout << "\nGenerating Frame indefinitely..." << std::endl;
-
 
         /** launch thread 'generate' which will run continuously */
+        std::cout << "\nGenerating Frame indefinitely..." << std::endl;
+        thread generate(generate_buffer_multithread, phy_object);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+        sending.join();
+        generate.join();
 
 
 
@@ -267,9 +252,9 @@ int main(int argc, char *argv[]) {
             std::cout << "\nE = " << E << std::endl;
             bool validated;
             free5GRAN::dci_1_0_si_rnti dci_object_UE;
-            phy_variable3.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
-                                             agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
-                                             dci_object_UE);
+            phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
+                                           agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
+                                           dci_object_UE);
 
             /** print dci_object_UE to verify that it's well decoded */
             std::cout << "\ndci_object_UE.RIV = " << dci_object_UE.RIV << std::endl;

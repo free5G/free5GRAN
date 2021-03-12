@@ -87,7 +87,7 @@ namespace free5GRAN{
 
 
 
-/** Bellow, it's additions from Benoit. Be Carrful during merging */
+/** Bellow, it's additions from Benoit. Be Careful during merging */
 typedef struct usrp_info_ {
     float sampling_rate;
     std::string subdev, ant, ref2;
