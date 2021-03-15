@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
             int slot_number = 6;
             int symbol_number = 0;
             vector<vector<complex<float>>> interleaved_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
-            //free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
+            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
 
 
 

@@ -65,7 +65,7 @@ namespace free5GRAN {
             void bch_payload_generation(int *mib_bits, int *mib_bits_interleaved);
             void scrambling_bch(int v, int pci, int *mib_bits_interleaved, int *bch_payload);
             void polar_encoding(int N, int *input_bits, int input_size, vector<int> &output_encoded_bits);
-            void rate_matching_polar_coding(vector<int> polar_encode_vector, int E, vector<int> &rate_matched_vector);
+            void rate_matching_polar_coding(vector<int> polar_encoded_vector, int N, int E, int K, vector<int> &rate_matched_vector);
             void bch_encoding(int * mib_bits, int pci, vector<int> &rate_matched_bch_vector);
             void dci_encoding(free5GRAN::dci_1_0_si_rnti dci_1_0_object, int freq_domain_ra_size, int length_crc, int *rnti, int agg_level, int n, vector<int> &rate_matched_dci);
         }

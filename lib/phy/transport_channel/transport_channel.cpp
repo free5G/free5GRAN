@@ -122,6 +122,7 @@ void free5GRAN::phy::transport_channel::rate_recover(int *input_bits, int *outpu
     }
 }
 
+
 void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *output_bits, int N, int K, int nmax, int i_il, int n_pc,
                                                      int n_wm_pc, int E) {
     /**
@@ -1394,22 +1395,22 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
 
 
 
-void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> polar_encode_vector, int E, vector <int> &rate_matched_vector) {
+void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> polar_encoded_vector,int N, int E, int K, vector <int> &rate_matched_vector) {
     /**
     * \fn rate_matching_polar_coding (vector<int> polar_encode_bch, vector <int> &rate_matched_vector)
     * \brief Applies the rate matching to the 512 bits sequence polar_encoded_bch to get a 864 bits long rate_matched_bch.
     * \details
-    * First, bits contained in polar_encoded_bch are interleaved (again).
+    * First, bits contained in polar_encoded_vector are interleaved (again).
     * Then, the 352 first bits of polar_encoded_bch are added at the end of this sequence, to get a 864 bits long sequence
     * \standard TS38.212 V15.2.0 Section 5.4.1
-    * \param[in] polar_encode_bch_vector polar_encode_bch, 512 bits long.
+    * \param[in] polar_encoded_vector Input vector.
+    * \param[in] N Size of Input
     * \param[in] E Size of the output.
-    * \param[out] &rate_matched_bch_vector Final BCH 864 bits sequence.
+    * \param[in] K number of bits that have been polar encoded
+    * \param[out] &rate_matched_vector Output sequence of size E.
     */
 
     /** Initialize variables */
-    int n = free5GRAN::phy::transport_channel::compute_N_polar_code(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2, free5GRAN::SIZE_PBCH_POLAR_DECODED, 9);
-    int N = pow(2, n);
     //int E = free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2;
     int i, j_n;
     int b1 [N];
@@ -1418,18 +1419,32 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> p
     for (int n = 0; n < N; n++) {
         i = floor(32 * (double) n / (double) N);
         j_n = free5GRAN::SUB_BLOCK_INTERLEAVER_PATTERN[i] * N / 32 + n % (N / 32);
-        b1[n] = polar_encode_vector[j_n];
+        b1[n] = polar_encoded_vector[j_n];
     }
 
     /** Add 352 bits at the end of b1 to get rate_matched_bch */
-    for (int n = 0; n < E; n++) {
-        if (n < N) {
-            rate_matched_vector[n] = b1[n];
-        } else {
-            rate_matched_vector[n] = b1[n - N];
+    if (E >=N ) {
+        for (int n = 0; n < E; n++) {
+            if (n < N) {
+                rate_matched_vector[n] = b1[n];
+            } else {
+                rate_matched_vector[n] = b1[n - N];
+            }
+        }
+    }else{
+        if ((float) K / (float) E <= 7.0/16.0){
+            /** puncturing */
+            for (int k = 0; k < E; k ++){
+                rate_matched_vector[k] = b1[k + N - E];
+            }
+        }else{
+            /** shortening */
+            for (int k = 0; k < E; k ++){
+                rate_matched_vector[k] = b1[k];
+            }
         }
     }
-    BOOST_LOG_TRIVIAL(info) << "function rate_matching_polar_coding done. At this point, we have "+std::to_string(free5GRAN::SIZE_SSB_PBCH_SYMBOLS * 2)+ " bits";
+    BOOST_LOG_TRIVIAL(info) << "function rate_matching_polar_coding done";
 }
 
 
@@ -1486,7 +1501,7 @@ void free5GRAN::phy::transport_channel::bch_encoding(int *mib_bits, int pci, vec
     free5GRAN::phy::transport_channel::polar_encoding(N, bch_payload_crc, input_size, polar_encoded_bch_vector);
 
     /** RATE MATCHING -> Generate rate_matching_bch (864 bits long in our case) from encoded_bch. TS38.212 V15.2.0 Section 5.4.1 */
-    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, rate_matched_bch_vector);
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_bch_vector, N, free5GRAN::SIZE_SSB_PBCH_SYMBOLS*2, free5GRAN::SIZE_PBCH_POLAR_DECODED, rate_matched_bch_vector);
 }
 
 
@@ -1573,7 +1588,7 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
 
     /** Step 5: Rate matching, according to TS38.212 V15.2.0 Section 7.3.4 */
     int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is the length of dci after rate_matching
-    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci, E, rate_matched_dci);
+    free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci,N, E, K, rate_matched_dci);
     free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
 }
 

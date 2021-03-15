@@ -1115,10 +1115,13 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
         }
     }
 
+    int reg_bundles_pdcch[agg_level];
+
     free5GRAN::utils::common_utils::display_vector_2D(interleaved_coreset_grid, 1, num_re_in_coreset, 6*12,  "interleaved_coreset_grid after insert dmrs");
 
-    /** Insert pdcch_symbols in coreset_grid */
 
+
+    /** Insert pdcch_symbols in interleaved_coreset_grid */
     int count3 = 0;
     for (int index = 0; index < agg_level; index++){
         for (int re = 0; re < free5GRAN::NUMBER_REG_PER_CCE * 12; re++){
