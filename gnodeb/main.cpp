@@ -246,27 +246,28 @@ int main(int argc, char *argv[]) {
             int slot_number = 6;
             int symbol_number = 0;
             vector<vector<complex<float>>> interleaved_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
-            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
+            //free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
 
 
 
 
 
 
-            /** UE try to decode */
+            /** */
+            //UE try to decode
 
             int K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 +
                     length_crc; // K is the length of dci_payload (crc included)
             int N = pow(2, n);
 
-            std::cout << "\nE = " << E << std::endl;
+            std::cout << "\nE = " << E <<" ; K = " << K << " ; N = "<<N<<" ; kebgth_crc = "<<length_crc<< " ; agg_leve = "<<agg_level<<" ; freq_domain_ra_size = " <<freq_domain_ra_size<<std::endl;
             bool validated;
             free5GRAN::dci_1_0_si_rnti dci_object_UE;
             phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
                                            agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
                                            dci_object_UE);
 
-            /** print dci_object_UE to verify that it's well decoded */
+            //print dci_object_UE to verify that it's well decoded
             std::cout << "\ndci_object_UE.RIV = " << dci_object_UE.RIV << std::endl;
             std::cout << "dci_object_UE.TD_ra = " << dci_object_UE.TD_ra << std::endl;
             std::cout << "dci_object_UE.vrb_prb_interleaving = " << dci_object_UE.vrb_prb_interleaving << std::endl;

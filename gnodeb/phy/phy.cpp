@@ -365,7 +365,7 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
     free5GRAN::utils::common_utils::display_table(decoded_dci_bits, K-24, "UE decoded_dci_bits");
     if (validated) {
     //if (true){
-        std::cout<<"\nCRC VALIDARED"<<std::endl;
+        std::cout<<"\nCRC VALIDATED"<<std::endl;
         dci_object.RIV = 0;
         for (int i = 0 ; i < freq_domain_ra_size; i ++){
             dci_object.RIV += decoded_dci_bits[i] * pow(2, freq_domain_ra_size - i - 1);

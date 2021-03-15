@@ -302,7 +302,7 @@ void free5GRAN::utils::common_utils::display_signal_float(std::complex<float> **
 }
 
 
-void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<std::complex<float>>> vector_to_display, int vector_size1, int vector_size2,
+void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<std::complex<float>>> vector_to_display, int vector_size1, int vector_size2, int line_break,
                                                     char *vector_name){
     /**
     * \fn display_vector2D (std::vector<std::vector<std::complex<float>>> *vector_to_display, int vector_size1, int vector_size2, char* vector_name)
@@ -317,6 +317,9 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
     for (int j = 0; j<vector_size1; j++) {
         std::cout <<"\n vector "<<j<<" = "<<ends;
         for (int i = 0; i < vector_size2; i++) {
+            if (i%line_break == 0){
+                std::cout<<""<<std::endl;
+            }
             std::cout << vector_to_display[j][i] << "  " << std::ends;
         }
     }
@@ -462,7 +465,7 @@ void free5GRAN::utils::common_utils::display_table(int *table_to_display, int si
     */
 
     for (int i = 0; i<size; i++) {
-        if (i % 70== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
+        if (i % 100== 0){        /** 70 here means that every 70 elements displayed, a line break is done */
             std::cout <<""<< std::endl;
         }
         if (i % 10 == 0 && i != 0){
