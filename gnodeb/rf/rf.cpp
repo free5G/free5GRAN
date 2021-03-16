@@ -139,6 +139,14 @@ double rf::getGain() {
 
 
 void rf::buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector<std::complex<float>> &buff2) {
+    /**
+    * \fn buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector<std::complex<float>> &buff2)
+    * \brief sends continuously via rf device (eg USRP) buff1 and buff2, alternatively.
+        * These 2 buffers are continuously generated in another thread. Semaphores are used to manage the 2 threads
+    *
+    * \param[in] &buff1 buffer 1 to be sent
+    * \param[in] &buff2 buffer 2 to be sent
+    */
     BOOST_LOG_TRIVIAL(warning) << "Function buffer_transmition begins ";
 
     uhd::stream_args_t stream_args("fc32", "sc16");
@@ -161,19 +169,20 @@ void rf::buffer_transmition(std::vector<std::complex<float>> &buff1, std::vector
 
     while (true) {
 
-
             /** Send buffer 1*/
             start_send1 = chrono::high_resolution_clock::now();
             tx_stream->send(&buff1.front(), buff1.size(), md);
             stop_send1 = chrono::high_resolution_clock::now();
-            sem_post(&free5GRAN::semaphore_common1); // release semaphore_common1 to let the main thread generate the next buffer1
+            /** release semaphore_common1 to let the 'generate' thread generate the next buffer1 */
+            sem_post(&free5GRAN::semaphore_common1);
             BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been sent ";
 
             /** Send buffer 2*/
             start_send2 = chrono::high_resolution_clock::now();
             tx_stream->send(&buff2.front(), buff2.size(), md);
             stop_send2 = chrono::high_resolution_clock::now();
-            sem_post(&free5GRAN::semaphore_common2); // release semaphore_common2 to let the main thread generate the next buffer2
+            /** release semaphore_common2 to let the 'generate' thread generate the next buffer2 */
+            sem_post(&free5GRAN::semaphore_common2);
             BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been sent ";
 
 

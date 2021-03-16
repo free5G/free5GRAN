@@ -31,14 +31,16 @@
 #include "../lib/variables/common_variables/common_variables.h"
 #include "../lib/utils/sequence_generator/sequence_generator.h"
 
-/** This function will run continuously to send frames and is called by thread 'sending' */
+
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_generated1, vector<complex<float>> * buff_generated2){
+    /** This function will run continuously to send frames and is called by thread 'sending' */
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function send_buffer_multithread begins ";
     rf_variable_2.buffer_transmition(*buff_generated1, *buff_generated2);
 }
 
-/** This function will run continuously to generate frames and is called by thread 'generate' */
+
 void generate_buffer_multithread(phy phy_object){
+    /** This function will run continuously to generate frames and is called by thread 'generate' */
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function generate_buffer_multithread begins ";
     phy_object.continuous_buffer_generation();
 }
@@ -46,9 +48,9 @@ void generate_buffer_multithread(phy phy_object){
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = true; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
+    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
     /** Depending on the running platform, select the right config file */
     const char *config_file;
@@ -245,15 +247,15 @@ int main(int argc, char *argv[]) {
             int R = 2;
             int slot_number = 6;
             int symbol_number = 0;
-            vector<vector<complex<float>>> interleaved_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
-            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, interleaved_coreset_grid);
+            vector<vector<complex<float>>> masked_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
+            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, masked_coreset_grid);
 
 
 
 
 
 
-            /**
+            /** */
             //UE try to decode
 
             int K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 +
@@ -263,8 +265,13 @@ int main(int argc, char *argv[]) {
             std::cout << "\nE = " << E <<" ; K = " << K << " ; N = "<<N<<" ; kebgth_crc = "<<length_crc<< " ; agg_leve = "<<agg_level<<" ; freq_domain_ra_size = " <<freq_domain_ra_size<<std::endl;
             bool validated;
             free5GRAN::dci_1_0_si_rnti dci_object_UE;
-            phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
+
+            /** phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
                                            agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
+                                           dci_object_UE); */
+
+            phy_object.UE_decode_coreset(masked_coreset_grid, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
+                                           agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, slot_number, symbol_number, pdcch_ss_mon_occ.n_rb_coreset,
                                            dci_object_UE);
 
             //print dci_object_UE to verify that it's well decoded
@@ -274,7 +281,7 @@ int main(int argc, char *argv[]) {
             std::cout << "dci_object_UE.mcs = " << dci_object_UE.mcs << std::endl;
             std::cout << "dci_object_UE.rv = " << dci_object_UE.rv << std::endl;
             std::cout << "dci_object_UE.si = " << dci_object_UE.si << std::endl;
- */
+
         }
 
 }

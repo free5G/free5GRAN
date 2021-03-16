@@ -37,16 +37,25 @@
 #include <semaphore.h>
 
 
-phy::phy(free5GRAN::mib mib_object3, int *cp_lengths_one_frame3, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame) {
+phy::phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame) {
+    /**
+    * \fn phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame)
+    * \brief initializes phy object. Also resizes some vectors or buffer with right size.
+    *
+    * \param[in] mib_object Master Information Block. Includes cell_barred, k_ssb, pddchc_config...
+    * \param[in] *cp_lengths_one_frame. Cyclic Prefix length for each symbol of a frame
+    * \param[in] ifft_size.
+    * \param[in] num_samples_in_frame. number of samples (IQ) that a 10 ms radio-frame will contain
+    */
 
-    this->mib_object = mib_object3;
-    this->cp_lengths_one_frame = cp_lengths_one_frame3;
+    this->mib_object = mib_object;
+    this->cp_lengths_one_frame = cp_lengths_one_frame;
     this->cum_sum_cp_lengths = cum_sum_cp_lengths;
     this->ifft_size = ifft_size;
     this->num_samples_in_frame = num_samples_in_frame;
 
 
-    /** Resize the 3 buffers */
+    /** Resize the 3 buffers which will be used to send and generate continuously */
     free5GRAN::buffer_generated1.resize(num_samples_in_frame,  {0.0, 0.0});
     free5GRAN::buffer_generated2.resize(num_samples_in_frame,  {0.0, 0.0});
     free5GRAN::buffer_null.resize(num_samples_in_frame,  {0.0, 0.0});
@@ -390,6 +399,149 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
 
         dci_object.si = decoded_dci_bits[freq_domain_ra_size + 4 + 1 + 5 + 2];
     }/***/
+}
+
+
+
+
+void phy::UE_decode_coreset(vector<vector<complex<float>>> masked_coreset_grid, int K, int N, int E, int length_crc, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, int slot_number, int symbol_number, int num_rb_coreset, free5GRAN::dci_1_0_si_rnti &dci_object) {
+
+    vector<vector<vector<int>>> ref(2, vector<vector<int>>(1, vector<int>(12 * num_rb_coreset)));
+
+    int reg_bundles[agg_level];
+    int height_reg_rb = free5GRAN::NUMBER_REG_PER_CCE / 1;
+    int num_candidates = num_rb_coreset / (agg_level * height_reg_rb);
+    int R = 2;
+    int C = num_rb_coreset / (6 * R);
+    int reg_index[C * R];
+
+
+    for (int symbol = 0; symbol < 1; symbol ++) {
+        for (int sc = 0; sc < 12 * num_rb_coreset; sc ++){
+            ref[1][symbol][sc] = 0;
+            ref[0][symbol][sc] = 0;
+        }
+    }
+    /*
+                 * Computing PDCCH candidate position in RE grid
+                 */
+
+    //free5GRAN::phy::physical_channel::compute_pdcch_indexes(ref, pdcch_ss_mon_occ, agg_level, reg_bundles, height_reg_rb);
+
+
+
+    vector<complex<float>> pdcch_symbols(E / 2, {0, 0});
+
+
+
+    /*
+     * Demodulate PBCH Signal
+     */
+
+    std::cout<<"agg_level from UE_decode = "<<agg_level<<std::endl;
+    int pdcch_bits[E];
+    free5GRAN::phy::signal_processing::hard_demodulation(pdcch_symbols,pdcch_bits,agg_level * 6 * 9,1);
+    free5GRAN::utils::common_utils::display_table(pdcch_bits, E, "UE_pdcch_bits (just after demodulation)");
+
+    /*
+        * De-scramble pbch_bits to scrambled_bits
+        */
+    int c_seq[agg_level * 6 * 9 * 2];
+    free5GRAN::utils::sequence_generator::generate_c_sequence((long) pci % (long)pow(2,31), agg_level * 6 * 9 * 2, c_seq,0);
+
+    int rate_matched_dci_table[E];
+    free5GRAN::utils::common_utils::scramble(pdcch_bits, c_seq, rate_matched_dci_table, agg_level * 6 * 9 * 2, 0);
+
+
+
+
+    int rate_recovered[N], polar_decoded[K], remainder[length_crc +1], descrambled[polar_decoded_size + length_crc];
+    //int descrambled[K + 24];
+
+    int A = K-length_crc;
+
+
+
+    /*
+     * rate recovering
+     */
+    free5GRAN::utils::common_utils::display_table(rate_matched_dci_table, E, "UE_rate_matched_dci_table");
+    free5GRAN::phy::transport_channel::rate_recover(rate_matched_dci_table, rate_recovered, 0, E, N, K);
+
+    free5GRAN::utils::common_utils::display_table(rate_recovered, N, "UE rate_recoverd");
+
+    /*
+     * Polar decoding
+     */
+
+    //free5GRAN::phy::transport_channel::polar_decode(rate_matched_dci_table,polar_decoded,N,K,9,1,0,0, E);
+    free5GRAN::phy::transport_channel::polar_decode(rate_recovered, polar_decoded, N, polar_decoded_size, 9, 1, 0, 0, E);
+
+    free5GRAN::utils::common_utils::display_table(polar_decoded, K, "UE_polar_decoded");
+
+    /*
+     * RNTI de-masking and CRC validation
+     */
+
+    for (int i = 0; i < length_crc; i ++){
+        descrambled[i] = 1;
+    }
+    std::cout<<"FROM EU, A = "<<A<<" & K = "<<K<<std::endl;
+    for (int i = 0; i < K; i ++){
+        if (i < A+8){
+            descrambled[i + length_crc] = polar_decoded[i];
+        }
+        else {
+            descrambled[i + length_crc] = (polar_decoded[i] + rnti[i - A - 8]) % 2;
+        }
+    }
+
+    free5GRAN::utils::common_utils::display_table(descrambled, K + length_crc, "UE_descrambled");
+
+    //free5GRAN::phy::transport_channel::crc_validate(polar_decoded, free5GRAN::G_CRC_24_C, remainder, K, 25);
+    free5GRAN::phy::transport_channel::crc_validate(descrambled, free5GRAN::G_CRC_24_C, remainder, K+length_crc, length_crc+1);
+    validated = true;
+    free5GRAN::utils::common_utils::display_table(remainder, length_crc, "remainder from UE decode");
+    for (int i = 0; i < length_crc+1; i ++){
+        if (remainder[i] ==1){
+            validated = false;
+            break;
+        }
+    }
+    BOOST_LOG_TRIVIAL(trace) << "## CRC " << ((validated) ? "validated" :  "not validated");
+
+    int decoded_dci_bits[K-24];
+    for (int i = 0; i < K-24; i ++){
+        decoded_dci_bits[i] = polar_decoded[i];
+    }
+    free5GRAN::utils::common_utils::display_table(decoded_dci_bits, K-24, "UE decoded_dci_bits");
+    if (validated) {
+        //if (true){
+        std::cout<<"\nCRC VALIDATED"<<std::endl;
+        dci_object.RIV = 0;
+        for (int i = 0 ; i < freq_domain_ra_size; i ++){
+            dci_object.RIV += decoded_dci_bits[i] * pow(2, freq_domain_ra_size - i - 1);
+        }
+        std::cout<<"dci_object.RIV from UE decode = "<<dci_object.RIV<<std::endl;
+        dci_object.TD_ra = 0;
+        for (int i = 0; i < 4; i ++){
+            dci_object.TD_ra += decoded_dci_bits[i + freq_domain_ra_size] * pow(2, 4 - i - 1);
+        }
+
+        dci_object.vrb_prb_interleaving = decoded_dci_bits[freq_domain_ra_size + 4];
+
+        dci_object.mcs = 0;
+        for (int i = 0; i < 5; i ++){
+            dci_object.mcs += decoded_dci_bits[i + freq_domain_ra_size + 4 + 1] * pow(2, 5 - i - 1);
+        }
+
+        dci_object.rv = 0;
+        for (int i = 0; i < 2; i ++){
+            dci_object.rv += decoded_dci_bits[i + freq_domain_ra_size + 4 + 1 + 5] * pow(2, 2 - i - 1);
+        }
+
+        dci_object.si = decoded_dci_bits[freq_domain_ra_size + 4 + 1 + 5 + 2];
+    }
 }
 
 

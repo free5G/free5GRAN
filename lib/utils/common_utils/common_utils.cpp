@@ -145,7 +145,7 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
     * \brief Transforms the MIB information (decimal) into the mib bits sequence.
     * In our case, mib bits sequence is 32 bits long.
     * \standard TS38.331 V15.11.0 Section 6.2.2
-    * \param[in] mib_object object MIB created in common_structures.h, including cell_barred, k_ssb, pddchc_config...
+    * \param[in] mib_object object MIB created in common_structures.h, includes cell_barred, k_ssb, pddchc_config...
     * \param[out] mib_bits bit sequence returned by the function.
     */
 

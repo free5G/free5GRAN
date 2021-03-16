@@ -45,7 +45,6 @@ private:
 
 public:
     phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame);
-    //void generate_frame(free5GRAN::mib mib_object, int num_SSB_in_this_frame, int num_symbols_frame, int *cp_lengths_one_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     void generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
     void compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame);
     void continuous_buffer_generation();
@@ -53,7 +52,7 @@ public:
     //----------- From here, DCI / PDCCH
 
     void UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int length_crc, int pci,int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object);
-
+    void UE_decode_coreset(vector<vector<complex<float>>> masked_coreset_grid, int K, int N, int E, int length_crc, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, int slot_number, int symbol_number, int num_rb_coreset, free5GRAN::dci_1_0_si_rnti &dci_object);
 };
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_generated1, vector<complex<float>> * buff_generated2);
 
