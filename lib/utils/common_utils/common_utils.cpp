@@ -326,6 +326,31 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
 }
 
 
+void free5GRAN::utils::common_utils::display_vector_2D_int(std::vector<std::vector<int>> vector_to_display, int vector_size1, int vector_size2, int line_break,
+                                                       char *vector_name){
+    /**
+    * \fn display_vector2D (std::vector<std::vector<int>> *vector_to_display, int vector_size1, int vector_size2, char* vector_name)
+    * \brief Displays a vector<vector<int>> in the console.
+    *
+    * \param[in] vector_to_display
+    * \param[in] vector_size1 number of vector in the vector_to_display
+    * \param[in] vector_size2 number of int in each vector
+    * \param[in] vector_name name to display
+    */
+    std::cout <<"\n\n"<< vector_name << " (of size "<< vector_size1<<" * "<<vector_size2 <<") = "<<std::ends;
+    for (int j = 0; j<vector_size1; j++) {
+        std::cout <<"\n vector "<<j<<" = "<<ends;
+        for (int i = 0; i < vector_size2; i++) {
+            if (i%line_break == 0){
+                std::cout<<""<<std::endl;
+            }
+            std::cout << vector_to_display[j][i] << "  " << std::ends;
+        }
+    }
+}
+
+
+
 
 
 void free5GRAN::utils::common_utils::display_vector_per_symbols(std::vector<std::complex<float>> vector_to_display, int size1,

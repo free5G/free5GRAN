@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 
 
 
-            /** */
+            /**
             //UE try to decode
 
             int K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 +
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
             std::cout << "dci_object_UE.mcs = " << dci_object_UE.mcs << std::endl;
             std::cout << "dci_object_UE.rv = " << dci_object_UE.rv << std::endl;
             std::cout << "dci_object_UE.si = " << dci_object_UE.si << std::endl;
-
+ */
         }
 
 }

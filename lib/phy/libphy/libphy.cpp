@@ -1066,7 +1066,7 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
 
 
 
-void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &interleaved_coreset_grid) {
+void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &masked_coreset_grid) {
 
     vector<complex<float>> pdcch_dmrs(CORESET_size * 3, {0, 0});
     free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, slot_number, symbol_number, pdcch_dmrs,
@@ -1080,20 +1080,22 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
     std::cout << "\nnum_re_in_coreset_pdcch = " << num_re_in_coreset_pdcch << std::endl;
 
     int num_re_per_cce = free5GRAN::NUMBER_REG_PER_CCE * 12;
+    std::cout << "\nnum_re_per_cce = " << num_re_per_cce << std::endl;
 
     /**This vector is in 2 dimensions in anticipation of case num_symbols != 1 */
     vector<vector<complex<float>>> coreset_grid(1, vector<complex<float>>(num_re_in_coreset, {0, 0}));
 
     /** Fill corest_grid with pdcch_dmrs, every 4 re (ressource element), beginning at re = 1 */
     int count = 0;
-    for (int re = 0; re < num_re_in_coreset_pdcch; re++) {
+    for (int re = 0; re < num_re_in_coreset; re++) {
         if (re % 4 == 1) {
             coreset_grid[0][re] = pdcch_dmrs[count];
             count++;
         }
     }
 
-    free5GRAN::utils::common_utils::display_vector_2D(coreset_grid, 1, num_re_in_coreset, 6*12,  "coreset_grid");
+    free5GRAN::utils::common_utils::display_vector_2D(coreset_grid, 1, num_re_in_coreset, num_re_per_cce,  "coreset_grid");
+
 
     //Compute CCE-to-REG mapping From TS38.211 7.3.2.2
     int C = CORESET_size / (6 * R);
@@ -1106,32 +1108,68 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
             reg_index[j] = (r * C + c + pci) % 8; // 8 has to be modified by a variable
         }
     }
-
     free5GRAN::utils::common_utils::display_table(reg_index, C * R, "reg_index");
-    /** Interleaving coreset_grid */
-    for (int index = 0; index < C*R; index++){
-        for (int re = 0; re < free5GRAN::NUMBER_REG_PER_CCE * 12; re++){
-            interleaved_coreset_grid[0][reg_index[index]*free5GRAN::NUMBER_REG_PER_CCE * 12 + re] = coreset_grid[0][index*free5GRAN::NUMBER_REG_PER_CCE * 12 + re];
+
+    int reg_bundles[agg_level];
+    for (int i=0; i<agg_level; i++){
+        reg_bundles[i] = reg_index[i];
+    }
+
+    sort(reg_bundles, reg_bundles+agg_level);
+    free5GRAN::utils::common_utils::display_table(reg_bundles, agg_level, "reg_bundles");
+
+    /** Create and fill coreset_mask */
+    vector<vector<int>> coreset_mask(1, vector<int>(num_re_in_coreset, 0));
+    for (int symbol = 0; symbol < 1; symbol ++){ // 1 has to be replaced by a variable
+        for (int cce = 0; cce < agg_level; cce++){
+            for (int re = 0; re < num_re_per_cce; re++){
+                coreset_mask[symbol][reg_bundles[cce]*num_re_per_cce + re] = 1;
+            }
         }
     }
 
-    int reg_bundles_pdcch[agg_level];
+    free5GRAN::utils::common_utils::display_vector_2D_int(coreset_mask, 1, num_re_in_coreset, num_re_per_cce, "coreset_mask");
 
-    free5GRAN::utils::common_utils::display_vector_2D(interleaved_coreset_grid, 1, num_re_in_coreset, 6*12,  "interleaved_coreset_grid after insert dmrs");
+    /** mask coreset_grid with coreset_mask to get masked_coreset_grid */
+    for (int symbol = 0; symbol < 1; symbol ++){
+        for (int re = 0; re<num_re_in_coreset; re++){
+            if (coreset_mask[symbol][re] == 1) {
+                masked_coreset_grid[symbol][re] = coreset_grid[symbol][re];
+            }
+        }
+    }
+
+    /** Insert pdcch_symbols in masked_coreset_grid */
+    int count4 = 0;
+    for (int symbol = 0; symbol < 1; symbol ++){
+        for (int re = 0; re<num_re_in_coreset; re++){
+            if (coreset_mask[symbol][re] == 1 && (re%4 != 1)){
+                masked_coreset_grid[symbol][re] = pdcch_symbols[count4];
+                count4++;
+            }
+        }
+    }
+    std::cout<<"\ncount4 = "<<count4<<std::endl;
 
 
 
-    /** Insert pdcch_symbols in interleaved_coreset_grid */
+
+
+    free5GRAN::utils::common_utils::display_vector_2D(masked_coreset_grid, 1, num_re_in_coreset, num_re_per_cce, "masked_coreset_grid after insert dmrs");
+
+
+
+    /** Insert pdcch_symbols in masked_coreset_grid */
     int count3 = 0;
     for (int index = 0; index < agg_level; index++){
         for (int re = 0; re < free5GRAN::NUMBER_REG_PER_CCE * 12; re++){
             if (re % 4 != 1) {
-                interleaved_coreset_grid[0][reg_index[index]*free5GRAN::NUMBER_REG_PER_CCE * 12 + re] = pdcch_symbols[count3];
+                masked_coreset_grid[0][reg_index[index] * free5GRAN::NUMBER_REG_PER_CCE * 12 + re] = pdcch_symbols[count3];
                 count3 ++;
             }
         }
     }
 
-    free5GRAN::utils::common_utils::display_vector_2D(interleaved_coreset_grid, 1, num_re_in_coreset, 6*12,  "interleaved_coreset_grid after insert pdcch");
+    //free5GRAN::utils::common_utils::display_vector_2D(masked_coreset_grid, 1, num_re_in_coreset, 6*12,  "masked_coreset_grid after insert pdcch");
 
 }
