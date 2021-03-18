@@ -210,7 +210,14 @@ void free5GRAN::utils::common_utils::encode_mib(free5GRAN::mib mib_object, int *
 
 
 void free5GRAN::utils::common_utils::dci_generation(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size){
-
+    /**
+      * \fn dci_generation(free5GRAN::dci_1_0_si_rnti dci_object, int *dci_bits, int freq_domain_ra_size)
+      * \brief Transforms a dci_object (format 1_0) into a dci bits sequence.
+      * \standard TS38.212 V15.2.0 Section 7.3.1.2.1
+      * \param[in] dci_object. Downlink Control Information, Format 1_0
+      * \param[in] freq_domain_ra_size. Number of bits in dci_bits reserved to Frequency domain resource assignment.
+      * \param[out] *dci_bits. Output dci bits sequence, of length A = freq_domain_ra_size +4+1+5+2+1+15
+      */
 
     int index_bit_dci = 0;
     int RIV_binary[freq_domain_ra_size];
@@ -311,6 +318,7 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
     * \param[in] vector_to_display
     * \param[in] vector_size1 number of vector in the vector_to_display
     * \param[in] vector_size2 number of complex<float> in each vector
+    * \param[in] line_break. Number of element to display before line break
     * \param[in] vector_name name to display
     */
     std::cout <<"\n\n"<< vector_name << " (of size "<< vector_size1<<" * "<<vector_size2 <<") = "<<std::ends;
@@ -335,6 +343,7 @@ void free5GRAN::utils::common_utils::display_vector_2D_int(std::vector<std::vect
     * \param[in] vector_to_display
     * \param[in] vector_size1 number of vector in the vector_to_display
     * \param[in] vector_size2 number of int in each vector
+    * \param[in] line_break. Number of element to display before line break
     * \param[in] vector_name name to display
     */
     std::cout <<"\n\n"<< vector_name << " (of size "<< vector_size1<<" * "<<vector_size2 <<") = "<<std::ends;
@@ -360,7 +369,7 @@ void free5GRAN::utils::common_utils::display_vector_per_symbols(std::vector<std:
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
-    * \param[in] vector_size number of element in the vector
+    * \param[in] size1 number of element in the vector
     * \param[in] vector_name name to display
     */
     int j = 0;
@@ -394,6 +403,16 @@ void free5GRAN::utils::common_utils::display_vector_per_symbols(std::vector<std:
 
 
 void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<float>> vector_to_display, int size, char *vector_name){
+
+    /**
+  * \fn display_vector_per_symbols (std::vector<std::complex<float>> vector_to_display, int vector_size, char* vector_name)
+  * \brief Displays a vector in the console.
+  *
+  * \param[in] vector_to_display
+  * \param[in] vector_size number of element in the vector
+  * \param[in] vector_name name to display
+  */
+
     std::cout<<"\n"<< vector_name << " (of size "<< size<< ") = "<<std::ends;
     for (int i = 0; i < size; i++){
         if (i % 10 == 0){
@@ -410,11 +429,11 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<std::complex<flo
 void free5GRAN::utils::common_utils::display_vector(std::vector<int> vector_to_display, int size1,
                                                     char *vector_name){
     /**
-    * \fn display_vector_per_symbols (std::vector<int> *vector_to_display, int vector_size, char* vector_name)
+    * \fn display_vector (std::vector<int> vector_to_display, int size, char* vector_name)
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
-    * \param[in] vector_size number of element in the vector
+    * \param[in] size1 number of element in the vector
     * \param[in] vector_name name to display
     */
 
@@ -435,10 +454,10 @@ void free5GRAN::utils::common_utils::display_vector(std::vector<int> vector_to_d
 
 
 
-void free5GRAN::utils::common_utils::display_complex_double(std::complex<double> *vector_to_display, int vector_size,
+void free5GRAN::utils::common_utils::display_complex_double(std::complex<double> *table_to_display, int vector_size,
                                                             char *vector_name){
     /**
-    * \fn display_complex_double (std::complex<double> *vector_to_display, int vector_size, char* vector_name)
+    * \fn display_complex_double (std::complex<double> *table_to_display, int vector_size, char* vector_name)
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
@@ -452,15 +471,15 @@ void free5GRAN::utils::common_utils::display_complex_double(std::complex<double>
         if (i == 0){
             std::cout << +vector_name << ": "<<std::ends;
         }
-        std::cout<<vector_to_display[i] <<"   "<< std::ends;
+        std::cout << table_to_display[i] << "   " << std::ends;
     }
 }
 
 
-void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *vector_to_display, int vector_size,
+void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *table_to_display, int vector_size,
                                                            char *vector_name){
     /**
-    * \fn display_complex_float (std::complex<float> *vector_to_display, int vector_size, char* vector_name)
+    * \fn display_complex_float (std::complex<float> *table_to_display, int vector_size, char* vector_name)
     * \brief Displays a vector in the console.
     *
     * \param[in] vector_to_display
@@ -474,7 +493,7 @@ void free5GRAN::utils::common_utils::display_complex_float(std::complex<float> *
         if (i == 0){
             std::cout << +vector_name << ": "<<std::ends;
         }
-        std::cout<<vector_to_display[i] <<"   "<< std::ends;
+        std::cout << table_to_display[i] << "   " << std::ends;
     }
 }
 

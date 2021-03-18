@@ -177,6 +177,12 @@ void phy::compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_fr
 
 
 void phy::continuous_buffer_generation() {
+    /**
+    * \fn continuous_buffer_generation()
+    * \brief generate continuously free5GRAN::buffer_generated1 and free5GRAN::buffer_generated2, alternatively.
+        * These 2 buffers are continuously sent in another thread. Semaphores are used to manage the 2 threads
+    *
+    */
 
     /** Initialize variables to measure time in loop 'while true' */
     int sfn = 0, duration_sum_generate = 0, i = 0;
@@ -192,19 +198,19 @@ void phy::continuous_buffer_generation() {
         while (true) {
 
             /** GENERATE BUFFER 1 */
-            /** Calculate the number of ssb block that the next frame will contain. To be optimize */
+            /** Calculate the number of ssb block that the next frame will contain */
             compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
 
             BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
             BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_next_frame);
 
-            sem_wait(&free5GRAN::semaphore_common1); // Waiting until buffer_generated1 finish to be sent
+            /** Waiting until buffer_generated1 has finish to be sent in the other thread */
+            sem_wait(&free5GRAN::semaphore_common1);
 
-            /** If the frame has to contain 1 or more SSB, we generate it */
+            /** If the frame has to contain 1 or more SSB, we generate it.  If not, we fill buffer with '0' */
             start_generate1 = chrono::high_resolution_clock::now();
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated1 */
-                //this->mib_object
                 phy::generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame,
                                             sfn,
                                             free5GRAN::gnodeB_config_globale.pci,
@@ -212,7 +218,6 @@ void phy::continuous_buffer_generation() {
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated1);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been generated";
             }else{
-                //free5GRAN::buffer_generated1 = phy_object.buffer_null;
                 free5GRAN::buffer_generated1 = free5GRAN::buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 1 has been fill with buffer_null";
             }
@@ -227,10 +232,11 @@ void phy::continuous_buffer_generation() {
             BOOST_LOG_TRIVIAL(warning) << "SFN = " + std::to_string(sfn);
             BOOST_LOG_TRIVIAL(warning) << "num_SSB in next frame = " + std::to_string(num_SSB_in_next_frame);
 
-            sem_wait(&free5GRAN::semaphore_common2); // Waiting until buffer_generated2 finish to be sent
+            /** Waiting until buffer_generated2 has finish to be sent in the other thread */
+            sem_wait(&free5GRAN::semaphore_common2);
 
             start_generate2 = chrono::high_resolution_clock::now();
-            /** If the frame has to contain 1 or more SSB, we generate it */
+            /** If the frame has to contain 1 or more SSB, we generate it. If not, we fill buffer with '0' */
             if (num_SSB_in_next_frame != 0) {
                 /** generate buffer_generated2 */
                 phy::generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame,
@@ -240,7 +246,7 @@ void phy::continuous_buffer_generation() {
                                             free5GRAN::gnodeB_config_globale.scaling_factor, free5GRAN::buffer_generated2);
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been generated";
             }else{
-                //free5GRAN::buffer_generated2 = phy_object.buffer_null;
+
                 free5GRAN::buffer_generated2 = free5GRAN::buffer_null;
                 BOOST_LOG_TRIVIAL(warning) << "Buffer 2 has been fill with buffer_null";
             }

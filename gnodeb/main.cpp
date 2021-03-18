@@ -33,14 +33,14 @@
 
 
 void send_buffer_multithread(rf rf_variable_2, vector<complex<float>> * buff_generated1, vector<complex<float>> * buff_generated2){
-    /** This function will run continuously to send frames and is called by thread 'sending' */
+    /** This function will run continuously to send the 2 buffers alternatively and is called by thread 'sending' */
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function send_buffer_multithread begins ";
     rf_variable_2.buffer_transmition(*buff_generated1, *buff_generated2);
 }
 
 
 void generate_buffer_multithread(phy phy_object){
-    /** This function will run continuously to generate frames and is called by thread 'generate' */
+    /** This function will run continuously to generate the 2 buffers alternatively and is called by thread 'generate' */
     BOOST_LOG_TRIVIAL(warning) << "MAIN Function generate_buffer_multithread begins ";
     phy_object.continuous_buffer_generation();
 }
@@ -48,9 +48,9 @@ void generate_buffer_multithread(phy phy_object){
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
     bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
+    bool run_test_dci = true; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
     /** Depending on the running platform, select the right config file */
     const char *config_file;

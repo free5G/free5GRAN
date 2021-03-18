@@ -1068,6 +1068,29 @@ void free5GRAN::phy::signal_processing::ifft(vector<vector<complex<float>>> freq
 
 void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_rb_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &masked_coreset_grid) {
 
+    /**
+ * \fn map_pdcch(vector<complex<float>> pdcch_symbols, int CORESET_rb_size, int agg_level, int R, int pci, int slot_number, int symbol_number, vector<vector<complex<float>>> &masked_coreset_grid)
+ * \brief .
+ * \standard TS38.211 Version 15.2.0 ; 7.3.2.2
+ * \details
+ * Step 1: Generate dmrs sequence of pdcch
+ * Step 2: Place this dmrs in coreset_grid
+ * Step 3: Generate coreset_mask which will indicates which RE in coreset_grid are used
+ * Step 4: Mask coreset_grid with coreset_mask to remove superfluous dmrs symbols
+ * Step 5: Insert pdcch symbols in coreset_grid according to coreset_mask
+ * \param[in] pdcch_symbols. Input pdcch symbols sequence, of lenght E/2
+ * \param[in] CORESET_rb_size. Number of RB (Ressource Block) that CORESET will contain
+ * \param[in] agg_level. Aggregation level : number of CCE's in CORESET to carry pdcch/dci message.
+ * \param[in] R. Used to calculate size of reg_index and reg_bundles
+ * \param[in] pci. Physical Cell Id. Used to generate dmrs.
+ * \param[in] slot_number. Used to generate dmrs
+ * \param[in] symbol_number. Used to generate dmrs
+ * \param[out] &masked_coreset_grid. Output sequence of num_symbols * num_re_in_coreset complex symbols.
+ */
+
+
+
+
     vector<complex<float>> pdcch_dmrs(CORESET_rb_size * 3, {0, 0});
     free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, slot_number, symbol_number, pdcch_dmrs,
                                                                        CORESET_rb_size * 3);
