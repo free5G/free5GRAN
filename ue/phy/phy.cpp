@@ -778,7 +778,6 @@ void phy::search_pdcch(bool &dci_found) {
         if (dci_1_0_si_rnti.rv == 0 || dci_1_0_si_rnti.rv == 3){
             dci_found = true;
         }
-
     }
 }
 

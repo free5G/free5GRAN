@@ -251,11 +251,70 @@ int main(int argc, char *argv[]) {
             free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, masked_coreset_grid);
 
 
+      /** PREPARE for place masked_coreset_grid (PDCCH) in time/frequency grid (buffer) */
+
+
+            /** Transforms pdcch_config into controlResourceSetZero and searchSpaceZero */
+            std::cout<<""<<std::endl;
+            int pdcch_config_index[8];
+            int controlResourceSetZero = 0, searchSpaceZero = 0;
+            free5GRAN::utils::common_utils::convert_decimal_to_binary(8, mib_object.pdcch_config, pdcch_config_index);
+            for (int i = 0; i<8; i++){
+                if (i<4) {
+                    controlResourceSetZero += pdcch_config_index[i] * pow(2, (3 - i));
+                }else{
+                    searchSpaceZero += pdcch_config_index[i] * pow(2, (7 - i));
+                }
+            }
+
+            std::cout << "controlResourceSetZero = " << controlResourceSetZero << std::endl;
+            std::cout << "searchSpaceZero = " << searchSpaceZero << std::endl;
+
+            /** Determine the first re index of pdcch in radio_frame */
+            int CORESET_offset_rb = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][3];
+            std::cout<<"CORESET_offset_rb = "<<CORESET_offset_rb<<std::endl;
+
+            int index_first_re_pdcch = (free5GRAN::SIZE_IFFT_SSB/2) - (free5GRAN::NUM_SC_SSB/2) - (CORESET_offset_rb*12);
+
+            std::cout<<"index_first_re_pdcch = "<<index_first_re_pdcch<<std::endl;
+
+            /** Determine the position of pdcch in time domain, in the radio_frame (index_slot & index_symbol_in_slot) */
+
+            pdcch_ss_mon_occ.O = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][0];
+            pdcch_ss_mon_occ.M = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][2];
+            int first_symbol_index_in_slot = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][3];
+
+            std::cout<<"pdcch_ss_mon_occ.O = "<<pdcch_ss_mon_occ.O<<std::endl;
+            std::cout<<"pdcch_ss_mon_occ.M = "<<pdcch_ss_mon_occ.M<<std::endl;
+            std::cout<<"first_symbol_index_in_slot = "<<first_symbol_index_in_slot<<std::endl;
+
+            int mu = log2 (mib_object.scs / 15e3);
+            std::cout<<"mib_object.scs = "<<mib_object.scs<<std::endl;
+            std::cout<<"mu = "<<mu<<std::endl;
+
+            int num_slots_per_frame = Num_symbols_per_subframe*10 / 14;
+            std::cout<<"num_slots_per_frame = "<<num_slots_per_frame<<std::endl;
+            int i_ssb = free5GRAN::gnodeB_config_globale.i_b_ssb;
+            int n0 = (int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) % num_slots_per_frame;
+            std::cout<<"n0 = "<<n0<<std::endl;
+
+            int parity_sfn = int((int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) / num_slots_per_frame) % 2;
+            std::cout<<"parity_sfn = "<<parity_sfn<<std::endl;
+
+
+            int first_symbol_index_in_frame = n0*14 + first_symbol_index_in_slot;
+            std::cout<<"first_symbol_index_in_frame = "<<first_symbol_index_in_frame<<std::endl;
 
 
 
 
-            /** */
+
+
+
+
+
+
+            /**
             //UE try to decode
 
             int K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 +
@@ -266,9 +325,9 @@ int main(int argc, char *argv[]) {
             bool validated;
             free5GRAN::dci_1_0_si_rnti dci_object_UE;
 
-            /** phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
-                                           agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
-                                           dci_object_UE); */
+            //phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
+            //                               agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
+            //                               dci_object_UE);
 
             phy_object.UE_decode_coreset(masked_coreset_grid, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
                                            agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, slot_number, symbol_number, pdcch_ss_mon_occ.n_rb_coreset,
@@ -281,6 +340,7 @@ int main(int argc, char *argv[]) {
             std::cout << "dci_object_UE.mcs = " << dci_object_UE.mcs << std::endl;
             std::cout << "dci_object_UE.rv = " << dci_object_UE.rv << std::endl;
             std::cout << "dci_object_UE.si = " << dci_object_UE.si << std::endl;
+            */
 
         }
 
