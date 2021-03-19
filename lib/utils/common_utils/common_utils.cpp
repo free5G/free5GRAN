@@ -381,21 +381,23 @@ void free5GRAN::utils::common_utils::display_vector_per_symbols(std::vector<std:
         std::cout<<"\nsymbol "<<symbol<<" = "<<std::ends;
         if (symbol % 14 == 0){
             //size_symbol = 278;
-            size_symbol = 552;
-            //size_symbol = 1112;
+            //size_symbol = 552;
+            size_symbol = 1112;
             //size_symbol = 2208;
         }
         if (symbol % 14 != 0){
             //size_symbol = 274;
-            size_symbol = 548;
-            //size_symbol = 1096;
+            //size_symbol = 548;
+            size_symbol = 1096;
             //size_symbol = 2192;
         }
         for (int sc = 0; sc<size_symbol; sc ++){
             if (sc % 10 == 0){
                 std::cout <<"  ||||  "<<std::ends;
             }
-            std::cout <<vector_to_display[j]<<" " <<std::ends;
+            if (sc < 30) { // This 'if' is here to avoid saturation of consol in CLion
+                std::cout << vector_to_display[j] << " " << std::ends;
+            }
             j++;
         }
     }

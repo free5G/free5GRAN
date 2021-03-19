@@ -49,8 +49,8 @@ void generate_buffer_multithread(phy phy_object){
 int main(int argc, char *argv[]) {
 
     bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
-    bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = true; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
+    bool run_one_time_ssb = true; /** put 'true' for running one time function 'generate_frame' and display result */
+    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
     /** Depending on the running platform, select the right config file */
     const char *config_file;
@@ -165,10 +165,16 @@ int main(int argc, char *argv[]) {
     if (run_with_usrp == false && run_one_time_ssb == true) {
 
 
-              int sfn = 555;
+        int sfn = 555;
+        int num_SSB_in_next_frame;
+
+        /** Calculate the number of ssb block that the next frame will contain */
+        phy_object.compute_num_SSB_in_frame(free5GRAN::gnodeB_config_globale.ssb_period, sfn, num_SSB_in_next_frame);
+
+
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
-        phy_object.generate_frame(1, free5GRAN::num_symbols_frame, sfn,
+        phy_object.generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame, sfn,
                                   free5GRAN::gnodeB_config_globale.pci,
                                   free5GRAN::gnodeB_config_globale.i_b_ssb,
                                   free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);

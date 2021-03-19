@@ -807,9 +807,7 @@ void free5GRAN::phy::signal_processing::map_ssb(vector<vector<complex<float>>> i
 
 
 
-void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<float>>> input_channel,
-                                                       vector<vector<complex<float>>> &output_channel, int num_symbols_ssb, int index_symbol_ssb, int num_SSB_in_this_frame,
-                                                       int num_sc_input, int ifft_size) {
+void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<vector<complex<float>>>> input_channels, int num_channels, int *channel_num_symbol, int *channel_num_sc, int *index_first_symbol_channel, int *index_first_sc_channel, int num_SSB_in_this_frame, int ifft_size, vector<vector<complex<float>>> &output_channel) {
     /**
     * \fn channel_mapper(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols_ssb, int index_symbol_ssb, int num_SSB_in_this_frame, int num_sc_input, int ifft_size)
     * \brief Build a 10 ms time/frequency resource grid, of size num_symbols_frame (eg 140) * IFFT_SIZE (eg 512) and place the SSB in this resource grid at the right place.
@@ -827,11 +825,12 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<flo
     */
 
 
+    /** Below: TO BE DELETED */
     /** Step 1: INCREASE SIZE SSB SYMBOLS */
-    /** Loop over all symbols */
+    /** Loop over all symbols
     for (int symbol = 0; symbol < num_symbols_ssb; symbol++){
-        int sc_in_counter = 0;
-        /** Loop over all subcarriers of output signal */
+        int sc_in_counter = 0; */
+        /** Loop over all subcarriers of output signal
         for (int sc_out = 0; sc_out < ifft_size; sc_out++){
             if (sc_out < ((ifft_size - num_sc_input) / 2) || sc_out > ifft_size - ((ifft_size - num_sc_input) / 2)){
                 free5GRAN::SSB_signal_extended[symbol][sc_out] = {0,0};
@@ -840,23 +839,44 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<complex<flo
                 sc_in_counter++;
             }
         }
-    }
-
+    } */
     /** Step 2: PLACE SSB IN A FRAME */
-    /** Place the 4 symbols of SSB at the right place in output_channel */
+    /** Place the 4 symbols of SSB at the right place in output_channel
     int i = 0;
     for (int symbol_ssb = index_symbol_ssb; symbol_ssb < index_symbol_ssb + NUM_SYMBOLS_SSB; symbol_ssb++) {
         output_channel[symbol_ssb] = free5GRAN::SSB_signal_extended[i];
         i++;
+    }*/
+
+
+    /** NEW STEP : PLACE CHANNELS IN FRAME */
+    /** Loop over channels */
+    for (int channel = 0; channel < num_channels; channel++){
+        /** Loop over symbols */
+        int symbol_channel = index_first_symbol_channel[channel];
+        for (int symbol_channel1 = 0; symbol_channel1 < channel_num_symbol[channel]; symbol_channel1++){
+            /** Loop over sc (also called re) */
+            int sc_channel = index_first_sc_channel[channel];
+            for (int sc_channel1 = 0; sc_channel1 < channel_num_sc[channel]; sc_channel1++){
+                output_channel[symbol_channel][sc_channel] = input_channels[channel][symbol_channel1][sc_channel1];
+                sc_channel++;
+            }
+            symbol_channel++;
+        }
     }
+
 
     /** If num_SSB_in_this_frame = 2 (i.e. if ssb_period == 0.005), place a second SSB in output_channel, 5 ms after the first one */
     if (num_SSB_in_this_frame == 2){
-        int j = 0;
-        int index_symbol_second_ssb = index_symbol_ssb + (num_symbols_frame/2);
-        for (int symbol_ssb = index_symbol_second_ssb; symbol_ssb < index_symbol_second_ssb + NUM_SYMBOLS_SSB; symbol_ssb++) {
-            output_channel[symbol_ssb] = free5GRAN::SSB_signal_extended[j];
-            j++;
+        int sc_channel3 = index_first_sc_channel[0];
+        int symbol_ssb = 0;
+        int index_symbol_second_ssb = index_first_symbol_channel[0] + (num_symbols_frame/2);
+        for (int symbol_second_ssb = index_symbol_second_ssb; symbol_second_ssb < index_symbol_second_ssb + channel_num_symbol[0]; symbol_second_ssb++) {
+            for (int sc_channel2 = 0; sc_channel2 < channel_num_sc[0]; sc_channel2++) {
+                output_channel[symbol_second_ssb][sc_channel3] = input_channels[0][symbol_ssb][sc_channel2];
+                sc_channel3 ++;
+            }
+            symbol_ssb++;
         }
     }
 }
@@ -938,11 +958,32 @@ void free5GRAN::phy::signal_processing::generate_freq_domain_frame(vector<comple
             ssb_signal_freq_domain, 4, free5GRAN::NUM_SYMBOLS_SSB, free5GRAN::NUM_SC_SSB);
 
 
-    /** step 3: channel_mapper: construct time/domain reference grid and place the SSB in it */
-    free5GRAN::phy::signal_processing::channel_mapper(ssb_signal_freq_domain, freq_domain_frame,
-                                                      free5GRAN::NUM_SYMBOLS_SSB, index_symbol_ssb,
-                                                      num_SSB_in_this_frame, free5GRAN::NUM_SC_SSB,
-                                                      free5GRAN::SIZE_IFFT_SSB);
+    /** step 3: channel_mapper: construct time/domain reference grid and place the SSB and PDCCH in it */
+
+    /** Rassemblate SSB and PDCCH into one input_vector */
+    int num_channels = 2;
+    int number_symbol_in_coreset = 1;
+    int channel_num_symbols[] = {free5GRAN::NUM_SYMBOLS_SSB, number_symbol_in_coreset};
+
+    free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
+    pdcch_ss_mon_occ.n_rb_coreset = 48;
+    int number_re_in_coreset = pdcch_ss_mon_occ.n_rb_coreset * 12;
+
+    int channel_num_sc[] = {free5GRAN::NUM_SC_SSB, number_re_in_coreset};
+
+    vector<vector<vector<complex<float>>>> input_channels2(num_channels);
+    for (int channel = 0; channel < num_channels; channel++){
+        input_channels2[channel] = vector<vector<complex<float>>>(channel_num_symbols[channel]);
+        for (int symbol = 0; symbol < channel_num_symbols[channel]; symbol++){
+            input_channels2[channel][symbol] = vector<complex<float>>(channel_num_sc[channel]);
+        }
+    }
+
+
+    vector<vector<complex<float>>> masked_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
+
+    input_channels2 = {ssb_signal_freq_domain, masked_coreset_grid};
+    free5GRAN::phy::signal_processing::channel_mapper(input_channels2, num_channels, channel_num_symbols, channel_num_sc, index_first_symbol_channel, index_first_sc_channel, num_SSB_in_this_frame, free5GRAN::SIZE_IFFT_SSB, freq_domain_frame);
 }
 
 
