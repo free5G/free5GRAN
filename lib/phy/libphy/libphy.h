@@ -61,6 +61,7 @@ namespace free5GRAN {
 
             void modulation(vector<int> bits, int bit_sequence_length, int modulation_scheme, vector<complex<float>> &pbch_symbols_vector);
             void build_reference_grid(int num_channels, int num_sc_ssb, int num_symbols_ssb, int pci, vector<vector<vector<int>>> &ref);
+            void MAP_ssb(vector<complex<float>> pbch_symbols_vector, int pci, int i_b_ssb, vector<vector<complex<float>>> &SSB_signal_freq_domain);
             void map_ssb(vector<vector<complex<float>>> input_channels, vector<vector<vector<int>>> ref, vector<vector<complex<float>>> &output_channels, int num_channels, int num_symbols, int num_sc);
             //void channel_mapper(vector<vector<complex<float>>> input_channel, vector<vector<complex<float>>> &output_channel, int num_symbols_ssb, int index_symbol_ssb, int num_SSB_in_this_frame, int num_sc_input, int ifft_size);
             void channel_mapper(vector<vector<vector<complex<float>>>> input_channels, int num_channels, int *channel_num_symbol, int *channel_num_sc, int *index_first_symbol_channel, int *index_first_sc_channel, int num_SSB_in_this_frame, int ifft_size, vector<vector<complex<float>>> &output_channel);

@@ -48,8 +48,8 @@ void generate_buffer_multithread(phy phy_object){
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
-    bool run_one_time_ssb = true; /** put 'true' for running one time function 'generate_frame' and display result */
+    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
+    bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
     bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
 
     /** Depending on the running platform, select the right config file */
@@ -174,10 +174,12 @@ int main(int argc, char *argv[]) {
 
         std::vector<std::complex<float>> buff_main_10ms(num_samples_in_frame);
 
+        /** */
         phy_object.generate_frame(num_SSB_in_next_frame, free5GRAN::num_symbols_frame, sfn,
                                   free5GRAN::gnodeB_config_globale.pci,
                                   free5GRAN::gnodeB_config_globale.i_b_ssb,
                                   free5GRAN::gnodeB_config_globale.scaling_factor, buff_main_10ms);
+
         free5GRAN::utils::common_utils::display_vector_per_symbols(buff_main_10ms, free5GRAN::num_symbols_frame,
                                                                    "\n\nbuff_main_10ms from main");
     }

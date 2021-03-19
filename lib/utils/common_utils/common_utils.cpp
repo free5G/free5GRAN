@@ -325,10 +325,9 @@ void free5GRAN::utils::common_utils::display_vector_2D(std::vector<std::vector<s
     for (int j = 0; j<vector_size1; j++) {
         std::cout <<"\n vector "<<j<<" = "<<ends;
         for (int i = 0; i < vector_size2; i++) {
-            if (i%line_break == 0){
-                std::cout<<""<<std::endl;
+            if (i < 400) {
+                std::cout << vector_to_display[j][i] << " " << std::ends;
             }
-            std::cout << vector_to_display[j][i] << "  " << std::ends;
         }
     }
 }
