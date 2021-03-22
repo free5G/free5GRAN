@@ -109,17 +109,30 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     free5GRAN::phy::signal_processing::MAP_ssb(pbch_symbols_vector, pci, i_b_ssb, SSB_signal_freq_domain);
 
 
+
     /** ---------------------------------------- DCI/PDCCH--------------------------------------------------------- */
 
     free5GRAN::dci_1_0_si_rnti dci_1_0_object;
     dci_1_0_object = free5GRAN::gnodeB_config_globale.dci_object;
 
+    /** Transforms pdcch_config into controlResourceSetZero and searchSpaceZero */
+    int pdcch_config_index[8];
+    int controlResourceSetZero = 0, searchSpaceZero = 0;
+    free5GRAN::utils::common_utils::convert_decimal_to_binary(8, mib_object.pdcch_config, pdcch_config_index);
+    for (int i = 0; i<8; i++){
+        if (i<4) {
+            controlResourceSetZero += pdcch_config_index[i] * pow(2, (3 - i));
+        }else{
+            searchSpaceZero += pdcch_config_index[i] * pow(2, (7 - i));
+        }
+    }
+
+
     /** Initialize some values needed for pdcch_encoding */
     free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
-    pdcch_ss_mon_occ.n_rb_coreset = 48;
+    pdcch_ss_mon_occ.n_rb_coreset = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][1];;
     int freq_domain_ra_size;
     freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
-    std::cout << "freq_domain_ra_size = " << freq_domain_ra_size << std::endl;
     int agg_level = pow(2, 2);
     int n = 9;
     int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is also calculated in function pdcch_encoding
@@ -135,7 +148,7 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     free5GRAN::phy::physical_channel::pdcch_encoding(rate_matched_dci, E, pdcch_symbols);
 
     /** pdcch mapping */
-    int number_symbol_in_coreset = 1;
+    int number_symbol_in_coreset = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][2];;
     int number_re_in_coreset = pdcch_ss_mon_occ.n_rb_coreset * 12;
     int R = 2;
     int slot_number = 6;
@@ -147,29 +160,13 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     /** PREPARE for place masked_coreset_grid (PDCCH) in time/frequency grid (buffer) */
 
 
-    /** Transforms pdcch_config into controlResourceSetZero and searchSpaceZero */
-    std::cout<<""<<std::endl;
-    int pdcch_config_index[8];
-    int controlResourceSetZero = 0, searchSpaceZero = 0;
-    free5GRAN::utils::common_utils::convert_decimal_to_binary(8, mib_object.pdcch_config, pdcch_config_index);
-    for (int i = 0; i<8; i++){
-        if (i<4) {
-            controlResourceSetZero += pdcch_config_index[i] * pow(2, (3 - i));
-        }else{
-            searchSpaceZero += pdcch_config_index[i] * pow(2, (7 - i));
-        }
-    }
 
-    std::cout << "controlResourceSetZero = " << controlResourceSetZero << std::endl;
-    std::cout << "searchSpaceZero = " << searchSpaceZero << std::endl;
 
     /** Determine the first re index of pdcch in radio_frame */
     int CORESET_offset_rb = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][3];
-    std::cout<<"CORESET_offset_rb = "<<CORESET_offset_rb<<std::endl;
 
     int index_first_re_pdcch = (free5GRAN::SIZE_IFFT_SSB/2) - (free5GRAN::NUM_SC_SSB/2) - (CORESET_offset_rb*12);
 
-    std::cout<<"index_first_re_pdcch = "<<index_first_re_pdcch<<std::endl;
 
     /** Determine the position of pdcch in time domain, in the radio_frame (index_slot & index_symbol_in_slot) */
 
@@ -177,26 +174,15 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     pdcch_ss_mon_occ.M = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][2];
     int first_symbol_index_in_slot = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][3];
 
-    std::cout<<"pdcch_ss_mon_occ.O = "<<pdcch_ss_mon_occ.O<<std::endl;
-    std::cout<<"pdcch_ss_mon_occ.M = "<<pdcch_ss_mon_occ.M<<std::endl;
-    std::cout<<"first_symbol_index_in_slot = "<<first_symbol_index_in_slot<<std::endl;
-
     int mu = log2 (mib_object.scs / 15e3);
-    std::cout<<"mib_object.scs = "<<mib_object.scs<<std::endl;
-    std::cout<<"mu = "<<mu<<std::endl;
 
     int num_slots_per_frame = num_symbols_frame / 14;
-    std::cout<<"num_slots_per_frame = "<<num_slots_per_frame<<std::endl;
     int i_ssb = free5GRAN::gnodeB_config_globale.i_b_ssb;
     int n0 = (int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) % num_slots_per_frame;
-    std::cout<<"n0 = "<<n0<<std::endl;
 
     int parity_sfn = int((int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) / num_slots_per_frame) % 2;
-    std::cout<<"parity_sfn = "<<parity_sfn<<std::endl;
-
 
     int index_first_symbol_pdcch_in_frame = n0 * 14 + first_symbol_index_in_slot;
-    std::cout << "index_first_symbol_pdcch_in_frame = " << index_first_symbol_pdcch_in_frame << std::endl;
 
     /** ----------------------------------------------------------------------------------------------------------- */
 
@@ -223,11 +209,10 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     int index_first_sc_channel[] = {(free5GRAN::SIZE_IFFT_SSB/2) - (free5GRAN::NUM_SC_SSB/2), index_first_re_pdcch};
     input_channels2 = {SSB_signal_freq_domain, masked_coreset_grid};
 
-    vector<vector<complex<float>>> ONEframe_freq(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
-    free5GRAN::phy::signal_processing::channel_mapper(input_channels2, num_channels, channel_num_symbols, channel_num_sc, index_first_symbol_channel, index_first_sc_channel, num_SSB_in_this_frame, free5GRAN::SIZE_IFFT_SSB, ONEframe_freq);
-    BOOST_LOG_TRIVIAL(info) << "GENERATE ONEframe_freq";
+    vector<vector<complex<float>>> freq_domain_frame(free5GRAN::num_symbols_frame, vector<complex<float>>(free5GRAN::SIZE_IFFT_SSB));
+    free5GRAN::phy::signal_processing::channel_mapper(input_channels2, num_channels, channel_num_symbols, channel_num_sc, index_first_symbol_channel, index_first_sc_channel, num_SSB_in_this_frame, free5GRAN::SIZE_IFFT_SSB, freq_domain_frame);
+    BOOST_LOG_TRIVIAL(info) << "GENERATE freq_domain_frame";
 
-    //free5GRAN::utils::common_utils::display_vector_2D(ONEframe_freq, num_symbols_frame, free5GRAN::SIZE_IFFT_SSB, 100000, "ONEframe_freq");
 
     /** Step 5: IFFT. Perform ifft for each symbols to get the final 10ms time_domain frame */
 
@@ -258,7 +243,7 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     }
 
     /** ifft -> This function are in 4 STEP: Place SSB in an empty frame ; reverse symbols ; ifft for each symbols ; adding CP for each symbols */
-    free5GRAN::phy::signal_processing::ifft(ONEframe_freq, cp_lengths_one_frame, data_symbols, num_symbols_frame, scaling_factor,
+    free5GRAN::phy::signal_processing::ifft(freq_domain_frame, cp_lengths_one_frame, data_symbols, num_symbols_frame, scaling_factor,
                                             one_frame_vector);
     BOOST_LOG_TRIVIAL(info) << "function ifft done";
 }

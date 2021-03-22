@@ -816,6 +816,7 @@ void free5GRAN::phy::signal_processing::channel_mapper(vector<vector<vector<comp
          * -step 2: From SSB_signal_extended to output_channel: place SSB at the right place in the 10 ms resource grid.
     * \standard !! TS TO BE ADDED !!
     * \param[in] input_channel. 2 dimensions vector of complexes. In our case, it is the SSB signal (4*240 symbols)
+    * \param[in] input_channel. 2 dimensions vector of complexes. In our case, it is the SSB signal (4*240 symbols)
     * \param[out] &output_channel. 2 dimensions vector of complex. It's the resource grid generated including the SSB
     * \param[in] num_symbols_ssb. Number of symbols in the SSB. In our case, it is 4.
     * \param[in] index_symbol_ssb. Position of the SSB in the 10 ms resource grid. Is calculated in function of i_b_ssb
