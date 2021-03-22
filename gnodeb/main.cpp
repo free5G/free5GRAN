@@ -170,8 +170,7 @@ int main(int argc, char *argv[]) {
     /** Run generate_frame one time just for testing */
     if (run_with_usrp == false && run_one_time_generate_frame == true) {
 
-
-        int sfn = 563;
+        int sfn = 400;
         int num_SSB_in_next_frame;
 
         /** Calculate the number of ssb block that the next frame will contain */

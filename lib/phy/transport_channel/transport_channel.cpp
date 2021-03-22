@@ -1304,7 +1304,7 @@ void free5GRAN::phy::transport_channel::scrambling_bch(int v, int pci, int *mib_
 void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, int input_size, vector<int> &output_encoded_bits) {
     /**
     * \fn polar_encoding (int N, int* input_bits, vector<int> &output_encoded_bits)
-    * \brief Polar encodes the 56 bits sequence input_bits into a 512 bits sequence output_encoded_bits.
+    * \brief Polar encodes the K bits sequence input_bits into a N bits sequence output_encoded_bits.
     * \details
     * -Step 1: pi_sequence is generated (56 bits long in our case).
     * -Step 2: c_p sequence is generated from this pi_sequence and from the input_bits bits sequence.
@@ -1315,8 +1315,8 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
     *
     * \standard TS38.212 V15.2.0 Section 5.3.1
     * \param[in] N Length of output_encoded_bits bits sequence. In our case, N depends on the size of SSB PBCH Symbols and on the size of PBCH POLAR DECODED bit sequence. In our case, N=512.
-    * \param[in] input_bits Bits sequence. 56 bits long in our case.
-    * \param[out] output_encoded_bits Bits sequence. 512 bits long in our case.
+    * \param[in] input_bits Bits sequence. K bits long in our case.
+    * \param[out] output_encoded_bits Bits sequence. N bits long in our case.
     */
 
     /** Initialize variables */
@@ -1394,7 +1394,7 @@ void free5GRAN::phy::transport_channel::rate_matching_polar_coding(vector<int> p
     * \brief Applies the rate matching to the 512 bits sequence polar_encoded_bch to get a 864 bits long rate_matched_bch.
     * \details
     * First, bits contained in polar_encoded_vector are interleaved (again).
-    * Then, the 352 first bits of polar_encoded_bch are added at the end of this sequence, to get a 864 bits long sequence
+    * Then, first bits of polar_encoded_bch are added at the end of this sequence, to get a E bits long sequence
     * \standard TS38.212 V15.2.0 Section 5.4.1
     * \param[in] polar_encoded_vector Input vector.
     * \param[in] N Size of Input

@@ -45,7 +45,7 @@ private:
 
 public:
     phy(free5GRAN::mib mib_object, int *cp_lengths_one_frame, int *cum_sum_cp_lengths, int ifft_size, int num_samples_in_frame);
-    void generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &buff_phy);
+    void generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int sfn,int pci, int i_b_ssb, float scaling_factor, std::vector<std::complex<float>> &one_frame);
     void compute_num_SSB_in_frame(float ssb_period, int sfn, int &num_SSB_in_frame);
     void continuous_buffer_generation();
 

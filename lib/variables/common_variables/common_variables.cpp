@@ -370,7 +370,5 @@ sem_t free5GRAN::semaphore_common1;
 sem_t free5GRAN::semaphore_common2;
 
 
-//--------- DCI - PDCCH ---------
-
 
 
