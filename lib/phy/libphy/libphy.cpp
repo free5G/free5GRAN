@@ -879,7 +879,7 @@ void free5GRAN::phy::signal_processing::MAP_ssb(vector<complex<float>> pbch_symb
     * \param[in] pci. Physical Cell ID.
     * \param[in] i_b_ssb. i_b_ssb. SSB index. Should be between 0 and 7.
     * \param[out] &SSB_signal_freq_domain. 2 dimensions vector of complex containing PBCH, PSS, SSS and DMRS. In our case, it's a 4*240 symbols long sequence.
-    */
+     */
 
     /** STEP 1: generate DMRS symbols */
     /** DMRS -> Generate dmrs_symbols (144 symbols long in our case) from pci and i_b_ssb. TS38.211 V15.2.0 Section 7.4.1.4.1 */
