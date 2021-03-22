@@ -1069,13 +1069,10 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
     vector<complex<float>> pdcch_dmrs(CORESET_rb_size * 3, {0, 0});
     free5GRAN::utils::sequence_generator::generate_pdcch_dmrs_sequence(pci, slot_number, symbol_number, pdcch_dmrs,
                                                                        CORESET_rb_size * 3);
-    free5GRAN::utils::common_utils::display_vector(pdcch_dmrs, CORESET_rb_size * 3, "pdcch_dmrs from libphy");
 
     int num_re_in_coreset = CORESET_rb_size * 12;
-    std::cout << "\nnum_re_in_coreset = " << num_re_in_coreset << std::endl;
 
     int num_re_per_cce = free5GRAN::NUMBER_REG_PER_CCE * 12;
-    std::cout << "\nnum_re_per_cce = " << num_re_per_cce << std::endl;
 
     /**This vector is in 2 dimensions in anticipation of case num_symbols != 1 */
     vector<vector<complex<float>>> coreset_grid(1, vector<complex<float>>(num_re_in_coreset, {0, 0}));
@@ -1088,7 +1085,6 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
             count++;
         }
     }
-    free5GRAN::utils::common_utils::display_vector_2D(coreset_grid, 1, num_re_in_coreset, num_re_per_cce,  "coreset_grid");
 
 
     /** Step 3: Generate coreset_mask which will indicates which RE in coreset_grid are used */
@@ -1103,7 +1099,6 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
             reg_index[j] = (r * C + c + pci) % 8; // 8 has to be modified by a variable like num_cce_in_coreset / num_symbols_in_coreset
         }
     }
-    free5GRAN::utils::common_utils::display_table(reg_index, C * R, "reg_index");
 
     /** reg_bundles will contain the agg_level first element of reg_index, sorted */
     int reg_bundles[agg_level];
@@ -1112,7 +1107,6 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
     }
 
     sort(reg_bundles, reg_bundles+agg_level);
-    free5GRAN::utils::common_utils::display_table(reg_bundles, agg_level, "reg_bundles");
 
     /** Create and fill coreset_mask */
     vector<vector<int>> coreset_mask(1, vector<int>(num_re_in_coreset, 0));
@@ -1123,7 +1117,6 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
             }
         }
     }
-    free5GRAN::utils::common_utils::display_vector_2D_int(coreset_mask, 1, num_re_in_coreset, num_re_per_cce, "coreset_mask");
 
     /** Step 4: Mask coreset_grid with coreset_mask to remove superfluous dmrs symbols*/
     for (int symbol = 0; symbol < 1; symbol ++){
@@ -1142,8 +1135,4 @@ void free5GRAN::phy::signal_processing::map_pdcch(vector<complex<float>> pdcch_s
             }
         }
     }
-    std::cout<<"\ncount4 = "<<count4<<std::endl;
-    free5GRAN::utils::common_utils::display_vector_2D(masked_coreset_grid, 1, num_re_in_coreset, num_re_per_cce, "masked_coreset_grid after insert dmrs and pdcch");
-
-
 }

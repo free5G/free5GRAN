@@ -205,7 +205,6 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
         };
     }
 
-    free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_decode");
     count_seq = 0;
     vector<int> q_ftmp_n, q_itmp_n;
 
@@ -257,7 +256,6 @@ void free5GRAN::phy::transport_channel::polar_decode(int *input_bits, int *outpu
     for (int n = 0; n < K + n_pc; n++){
         q_i_n[n] = q_itmp_n[q_itmp_n.size() - ( K + n_pc) + n];
     }
-    free5GRAN::utils::common_utils::display_table(q_i_n, K, "q_i_n from polar_decode");
     count_seq = 0;
     /*
      * Recovering c' from u_n (TS38.212 5.3.1.2)
@@ -1325,7 +1323,6 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
     int n_pc = 0, i_il = 1, nmax = 9, n_wm_pc = 0, K_polar = input_size, K_max = 164, count_seq = 0;
     //K_polar = free5GRAN::SIZE_PBCH_POLAR_DECODED
 
-    //free5GRAN::utils::common_utils::display_table(input_bits, 40, "input_bits from polar_encode");
 
     bool found;
     //int c_p [56], q_0_n_1 [N], q_i_n [K_polar + n_pc], u [N], pi_seq [56];
@@ -1337,8 +1334,6 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
             count_seq++;
         }
     }
-
-    //free5GRAN::utils::common_utils::display_table(pi_seq, input_size, "pi_seq from polar_encode" );
 
 
     /** Step 2: Generate c_p sequence from input_bits using pi_seq, according to TS38.212 V15.2.0 Section 5.3.1.1 */
@@ -1361,7 +1356,6 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
         q_i_n[n] = q_0_n_1[N - (K_polar + n_pc) + n];
     }
 
-    //free5GRAN::utils::common_utils::display_table(q_i_n, K_polar, "q_i_n from polar_encode");
 
     /** Step 5: Polar coding apply to c_p to get u (using q_i_n) according to TS38.212 V15.2.0 Section 5.3.1.2 */
     count_seq = 0;
@@ -1381,7 +1375,6 @@ void free5GRAN::phy::transport_channel::polar_encoding(int N, int *input_bits, i
         }
     }
 
-    //free5GRAN::utils::common_utils::display_table(u, N, "u[n] from polar_encode");
 
     /** Step 6: polar coding apply to u to get output_encoded_bits using G9 matrix according to TS38.212 V15.2.0 Section 5.3.1.2 */
     for (int n = 0; n < N; n++) {
@@ -1532,8 +1525,6 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
     int A = freq_domain_ra_size + 4+1+5+2+1+15;
     int dci_bits[A];
     free5GRAN::utils::common_utils::dci_generation(dci_1_0_object, dci_bits, freq_domain_ra_size);
-    free5GRAN::utils::common_utils::display_table(dci_bits, A, "dci_bits from main");
-
 
     /** Step 2: generate CRC and mask (scramble) it with RNTI sequence, according to TS38.212 V15.2.0 Section 7.3.2 */
     int K = A + length_crc; // K is the length of dci_payload (crc included)
@@ -1546,11 +1537,9 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
             dci_ready_for_crc[i] = dci_bits[i-length_crc];
         }
     }
-    free5GRAN::utils::common_utils::display_table(dci_ready_for_crc, K, "dci_ready_for_crc");
     int crc_dci_descrambled[length_crc];
 
     free5GRAN::phy::transport_channel::compute_crc(dci_ready_for_crc, free5GRAN::G_CRC_24_C, crc_dci_descrambled,  K, length_crc+1);
-    free5GRAN::utils::common_utils::display_table(crc_dci_descrambled, length_crc+1, "crc_dci_descrambled");
 
     //rnti is padded with '0' at the left to reach length_crc size
     int rnti_padded[24];
@@ -1561,11 +1550,9 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
             rnti_padded[i] = rnti[i-8];
         }
     }
-    free5GRAN::utils::common_utils::display_table(rnti_padded, 24, "rnti_padded");
 
     int crc_dci_scrambled[length_crc];
     free5GRAN::utils::common_utils::scramble(crc_dci_descrambled, rnti_padded, crc_dci_scrambled, length_crc, 0);
-    free5GRAN::utils::common_utils::display_table(crc_dci_scrambled, length_crc-1, "crc_dci_scrambled");
 
 
     /** Step 3: adding CRC to dci_bits, according to TS38.212 V15.2.0 Section 7.3.2 */
@@ -1577,18 +1564,15 @@ void free5GRAN::phy::transport_channel::dci_encoding(free5GRAN::dci_1_0_si_rnti 
             dci_bits_with_crc[bit] = crc_dci_scrambled[bit-A];
         }
     }
-    free5GRAN::utils::common_utils::display_table(dci_bits_with_crc, K, "dci_bits_with_crc from adding_dci_crc");
 
     /** Step 4: Polar coding, according to TS38.212 V15.2.0 Section 7.3.3 and 5.3.1 */
     int N = pow(2, n);
     std::vector<int> polar_encoded_dci(N, 0);
     free5GRAN::phy::transport_channel::polar_encoding(N, dci_bits_with_crc, K, polar_encoded_dci);
-    free5GRAN::utils::common_utils::display_vector(polar_encoded_dci, N, "polar_encoded_dci");
 
 
     /** Step 5: Rate matching, according to TS38.212 V15.2.0 Section 7.3.4 */
     int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 * 2; // E is the length of dci after rate_matching
     free5GRAN::phy::transport_channel::rate_matching_polar_coding(polar_encoded_dci,N, E, K, rate_matched_dci);
-    free5GRAN::utils::common_utils::display_vector(rate_matched_dci, E, "rate_matched_dci from main");
 }
 

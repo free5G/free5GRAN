@@ -160,8 +160,6 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     /** PREPARE for place masked_coreset_grid (PDCCH) in time/frequency grid (buffer) */
 
 
-
-
     /** Determine the first re index of pdcch in radio_frame */
     int CORESET_offset_rb = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][3];
 
@@ -181,6 +179,12 @@ void phy::generate_frame(int num_SSB_in_this_frame, int num_symbols_frame, int s
     int n0 = (int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) % num_slots_per_frame;
 
     int parity_sfn = int((int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) / num_slots_per_frame) % 2;
+    int num_PDCCH_in_this_frame = 0;
+    if (parity_sfn% 2 == sfn%2){
+        num_PDCCH_in_this_frame = 1;
+    }
+
+    std::cout<<"num_PDCCH_in_this_frame = "<<num_PDCCH_in_this_frame<<std::endl;
 
     int index_first_symbol_pdcch_in_frame = n0 * 14 + first_symbol_index_in_slot;
 
@@ -391,12 +395,7 @@ void phy::continuous_buffer_generation() {
 
 
 
-/** ################################ DCI - PDCCH ################################ */
-
-
-
-
-
+/** ################################ DECODE DCI - PDCCH ################################ */
 
 void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N, int E, int length_crc, int pci, int agg_level, int polar_decoded_size, int freq_domain_ra_size, int *rnti, bool &validated, free5GRAN::dci_1_0_si_rnti &dci_object){
 
@@ -509,6 +508,11 @@ void phy::UE_decode_polar_dci(vector<complex<float>> pdcch_symbols, int K, int N
         dci_object.si = decoded_dci_bits[freq_domain_ra_size + 4 + 1 + 5 + 2];
     }/***/
 }
+
+
+
+
+
 
 
 

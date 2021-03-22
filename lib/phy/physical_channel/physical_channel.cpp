@@ -286,13 +286,10 @@ void free5GRAN::phy::physical_channel::pdcch_encoding(vector<int> rate_matched_d
     /** Step 1: Scrambling, according to TS38.211 V15.2.0 Section 7.3.2.3 */
     int c_seq_pdcch[E];
     free5GRAN::utils::sequence_generator::generate_c_sequence((long) free5GRAN::gnodeB_config_globale.pci % (long)pow(2,31), E, c_seq_pdcch,0);
-    free5GRAN::utils::common_utils::display_table(c_seq_pdcch,E, "c_seq_pdcch from main");
     std::vector<int> scrambled_pdcch(E, 0);
     free5GRAN::utils::common_utils::scramble(rate_matched_dci, c_seq_pdcch, scrambled_pdcch, E, 0);
-    free5GRAN::utils::common_utils::display_vector(scrambled_pdcch, E, "scrambled_pdcch from main");
 
 
     /** Step 2: Modulation : transform E bits into E/2 symbols (QPSK) according to TS38.211 V15.2.0 Section 7.3.2.4 */
     free5GRAN::phy::signal_processing::modulation(scrambled_pdcch, E, 1, pdcch_symbols);
-    free5GRAN::utils::common_utils::display_vector(pdcch_symbols, E / 2, "pdcch_symbols from main");
 }

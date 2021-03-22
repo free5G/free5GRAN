@@ -48,9 +48,8 @@ void generate_buffer_multithread(phy phy_object){
 
 int main(int argc, char *argv[]) {
 
-    bool run_with_usrp = true; /** put 'true' if running_platform is attached to an USRP */
-    bool run_one_time_ssb = false; /** put 'true' for running one time function 'generate_frame' and display result */
-    bool run_test_dci = false; /** put 'true' for running, without USRP, encode and decode DCI/PDCCH */
+    bool run_with_usrp = false; /** put 'true' if running_platform is attached to an USRP */
+    bool run_one_time_generate_frame = true; /** put 'true' for running one time function 'generate_frame' and display result */
 
     /** Depending on the running platform, select the right config file */
     const char *config_file;
@@ -153,6 +152,13 @@ int main(int argc, char *argv[]) {
     std::cout << "# DMRS type A position: " << mib_object.dmrs_type_a_position << std::endl;
     std::cout << "# k SSB: " << mib_object.k_ssb << std::endl;
     std::cout << "# Intra freq reselection: " << mib_object.intra_freq_reselection << std::endl;
+    std::cout << "\n###### DCI" << std::endl;
+    std::cout << "# RIV: " << free5GRAN::gnodeB_config_globale.dci_object.RIV<< std::endl;
+    std::cout << "# Time Domain RA: " << free5GRAN::gnodeB_config_globale.dci_object.TD_ra<< std::endl;
+    std::cout << "# vrb_prb_interleaving (0 = non-interleaved): " << free5GRAN::gnodeB_config_globale.dci_object.vrb_prb_interleaving<< std::endl;
+    std::cout << "# Modulation coding scheme: " << free5GRAN::gnodeB_config_globale.dci_object.mcs<< std::endl;
+    std::cout << "# Redudancy version: " << free5GRAN::gnodeB_config_globale.dci_object.rv<< std::endl;
+    std::cout << "# System information (0 = SIB1): " << free5GRAN::gnodeB_config_globale.dci_object.si<< std::endl;
     std::cout << "\n###### USRP" << std::endl;
     std::cout << "# Sampling rate: " << usrp_info_object.sampling_rate / 1e6 << " MHz" << std::endl;
     std::cout << "# Bandwidth: " << usrp_info_object.bandwidth / 1e6 << " MHz" << std::endl;
@@ -162,10 +168,10 @@ int main(int argc, char *argv[]) {
 
 
     /** Run generate_frame one time just for testing */
-    if (run_with_usrp == false && run_one_time_ssb == true) {
+    if (run_with_usrp == false && run_one_time_generate_frame == true) {
 
 
-        int sfn = 555;
+        int sfn = 563;
         int num_SSB_in_next_frame;
 
         /** Calculate the number of ssb block that the next frame will contain */
@@ -214,142 +220,4 @@ int main(int argc, char *argv[]) {
         sending.join();
         generate.join();
     }
-
-
-
-        /** Below is under construction (DCI - PDCCH) */
-
-        if (run_test_dci == true) {
-
-            /** Read config file to get dci_object */
-            const char *config_file;
-            config_file = ("../config/ssb_emission.cfg");
-            free5GRAN::utils::common_utils::read_config_gNodeB(config_file);
-            free5GRAN::dci_1_0_si_rnti dci_1_0_object;
-            dci_1_0_object = free5GRAN::gnodeB_config_globale.dci_object;
-
-            /** Initialize some values needed for pdcch_encoding */
-            free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ;
-            pdcch_ss_mon_occ.n_rb_coreset = 48;
-            int freq_domain_ra_size;
-            freq_domain_ra_size = ceil(log2(pdcch_ss_mon_occ.n_rb_coreset * (pdcch_ss_mon_occ.n_rb_coreset + 1) / 2));
-            std::cout << "freq_domain_ra_size = " << freq_domain_ra_size << std::endl;
-            int agg_level = pow(2, 2);
-            int n = 9;
-            int E = agg_level * free5GRAN::NUMBER_REG_PER_CCE * 9 *
-                    2; // E is also calculated in function pdcch_encoding
-            int length_crc = 24;
-
-            /** dci_encoding */
-            vector<int> rate_matched_dci(E, 0);
-            free5GRAN::phy::transport_channel::dci_encoding(dci_1_0_object, freq_domain_ra_size, length_crc,
-                                                            free5GRAN::SI_RNTI, agg_level, n, rate_matched_dci);
-
-            /** pdcch encoding */
-            vector<complex<float>> pdcch_symbols(E / 2, {0, 0});
-            free5GRAN::phy::physical_channel::pdcch_encoding(rate_matched_dci, E, pdcch_symbols);
-
-            /** pdcch mapping */
-            int number_symbol_in_coreset = 1;
-            int number_re_in_coreset = pdcch_ss_mon_occ.n_rb_coreset * 12;
-            int R = 2;
-            int slot_number = 6;
-            int symbol_number = 0;
-            vector<vector<complex<float>>> masked_coreset_grid(number_symbol_in_coreset, vector<complex<float>>(number_re_in_coreset));
-            free5GRAN::phy::signal_processing::map_pdcch(pdcch_symbols, pdcch_ss_mon_occ.n_rb_coreset, agg_level, R, free5GRAN::gnodeB_config_globale.pci, slot_number, symbol_number, masked_coreset_grid);
-
-
-      /** PREPARE for place masked_coreset_grid (PDCCH) in time/frequency grid (buffer) */
-
-
-            /** Transforms pdcch_config into controlResourceSetZero and searchSpaceZero */
-            std::cout<<""<<std::endl;
-            int pdcch_config_index[8];
-            int controlResourceSetZero = 0, searchSpaceZero = 0;
-            free5GRAN::utils::common_utils::convert_decimal_to_binary(8, mib_object.pdcch_config, pdcch_config_index);
-            for (int i = 0; i<8; i++){
-                if (i<4) {
-                    controlResourceSetZero += pdcch_config_index[i] * pow(2, (3 - i));
-                }else{
-                    searchSpaceZero += pdcch_config_index[i] * pow(2, (7 - i));
-                }
-            }
-
-            std::cout << "controlResourceSetZero = " << controlResourceSetZero << std::endl;
-            std::cout << "searchSpaceZero = " << searchSpaceZero << std::endl;
-
-            /** Determine the first re index of pdcch in radio_frame */
-            int CORESET_offset_rb = free5GRAN::TS_38_213_TABLE_13_4[controlResourceSetZero][3];
-            std::cout<<"CORESET_offset_rb = "<<CORESET_offset_rb<<std::endl;
-
-            int index_first_re_pdcch = (free5GRAN::SIZE_IFFT_SSB/2) - (free5GRAN::NUM_SC_SSB/2) - (CORESET_offset_rb*12);
-
-            std::cout<<"index_first_re_pdcch = "<<index_first_re_pdcch<<std::endl;
-
-            /** Determine the position of pdcch in time domain, in the radio_frame (index_slot & index_symbol_in_slot) */
-
-            pdcch_ss_mon_occ.O = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][0];
-            pdcch_ss_mon_occ.M = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][2];
-            int first_symbol_index_in_slot = free5GRAN::TS_38_213_TABLE_13_11[searchSpaceZero][3];
-
-            std::cout<<"pdcch_ss_mon_occ.O = "<<pdcch_ss_mon_occ.O<<std::endl;
-            std::cout<<"pdcch_ss_mon_occ.M = "<<pdcch_ss_mon_occ.M<<std::endl;
-            std::cout<<"first_symbol_index_in_slot = "<<first_symbol_index_in_slot<<std::endl;
-
-            int mu = log2 (mib_object.scs / 15e3);
-            std::cout<<"mib_object.scs = "<<mib_object.scs<<std::endl;
-            std::cout<<"mu = "<<mu<<std::endl;
-
-            int num_slots_per_frame = Num_symbols_per_subframe*10 / 14;
-            std::cout<<"num_slots_per_frame = "<<num_slots_per_frame<<std::endl;
-            int i_ssb = free5GRAN::gnodeB_config_globale.i_b_ssb;
-            int n0 = (int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) % num_slots_per_frame;
-            std::cout<<"n0 = "<<n0<<std::endl;
-
-            int parity_sfn = int((int)(pdcch_ss_mon_occ.O * pow(2, mu) + floor(i_ssb * pdcch_ss_mon_occ.M)) / num_slots_per_frame) % 2;
-            std::cout<<"parity_sfn = "<<parity_sfn<<std::endl;
-
-
-            int first_symbol_index_in_frame = n0*14 + first_symbol_index_in_slot;
-            std::cout<<"first_symbol_index_in_frame = "<<first_symbol_index_in_frame<<std::endl;
-
-
-
-
-
-
-
-
-
-
-            /**
-            //UE try to decode
-
-            int K = freq_domain_ra_size + 4 + 1 + 5 + 2 + 1 + 15 +
-                    length_crc; // K is the length of dci_payload (crc included)
-            int N = pow(2, n);
-
-            std::cout << "\nE = " << E <<" ; K = " << K << " ; N = "<<N<<" ; kebgth_crc = "<<length_crc<< " ; agg_leve = "<<agg_level<<" ; freq_domain_ra_size = " <<freq_domain_ra_size<<std::endl;
-            bool validated;
-            free5GRAN::dci_1_0_si_rnti dci_object_UE;
-
-            //phy_object.UE_decode_polar_dci(pdcch_symbols, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
-            //                               agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated,
-            //                               dci_object_UE);
-
-            phy_object.UE_decode_coreset(masked_coreset_grid, K, N, E, length_crc, free5GRAN::gnodeB_config_globale.pci,
-                                           agg_level, K, freq_domain_ra_size, free5GRAN::SI_RNTI, validated, slot_number, symbol_number, pdcch_ss_mon_occ.n_rb_coreset,
-                                           dci_object_UE);
-
-            //print dci_object_UE to verify that it's well decoded
-            std::cout << "\ndci_object_UE.RIV = " << dci_object_UE.RIV << std::endl;
-            std::cout << "dci_object_UE.TD_ra = " << dci_object_UE.TD_ra << std::endl;
-            std::cout << "dci_object_UE.vrb_prb_interleaving = " << dci_object_UE.vrb_prb_interleaving << std::endl;
-            std::cout << "dci_object_UE.mcs = " << dci_object_UE.mcs << std::endl;
-            std::cout << "dci_object_UE.rv = " << dci_object_UE.rv << std::endl;
-            std::cout << "dci_object_UE.si = " << dci_object_UE.si << std::endl;
-            */
-
-        }
-
 }
