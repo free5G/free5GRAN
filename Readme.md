@@ -21,20 +21,21 @@ Before compiling, make sure that the following libraries are installed:
 * libfftw3
 * libconfig++
 * boost
+* cpufrequtils
 
 On ubuntu, those libraries can be installed via:
 ```
-sudo apt-get install cmake libfftw3-dev libconfig++-dev libboost-program-options-dev libboost-log-dev
+sudo apt-get install cmake libfftw3-dev libconfig++-dev libboost-program-options-dev libboost-log-dev cpufrequtils
 ```
 
 ### Radio frontend
 
-We currently support USRP B210 and X310 natively. `libuhd-dev` is required. It can be installed on Ubuntu via:
+We currently support USRP B210, N210 and X310 natively. `libuhd-dev` is required. It can be installed on Ubuntu via:
 ```
 sudo apt-get install libuhd-dev
 ```
 
-USRP N210 is also supported but `free5GRAN` requires Liquid SDR library for sampling rate resampling : `https://liquidsdr.org/doc/installation/`. To build `free5GRAN` with USRP N210 support, just run `cmake` with option `-DINCLUDE_N210=ON`.
+USRP N210 is partially supported (it can be unstable) and `free5GRAN` requires Liquid SDR library for sampling rate resampling : `https://liquidsdr.org/doc/installation/`. To build `free5GRAN` with USRP N210 support, just run the `cmake` command with option `-DINCLUDE_N210=ON`.
 
 ### Compiling
 
@@ -67,16 +68,16 @@ If you want to use a pre-defined RF device, USRP device has to be configured:
 * Find the device you want to use
 * Copy the `serial` field of the device and paste it in the config file.
 
-##### USRP X310 network configuration
-Before running `free5GRAN` with USRP X310, set mtu size to 8000: `ifconfig ETHERNET_INTERFACE mtu 8000`. Foremost, run `sudo sysctl -w net.core.wmem_max=24266666`.
+##### USRP network configuration
+To run `free5GRAN` with USRP X310, set mtu size to 8000: `ifconfig ETHERNET_INTERFACE mtu 8000`.
+
+To run `free5GRAN` with USRP N210, set mtu size to 1500: `ifconfig ETHERNET_INTERFACE mtu 1500`.
 
 #### Running
 
 `free5GRAN` should be available globally after installation. Configuration files are located in `/root/.config/free5GRAN/config`. There is two possible options for running free5GRAN:
 * Run `sudo free5GRAN` to run `free5GRAN` with default config file `/root/.config/free5GRAN/config/free5GRAN.cfg`.
 * Run `sudo free5GRAN RELATIVE_CONFIG_FILE_PATH` to run `free5GRAN` with a specific configuration file.
-
-Foremost, if you want to set the maximum priority level for `free5GRAN`, you can run it with: `sudo nice -n -20 free5GRAN RELATIVE_CONFIG_FILE_PATH`
 
 ### Debugging
 

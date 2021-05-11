@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(free5GRAN)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -funroll-loops")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -std=c++17")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
 
 file(GLOB nr_rrc_src
         "lib/asn1c/nr_rrc/*.h"
@@ -38,14 +38,16 @@ ADD_LIBRARY( free5GRAN_lib STATIC
         lib/asn1c/nr_rrc/asn_application.h
         lib/phy/physical_channel/physical_channel.cpp
         lib/phy/physical_channel/physical_channel.h
+        lib/rf/rf.cpp
         lib/rf/rf.h
         lib/rf/usrp_b200/usrp_b200.cpp
         lib/rf/usrp_b200/usrp_b200.h
         lib/rf/usrp_x300/usrp_x300.cpp
         lib/rf/usrp_x300/usrp_x300.h
-)
+        lib/phy/bwp/bwp.cpp
+        lib/phy/bwp/bwp.h)
 
-target_link_libraries(free5GRAN_lib asn1c_lib ${GR_LIBRARIES})
+target_link_libraries(free5GRAN_lib asn1c_lib ${GR_LIBRARIES} ${Boost_LIBRARIES} boost_system boost_log boost_thread boost_log_setup)
 
 if (INCLUDE_N210)
     message("INCLUDING N210")

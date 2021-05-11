@@ -18,19 +18,27 @@
 #include <vector>
 using namespace std;
 
-namespace free5GRAN {
-    namespace phy {
-        namespace synchronization {
-            void search_pss(int &n_id_2, int &synchronisation_index, float &peak_value, int cp_length, vector<complex<float>> &buff, int fft_size);
+namespace free5GRAN::phy::synchronization {
+void search_pss(int& n_id_2,
+                int& synchronisation_index,
+                float& peak_value,
+                int cp_length,
+                vector<complex<float>>& buff,
+                int fft_size);
 
-            void cross_correlation(vector<complex<float>> in1, vector<complex<float>> in2, complex<float>* out, int size1,  int size2);
+void cross_correlation(vector<complex<float>> in1,
+                       vector<complex<float>> in2,
+                       complex<float>* out,
+                       int size1,
+                       int size2);
 
-            void get_sss(int &n_id_1, float &peak_value, vector<complex<float>> &buff, int fft_size, int n_id_2);
+void get_sss(int& n_id_1,
+             float& peak_value,
+             vector<complex<float>>& buff,
+             int fft_size,
+             int n_id_2);
 
-            complex<float> correlate(vector<complex<float>> in1, int* in2, int size);
+auto correlate(vector<complex<float>> in1, int* in2, int size)
+    -> complex<float>;
 
-        };
-    }
-
-}
-
+}  // namespace free5GRAN::phy::synchronization

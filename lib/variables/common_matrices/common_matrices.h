@@ -17,42 +17,36 @@
 #ifndef FREE5GRAN_COMMON_MATRICES_H
 #define FREE5GRAN_COMMON_MATRICES_H
 
+namespace free5GRAN {
 
-namespace free5GRAN{
+/*
+ * Gn matrix and inverse matrix (TS38.212 5.3.1.2)
+ */
 
-    /*
-     * Gn matrix and inverse matrix (TS38.212 5.3.1.2)
-     */
+extern int G5[32][32];
 
-    extern int G5[32][32];
+extern int G5_INV[32][32];
 
-    extern int G5_INV[32][32];
+extern int G6[64][64];
 
+extern int G6_INV[64][64];
 
-    extern int G6[64][64];
+extern int G7[128][128];
 
-    extern int G6_INV[64][64];
+extern int G7_INV[128][128];
 
+extern int G8[256][256];
 
-    extern int G7[128][128];
+extern int G8_INV[256][256];
 
-    extern int G7_INV[128][128];
+extern int G9[512][512];
 
+extern int G9_INV[512][512];
 
-    extern int G8[256][256];
+extern int G10[1024][1024];
 
-    extern int G8_INV[256][256];
+extern int G10_INV[1024][1024];
 
-
-    extern int G9[512][512];
-
-    extern int G9_INV[512][512];
-
-
-    extern int G10[1024][1024];
-
-    extern int G10_INV[1024][1024];
-
-}
+}  // namespace free5GRAN
 
 #endif

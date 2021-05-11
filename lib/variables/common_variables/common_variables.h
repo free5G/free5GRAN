@@ -14,174 +14,182 @@
    limitations under the License.
  */
 
+#include <fftw3.h>
 #include "../common_structures/common_structures.h"
 
 #ifndef FREE5GRAN_COMMON_VARIABLES_H
 #define FREE5GRAN_COMMON_VARIABLES_H
 
+namespace free5GRAN {
 
-namespace free5GRAN{
+/*
+ * CRC generated with gcrc24c method.
+ * TS38.212 5.1
+ */
+extern int G_CRC_24_C[25];
 
-    /*
-     * CRC generated with gcrc24c method.
-     * TS38.212 5.1
-     */
-    extern int G_CRC_24_C[25];
+extern int G_CRC_24_A[25];
 
-    extern int G_CRC_24_A[25];
+extern int G_CRC_16[27];
 
-    extern int G_CRC_16[27];
+/*
+ * TS 38.212 Table 7.1.1-1
+ */
+extern int PBCH_PAYLOAD_INTERLEAVER[32];
 
-    /*
-     * TS 38.212 Table 7.1.1-1
-     */
-    extern int PBCH_PAYLOAD_INTERLEAVER[32];
+/*
+ * TS38.212 Table 5.4.1.1-1
+ */
+extern int SUB_BLOCK_INTERLEAVER_PATTERN[32];
+/*
+ * TS38.212 Table 5.3.1.1-1
+ */
+extern int INTERLEAVING_PATTERN[164];
 
-    /*
-     * TS38.212 Table 5.4.1.1-1
-     */
-    extern int SUB_BLOCK_INTERLEAVER_PATTERN[32];
-    /*
-     * TS38.212 Table 5.3.1.1-1
-     */
-    extern int INTERLEAVING_PATTERN[164];
+/*
+ * TS38.212 Table 5.3.1.2-1
+ */
+extern int POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[1024];
 
-    /*
-     * TS38.212 Table 5.3.1.2-1
-     */
-    extern int POLAR_SEQUENCE_QNMAX_AND_RELIABILITY[1024];
+/*
+ * Number of PBCH samples in SSB
+ */
+extern int SIZE_SSB_PBCH_SAMPLES;
 
-    /*
-     * Number of PBCH symbols in SSB
-     */
-    extern int SIZE_SSB_PBCH_SYMBOLS;
+/*
+ * Number of DMRS samples in SSB
+ */
+extern int SIZE_SSB_DMRS_SAMPLES;
 
-    /*
-     * Number of DMRS symbols in SSB
-     */
-    extern int SIZE_SSB_DMRS_SYMBOLS;
+/*
+ * Number of subcarriers in SSB
+ */
+extern int NUM_SC_SSB;
 
-    /*
-     * Number of subcarriers in SSB
-     */
-    extern int NUM_SC_SSB;
+/*
+ * Interval in 2nd SSB symbol with no PBCH & DMRS
+ */
+extern int INTERVAL_SSB_NO_PBCH_DMRS[2];
 
-    /*
-     * Interval in 2nd SSB symbol with no PBCH & DMRS
-     */
-    extern int INTERVAL_SSB_NO_PBCH_DMRS[2];
+/*
+ * Maximum value for I_BAR_SSB
+ */
+extern int MAX_I_BAR_SSB;
 
-    /*
-     * Maximum value for I_BAR_SSB
-     */
-    extern int MAX_I_BAR_SSB;
+/*
+ * Number of symbols with PBCH & DMRS in SSB
+ */
+extern int NUM_SYMBOL_PBCH_SSB;
 
-    /*
-     * Number of symbols with PBCH & DMRS in SSB
-     */
-    extern int NUM_SYMBOL_PBCH_SSB;
+/*
+ * Size of PSS & SSS sequences
+ */
+extern int SIZE_PSS_SSS_SIGNAL;
 
-    /*
-     * Size of PSS & SSS sequences
-     */
-    extern int SIZE_PSS_SSS_SIGNAL;
+/*
+ * Maximum value for variable N_ID_1
+ */
+extern int MAX_N_ID_1;
 
-    /*
-     * Maximum value for variable N_ID_1
-     */
-    extern int MAX_N_ID_1;
+/*
+ * PBCH payload size after polar decoding (or before polar coding :-) )
+ */
+extern int SIZE_PBCH_POLAR_DECODED;
 
-    /*
-     * PBCH payload size after polar decoding (or before polar coding :-) )
-     */
-    extern int SIZE_PBCH_POLAR_DECODED;
+/*
+ * BCH payload CRC size
+ */
+extern int BCH_CRC_LENGTH;
 
-    /*
-     * BCH payload CRC size
-     */
-    extern int BCH_CRC_LENGTH;
+/*
+ * BCH payload size
+ */
+extern int BCH_PAYLOAD_SIZE;
 
-    /*
-     * BCH payload size
-     */
-    extern int BCH_PAYLOAD_SIZE;
+/*
+ * Base sequence for generating PSS
+ */
+extern int PSS_BASE_SEQUENCE[7];
 
-    /*
-     * Base sequence for generating PSS
-     */
-    extern int PSS_BASE_SEQUENCE[7];
+/*
+ * X0 base sequence for generating SSS
+ */
+extern int SSS_BASE_X0_SEQUENCE[7];
 
-    /*
-     * X0 base sequence for generating SSS
-     */
-    extern int SSS_BASE_X0_SEQUENCE[7];
+/*
+ * X1 base sequence for generating SSS
+ */
+extern int SSS_BASE_X1_SEQUENCE[7];
 
-    /*
-     * X1 base sequence for generating SSS
-     */
-    extern int SSS_BASE_X1_SEQUENCE[7];
+/*
+ * Number of symbols in SSBlock
+ */
+extern int NUM_SYMBOLS_SSB;
 
-    /*
-     * Number of symbols in SSBlock
-     */
-    extern int NUM_SYMBOLS_SSB;
+/*
+ * X1 base sequence for generating for PBCH DMRS
+ */
+extern int DMRS_BASE_X1_SEQUENCE[32];
 
-    /*
-     * X1 base sequence for generating for PBCH DMRS
-     */
-    extern int DMRS_BASE_X1_SEQUENCE[32];
+/*
+ * Number of supported bands
+ */
+extern int NUM_SUPPORTED_BANDS;
+/*
+ * Array to store available bands
+ */
+extern free5GRAN::band AVAILABLE_BANDS[7];
 
-    /*
-     * Number of supported bands
-     */
-    extern int NUM_SUPPORTED_BANDS;
-    /*
-     * Array to store available bands
-     */
-    extern free5GRAN::band AVAILABLE_BANDS[7];
+/*
+ * TS 38.213 Table 13-1
+ */
+extern int TS_38_213_TABLE_13_1[16][4];
 
-    /*
-     * TS 38.213 Table 13-1
-     */
-    extern int TS_38_213_TABLE_13_1[16][4];
+/*
+ * TS 38.213 Table 13-2
+ */
+extern int TS_38_213_TABLE_13_2[16][4];
 
-    /*
-     * TS 38.213 Table 13-2
-     */
-    extern int TS_38_213_TABLE_13_2[16][4];
+/*
+ * TS 38.213 Table 13-3
+ */
+extern int TS_38_213_TABLE_13_3[16][4];
 
-    /*
-     * TS 38.213 Table 13-3
-     */
-    extern int TS_38_213_TABLE_13_3[16][4];
+/*
+ * TS 38.213 Table 13-4
+ */
+extern int TS_38_213_TABLE_13_4[16][4];
 
-    /*
-     * TS 38.213 Table 13-4
-     */
-    extern int TS_38_213_TABLE_13_4[16][4];
+/*
+ * TS 38.213 Table 13-11
+ */
+extern float TS_38_213_TABLE_13_11[16][4];
 
-    /*
-     * TS 38.213 Table 13-11
-     */
-    extern float TS_38_213_TABLE_13_11[16][4];
+extern int TS_38_214_TABLE_5_1_2_1_1_2[16][2][4];
 
-    extern int TS_38_214_TABLE_5_1_2_1_1_2[16][2][4];
+extern int TS_38_214_TABLE_5_1_3_1_1[29][2];
 
-    extern int TS_38_214_TABLE_5_1_3_1_1[29][2];
+extern int TS_38_211_TABLE_7_4_1_1_2_3[15][4];
 
-    extern int TS_38_211_TABLE_7_4_1_1_2_3[15][4];
+extern int TS_38_214_TABLE_5_1_3_2_1[93];
 
-    extern int TS_38_214_TABLE_5_1_3_2_1[93];
+extern int TS_38_212_TABLE_5_3_2_1[8][8];
 
-    extern int TS_38_212_TABLE_5_3_2_1[8][8];
+extern int NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
 
-    extern int NUMBER_SYMBOLS_PER_SLOT_NORMAL_CP;
+extern int NUMBER_REG_PER_CCE;
 
-    extern int NUMBER_REG_PER_CCE;
+extern int SI_RNTI[16];
 
-    extern int SI_RNTI[16];
+extern int PSS_SSS_FFT_SIZE;
 
-    extern int PSS_SSS_FFT_SIZE;
+extern fftw_plan FFT_PLAN_15_KHZ;
 
-}
+extern fftw_plan FFT_PLAN_30_KHZ;
+
+extern fftw_plan FFT_PLAN_60_KHZ;
+
+// extern bool SIGNAL_STOP = false;
+
+}  // namespace free5GRAN
 #endif

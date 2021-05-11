@@ -17,34 +17,36 @@
 #ifndef FREE5GRAN_USRP_B200_H
 #define FREE5GRAN_USRP_B200_H
 
-#include "../rf.h"
 #include "../../variables/common_structures/common_structures.h"
+#include "../rf.h"
 
 namespace free5GRAN {
-    class usrp_b200: public rf {
-        public:
-            usrp_b200(
-                    double sample_rate,
-                    double center_frequency,
-                    double gain,
-                    double bandwidth,
-                    free5GRAN::rf_device chosen_device
-                    );
+class usrp_b200 : public rf {
+ public:
+  usrp_b200(double sample_rate,
+            double center_frequency,
+            double gain,
+            double bandwidth,
+            free5GRAN::rf_device chosen_device,
+            free5GRAN::rf_buffer* rf_buff);
 
-            void get_samples(vector<complex<float>> &buff, double &time_first_sample);
+  void get_samples(vector<complex<float>>& buff,
+                   double& time_first_sample) override;
 
-            double getSampleRate();
+  auto getSampleRate() -> double override;
 
-            void setSampleRate(double rate);
+  void setSampleRate(double rate) override;
 
-            double getCenterFrequency();
+  auto getCenterFrequency() -> double override;
 
-            void setCenterFrequency(double freq);
+  void setCenterFrequency(double freq) override;
 
-            void setGain(double gain);
+  void setGain(double gain) override;
 
-            double getGain();
-    };
-}
+  auto getGain() -> double override;
 
-#endif //FREE5GRAN_USRP_B200_H
+  void start_loopback_recv(bool& stop_signal, size_t buff_size) override;
+};
+}  // namespace free5GRAN
+
+#endif  // FREE5GRAN_USRP_B200_H

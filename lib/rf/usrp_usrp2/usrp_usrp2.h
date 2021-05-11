@@ -17,43 +17,53 @@
 #ifndef FREE5GRAN_USRP_USRP2_H
 #define FREE5GRAN_USRP_USRP2_H
 
-#include "../rf.h"
+#include <semaphore.h>
+
 #include "../../variables/common_structures/common_structures.h"
+#include "../rf.h"
+
 #include <liquid/liquid.h>
 
 namespace free5GRAN {
-    class usrp_usrp2: public rf {
-        private:
-            double internal_sampling_rate;
-            double resampling_ratio;
-            resamp_crcf resampling_filter;
-            bool filter_init_done = false;
-        public:
-            usrp_usrp2(
-                    double sample_rate,
-                    double center_frequency,
-                    double gain,
-                    double bandwidth,
-                    free5GRAN::rf_device chosen_device
-            );
+class usrp_usrp2 : public rf {
+ private:
+  double internal_sampling_rate;
+  double resampling_ratio;
+  resamp_crcf resampling_filter;
+  bool filter_init_done = false;
 
-            void get_samples(vector<complex<float>> &buff, double &time_first_sample);
+ public:
+  usrp_usrp2(double sample_rate,
+             double center_frequency,
+             double gain,
+             double bandwidth,
+             free5GRAN::rf_device chosen_device,
+             free5GRAN::rf_buffer* rf_buff);
 
-            double getSampleRate();
+  void get_samples(vector<complex<float>>& buff,
+                   double& time_first_sample) override;
 
-            void setSampleRate(double rate);
+  auto getSampleRate() -> double override;
 
-            double getCenterFrequency();
+  void setSampleRate(double rate) override;
 
-            void setCenterFrequency(double freq);
+  auto getCenterFrequency() -> double override;
 
-            void setGain(double gain);
+  void setCenterFrequency(double freq) override;
 
-            double getGain();
+  void setGain(double gain) override;
 
-            void adjust_sampling_rate(double &rate);
-    };
-}
+  auto getGain() -> double override;
 
+  void adjust_sampling_rate(double& rate);
 
-#endif //FREE5GRAN_USRP_USRP2_H
+  void start_loopback_recv(bool& stop_signal, size_t buff_size) override;
+
+  void loopback_filter(vector<complex<float>>& tmp_buff,
+                       sem_t& filtering_sem,
+                       bool& stop_signal,
+                       bool& overflow);
+};
+}  // namespace free5GRAN
+
+#endif  // FREE5GRAN_USRP_USRP2_H

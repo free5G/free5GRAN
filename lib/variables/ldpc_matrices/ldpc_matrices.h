@@ -20,9 +20,8 @@
 #include <iostream>
 #include <vector>
 
-
 namespace free5GRAN {
-    extern std::vector<int*> TS_38_212_TABLE_5_3_2_2;
-    extern std::vector<int*> TS_38_212_TABLE_5_3_2_3;
-}
+extern std::vector<int*> TS_38_212_TABLE_5_3_2_2;
+extern std::vector<int*> TS_38_212_TABLE_5_3_2_3;
+}  // namespace free5GRAN
 #endif

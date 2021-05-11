@@ -14,24 +14,39 @@
    limitations under the License.
  */
 
-#include "../../variables/common_structures/common_structures.h"
-#include <vector>
 #include <uhd.h>
+
+#include <condition_variable>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <vector>
+
+#include "../../variables/common_structures/common_structures.h"
 using namespace std;
 
-namespace free5GRAN {
-    namespace utils {
-        namespace common_utils {
-            void parse_mib(int *mib_bits, free5GRAN::mib &mib_object);
+namespace free5GRAN::utils::common_utils {
+void parse_mib(int* mib_bits, free5GRAN::mib& mib_object);
 
-            void scramble(int * input_bits, int * c_seq, int * output_bits, int length, int offset);
+void scramble(int* input_bits,
+              int* c_seq,
+              int* output_bits,
+              int length,
+              int offset);
 
-            void scramble(double * input_bits, int * c_seq, double * output_bits, int length, int offset);
+void scramble(double* input_bits,
+              int* c_seq,
+              double* output_bits,
+              int length,
+              int offset);
 
-            void get_usrp_devices(vector<free5GRAN::rf_device> &rf_devices_list);
+void get_usrp_devices(vector<free5GRAN::rf_device>& rf_devices_list);
 
-            void select_rf_device(free5GRAN::rf_device &rf_device_obj, string identifier);
-        }
-    }
-}
+void select_rf_device(free5GRAN::rf_device& rf_device_obj, string identifier);
+
+auto create_bwp(int id, double scs, int size_rb, double sampling_rate)
+    -> free5GRAN::bwp;
+
+void init_fft_plans(double sampling_rate);
+
+void destroy_fft_plans();
+
+}  // namespace free5GRAN::utils::common_utils

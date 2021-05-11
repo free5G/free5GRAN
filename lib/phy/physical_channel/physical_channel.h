@@ -16,23 +16,37 @@
 
 #include <complex>
 #include <vector>
+
 #include "../../variables/common_structures/common_structures.h"
 using namespace std;
 
-namespace free5GRAN {
-    namespace phy {
-        namespace physical_channel {
-            void decode_pdcch(vector<complex<float>> pdcch_symbols,int *dci_bits, int agg_level, int* reg_index, int* reg_index_sorted, int pci);
+namespace free5GRAN::phy::physical_channel {
+void decode_pdcch(vector<complex<float>> pdcch_symbols,
+                  int* dci_bits,
+                  int agg_level,
+                  int* reg_index,
+                  int* reg_index_sorted,
+                  int pdcch_DMRS_ScrambingID);
 
-            void decode_pdsch(vector<complex<float>> pdsch_samples, double *unscrambled_soft_bits, int pci);
+void decode_pdsch(vector<complex<float>> pdsch_samples,
+                  double* unscrambled_soft_bits,
+                  int pci);
 
-            void decode_pbch(vector<complex<float>> pbch_symbols, int i_ssb, int pci, int *bch_bits);
+void decode_pbch(vector<complex<float>> pbch_symbols,
+                 int i_ssb,
+                 int pci,
+                 int* bch_bits);
 
-            void compute_pbch_indexes(vector<vector<vector<int>>> &ref, int pci);
+void compute_pbch_indexes(vector<vector<vector<int>>>& ref, int pci);
 
-            void compute_pdcch_indexes(vector<vector<vector<int>>> &ref, free5GRAN::pdcch_t0ss_monitoring_occasions pdcch_ss_mon_occ, int agg_level, int *reg_bundles, int height_reg_rb);
+void compute_pdcch_indexes(vector<vector<vector<int>>>& ref,
+                           int n_symb_coreset,
+                           int agg_level,
+                           int* reg_bundles,
+                           int height_reg_rb);
 
-            void compute_pdsch_indexes(vector<vector<vector<int>>> &ref, bool dmrs_symbol_array[], int L, int lrb);
-        }
-    }
-}
+void compute_pdsch_indexes(vector<vector<vector<int>>>& ref,
+                           bool dmrs_symbol_array[],
+                           int L,
+                           int lrb);
+}  // namespace free5GRAN::phy::physical_channel
