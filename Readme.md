@@ -4,6 +4,8 @@ free5GRAN is an open-source 5G RAN stack. The current version includes a receive
 
 free5GRAN includes a library which can be reused for further developments. Documentation is available https://free5g.github.io/free5GRAN-documentation/.
 
+**free5GRAN is under active developments. A full 5G SA PHY layer should be released in Q1 2022.**
+
 ## LGTM scores
 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/free5G/free5GRAN.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/free5G/free5GRAN/alerts/)
